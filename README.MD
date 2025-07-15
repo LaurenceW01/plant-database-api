@@ -49,6 +49,15 @@ This project exposes the existing plant database as a secure, modern API, enabli
 - Ensure environment variables are set in the render.com dashboard
 - The API will be accessible at the public URL provided by render.com
 
+## Start Command (Render.com)
+To run this API with Flask in production, Render.com should use gunicorn:
+
+```
+gunicorn api.main:app
+```
+- Replace `api.main:app` if your main Flask file or app variable is named differently.
+- By convention, if your main file is `api/main.py` and your Flask app is named `app`, this command will work out of the box.
+
 ## API Usage Basics
 - All endpoints accept and return JSON
 - Authentication is required for write operations (see `/docs/authentication.md`)
