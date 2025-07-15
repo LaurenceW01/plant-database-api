@@ -89,3 +89,4 @@ logs/
 
 # Render.com build artifacts
 render-build/ 
+config/*.json 

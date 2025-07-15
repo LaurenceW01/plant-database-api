@@ -44,19 +44,36 @@ This project exposes the existing plant database as a secure, modern API, enabli
    uvicorn api.main:app --reload
    ```
 
-## Deployment (render.com)
-- Follow the deployment instructions in `/docs/deployment.md` (to be created)
-- Ensure environment variables are set in the render.com dashboard
-- The API will be accessible at the public URL provided by render.com
+## Deployment (Render.com)
 
-## Start Command (Render.com)
-To run this API with Flask in production, Render.com should use gunicorn:
+1. **Set Environment Variables in Render Dashboard:**
+   - `GARDENLLM_API_KEY`: Your API key for write operations.
+   - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your Google credentials JSON file (upload as a secret file or set as an env var).
+2. **Deploy the App:**
+   - Use the following start command: `gunicorn 'api.main:create_app()'`
+   - Ensure your requirements.txt includes all dependencies (Flask, Flask-Limiter, Flask-CORS, python-dotenv, etc.).
+3. **Security Features:**
+   - API key authentication for all write operations (POST/PUT)
+   - Rate limiting (10 POST/PUT per minute per IP)
+   - Audit logging to file and stdout
+   - CORS enabled for all routes
+   - HTTPS enforced by Render.com
 
-```
-gunicorn api.main:app
-```
-- Replace `api.main:app` if your main Flask file or app variable is named differently.
-- By convention, if your main file is `api/main.py` and your Flask app is named `app`, this command will work out of the box.
+## Local Development & Testing
+
+- Use the app factory: `from api.main import create_app`
+- For local dev: `app = create_app()`
+- For testing: `app = create_app(testing=True)` (disables rate limiting)
+- Run locally: `flask run` or `python -m api.main`
+- Run tests: `pytest`
+
+## Quickstart
+
+1. Clone the repo and set up your virtual environment.
+2. Create a `.env` file with your API key and credentials (do not commit this file).
+3. Install dependencies: `pip install -r requirements.txt`
+4. Run the app: `flask run` or `gunicorn 'api.main:create_app()'`
+5. Deploy to Render.com following the steps above.
 
 ## API Usage Basics
 - All endpoints accept and return JSON

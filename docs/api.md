@@ -110,6 +110,27 @@ This API provides secure, validated access to a plant database. All endpoints re
 
 ---
 
+## Deployment & Usage Notes
+
+- **App Factory Pattern:**
+  - The API uses a Flask app factory (`create_app`). For production, run the app using `create_app()`. For testing, use `create_app(testing=True)` to disable rate limiting and enable test mode.
+- **Environment Variables:**
+  - `GARDENLLM_API_KEY`: Required for all write operations (POST/PUT). Set this in your environment or deployment platform (e.g., Render.com dashboard).
+  - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your Google credentials JSON file for Sheets access. Should be set in your deployment environment, not committed to git.
+  - `.env` file: You can use a `.env` file for local development. All sensitive keys must be excluded from git.
+- **Rate Limiting:**
+  - In production, write operations are limited to 10 POST/PUT requests per minute per IP. In test mode, rate limiting is disabled.
+- **Audit Logging:**
+  - All write operations are logged to both `api_audit.log` (local/dev) and stdout (for cloud/Render dashboard).
+- **CORS & HTTPS:**
+  - CORS is enabled for all routes. Render.com enforces HTTPS for all endpoints.
+- **Testing:**
+  - Use the app factory with `testing=True` for all tests. See `tests/test_api.py` for examples.
+- **Production Run:**
+  - Use `gunicorn 'api.main:create_app()'` or similar for production WSGI servers.
+
+---
+
 ## Example cURL Requests
 
 **Add a plant:**
