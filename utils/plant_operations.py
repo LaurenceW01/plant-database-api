@@ -2,9 +2,9 @@ import logging
 from datetime import datetime
 import pytz
 from typing import List, Dict, Optional, Tuple, Union
-from config import sheets_client, SPREADSHEET_ID, RANGE_NAME
-from sheets_client import check_rate_limit, get_next_id
-from field_config import get_canonical_field_name, get_all_field_names, is_valid_field
+from config.config import sheets_client, SPREADSHEET_ID, RANGE_NAME
+from utils.sheets_client import check_rate_limit, get_next_id
+from models.field_config import get_canonical_field_name, get_all_field_names, is_valid_field
 import re
 import time
 
@@ -568,12 +568,16 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
             return {"success": False, "error": "Could not generate plant ID"}
         
         # Prepare plant data using field_config
+        # Wrap the photo_url in =IMAGE() for the 'Photo URL' field
+        photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
+        raw_photo_url = photo_url  # Store the raw URL directly
         plant_data = {
             get_canonical_field_name('ID'): next_id,
             get_canonical_field_name('Plant Name'): plant_name,
             get_canonical_field_name('Description'): description,
             get_canonical_field_name('Location'): location,
-            get_canonical_field_name('Photo URL'): photo_url,
+            get_canonical_field_name('Photo URL'): photo_formula,
+            get_canonical_field_name('Raw Photo URL'): raw_photo_url,
             get_canonical_field_name('Last Updated'): datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         
@@ -592,7 +596,7 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
         sheets_client.values().append(
             spreadsheetId=SPREADSHEET_ID,
             range=RANGE_NAME,
-            valueInputOption='RAW',
+            valueInputOption='USER_ENTERED',  # Changed from 'RAW' to 'USER_ENTERED'
             body={'values': [row_data]}
         ).execute()
         
@@ -604,42 +608,6 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
         
     except Exception as e:
         logger.error(f"Error adding plant {plant_name}: {e}")
-        return {"success": False, "error": str(e)}
-
-def delete_plant(plant_id: Union[int, str]) -> Dict[str, Union[bool, str]]:
-    """
-    Delete a plant from the database by ID.
-    
-    Args:
-        plant_id (Union[int, str]): ID of the plant to delete
-        
-    Returns:
-        Dict[str, Union[bool, str]]: Result with success status and message
-    """
-    try:
-        plant_id = str(plant_id)
-        
-        # Find the plant row
-        plant_row, plant_data = find_plant_by_id_or_name(plant_id)
-        if not plant_row:
-            return {"success": False, "error": "Plant not found"}
-        
-        # Delete the row
-        check_rate_limit()
-        sheets_client.spreadsheets().values().clear(
-            spreadsheetId=SPREADSHEET_ID,
-            range=f'Plants!A{plant_row}:Q{plant_row}'
-        ).execute()
-        
-        # Invalidate cache
-        invalidate_plant_list_cache()
-        
-        plant_name = plant_data[0][1] if plant_data and len(plant_data[0]) > 1 else "Unknown"
-        logger.info(f"Successfully deleted plant: {plant_name}")
-        return {"success": True, "message": f"Deleted {plant_name}"}
-        
-    except Exception as e:
-        logger.error(f"Error deleting plant {plant_id}: {e}")
         return {"success": False, "error": str(e)}
 
 def search_plants(query: str) -> List[Dict]:

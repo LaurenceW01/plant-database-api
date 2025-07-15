@@ -2,11 +2,8 @@ from datetime import datetime, timedelta
 import logging
 from time import sleep
 from typing import List, Dict, Optional, Any
-from config import (
-    sheets_client, SPREADSHEET_ID, RANGE_NAME, SHEETS_REQUESTS,
-    MAX_REQUESTS_PER_MINUTE, QUOTA_RESET_INTERVAL, SHEET_GID
-)
-from field_config import get_all_field_names
+from config.config import sheets_client, SPREADSHEET_ID, RANGE_NAME, SHEETS_REQUESTS, MAX_REQUESTS_PER_MINUTE, QUOTA_RESET_INTERVAL, SHEET_GID
+from models.field_config import get_all_field_names
 
 logger = logging.getLogger(__name__)
 
