@@ -36,25 +36,40 @@ def require_api_key(func):
 def map_underscore_fields_to_canonical(data):
     """
     Convert underscore field names from ChatGPT to canonical field names.
-    Maps fields like 'plant_name' to 'Plant Name' for API compatibility.
+    Maps fields like 'plant_name' or 'Plant___Name' to 'Plant Name' for API compatibility.
+    Handles both single underscores and triple underscores from ChatGPT's OpenAPI parser.
     """
     field_mapping = {
         'plant_name': 'Plant Name',
+        'plant___name': 'Plant Name',
         'description': 'Description',
         'location': 'Location',
         'light_requirements': 'Light Requirements',
+        'light___requirements': 'Light Requirements',
         'frost_tolerance': 'Frost Tolerance',
+        'frost___tolerance': 'Frost Tolerance',
         'watering_needs': 'Watering Needs',
+        'watering___needs': 'Watering Needs',
         'soil_preferences': 'Soil Preferences',
+        'soil___preferences': 'Soil Preferences',
         'pruning_instructions': 'Pruning Instructions',
+        'pruning___instructions': 'Pruning Instructions',
         'mulching_needs': 'Mulching Needs',
+        'mulching___needs': 'Mulching Needs',
         'fertilizing_schedule': 'Fertilizing Schedule',
+        'fertilizing___schedule': 'Fertilizing Schedule',
         'winterizing_instructions': 'Winterizing Instructions',
+        'winterizing___instructions': 'Winterizing Instructions',
         'spacing_requirements': 'Spacing Requirements',
+        'spacing___requirements': 'Spacing Requirements',
         'care_notes': 'Care Notes',
+        'care___notes': 'Care Notes',
         'photo_url': 'Photo URL',
+        'photo___url': 'Photo URL',
         'raw_photo_url': 'Raw Photo URL',
+        'raw___photo___url': 'Raw Photo URL',
         'last_updated': 'Last Updated',
+        'last___updated': 'Last Updated',
         'id': 'ID'
     }
     
