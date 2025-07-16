@@ -1,0 +1,406 @@
+openapi: 3.1.0
+info:
+  title: Plant Database API
+  description: A comprehensive plant database API for managing garden plants with full CRUD operations. Supports adding, updating, retrieving, and searching plant information including care instructions, growing conditions, and photos.
+  version: 1.0.0
+
+servers:
+  - url: https://plant-database-api.onrender.com
+    description: Production server (replace with your actual render.com URL)
+
+paths:
+  /api/plants:
+    get:
+      operationId: searchPlants
+      summary: Search or list all plants
+      description: Search for plants by name, description, or location. If no query is provided, returns paginated plants.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query to find plants by name, description, or location
+          required: false
+          schema:
+            type: string
+            example: "tomato"
+        - name: limit
+          in: query
+          description: Maximum number of plants to return (default 20)
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          description: Number of plants to skip for pagination (default 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated list of plants matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plants:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Plant'
+                  total:
+                    type: integer
+                    description: Total number of plants in database
+                  count:
+                    type: integer
+                    description: Number of plants in this response
+                  offset:
+                    type: integer
+                    description: Number of plants skipped
+                  limit:
+                    type: integer
+                    description: Maximum plants per page
+
+    post:
+      operationId: addPlant
+      summary: Add a new plant to the database
+      description: Add a new plant with comprehensive field support. Only Plant Name is required, all other fields are optional.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantInput'
+            examples:
+              minimal:
+                summary: Minimal plant addition
+                value:
+                  Plant Name: "Basil"
+                  Location: "Herb Garden"
+              comprehensive:
+                summary: Comprehensive plant addition
+                value:
+                  Plant Name: "Japanese Maple"
+                  Description: "Beautiful ornamental tree with stunning fall colors"
+                  Location: "Front Yard"
+                  Light Requirements: "Partial Shade to Full Sun"
+                  Frost Tolerance: "Hardy to -15°C (zones 5-9)"
+                  Watering Needs: "Regular watering, drought tolerant once established"
+                  Soil Preferences: "Well-draining, slightly acidic soil"
+                  Pruning Instructions: "Prune in late winter, remove dead branches"
+                  Mulching Needs: "3-inch layer of organic mulch"
+                  Fertilizing Schedule: "Feed in early spring with balanced fertilizer"
+                  Winterizing Instructions: "Protect young trees from harsh winds"
+                  Spacing Requirements: "Plant 6-8 feet apart"
+                  Care Notes: "Avoid wet feet, provide wind protection"
+                  Photo URL: "https://example.com/japanese-maple.jpg"
+      responses:
+        '201':
+          description: Plant added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Added Basil to garden"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/plants/{id_or_name}:
+    get:
+      operationId: getPlant
+      summary: Get a specific plant by ID or name
+      description: Retrieve detailed information about a specific plant using either its ID or exact name.
+      security: []
+      parameters:
+        - name: id_or_name
+          in: path
+          required: true
+          description: Plant ID or exact plant name
+          schema:
+            type: string
+            example: "Tomato"
+      responses:
+        '200':
+          description: Plant details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plant:
+                    $ref: '#/components/schemas/Plant'
+        '404':
+          description: Plant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      operationId: updatePlant
+      summary: Update an existing plant
+      description: Update specific fields of an existing plant. All fields are optional - only provided fields will be updated.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id_or_name
+          in: path
+          required: true
+          description: Plant ID or exact plant name to update
+          schema:
+            type: string
+            example: "Tomato"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantUpdate'
+            examples:
+              care_update:
+                summary: Update care instructions
+                value:
+                  Watering Needs: "Water deeply twice per week"
+                  Care Notes: "Mulch heavily during summer heat"
+              description_update:
+                summary: Update description and location
+                value:
+                  Description: "Updated plant description"
+                  Location: "Moved to back garden"
+      responses:
+        '200':
+          description: Plant updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Updated Tomato"
+        '400':
+          description: Validation error or plant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API key required for write operations (POST, PUT)
+
+  schemas:
+    Plant:
+      type: object
+      properties:
+        ID:
+          type: string
+          description: Unique plant identifier
+          example: "1"
+        Plant Name:
+          type: string
+          description: Name of the plant
+          example: "Tomato"
+        Description:
+          type: string
+          description: Plant description
+          example: "Classic garden vegetable"
+        Location:
+          type: string
+          description: Location in garden (comma-separated for multiple)
+          example: "Vegetable Garden, Greenhouse"
+        Light Requirements:
+          type: string
+          description: Sunlight needs
+          example: "Full Sun"
+        Frost Tolerance:
+          type: string
+          description: Cold hardiness information
+          example: "Not frost tolerant"
+        Watering Needs:
+          type: string
+          description: Watering frequency and requirements
+          example: "Regular watering, keep soil moist"
+        Soil Preferences:
+          type: string
+          description: Soil type and pH requirements
+          example: "Well-draining, rich soil"
+        Pruning Instructions:
+          type: string
+          description: When and how to prune
+          example: "Remove suckers, prune lower leaves"
+        Mulching Needs:
+          type: string
+          description: Mulching recommendations
+          example: "2-3 inch layer around base"
+        Fertilizing Schedule:
+          type: string
+          description: Fertilization timing and type
+          example: "Every 2-3 weeks during growing season"
+        Winterizing Instructions:
+          type: string
+          description: Winter care instructions
+          example: "Harvest before first frost"
+        Spacing Requirements:
+          type: string
+          description: Plant spacing recommendations
+          example: "18-24 inches apart"
+        Care Notes:
+          type: string
+          description: Additional care information
+          example: "Support with stakes or cages"
+        Photo URL:
+          type: string
+          description: Image URL (stored as IMAGE formula)
+          example: "=IMAGE(\"https://example.com/tomato.jpg\")"
+        Raw Photo URL:
+          type: string
+          description: Direct image URL
+          example: "https://example.com/tomato.jpg"
+        Last Updated:
+          type: string
+          description: Timestamp of last update
+          example: "2024-01-15 10:30:45"
+
+    PlantInput:
+      type: object
+      required:
+        - Plant Name
+      properties:
+        Plant Name:
+          type: string
+          description: "REQUIRED: Name of the plant - use exactly 'Plant Name'"
+          example: "Basil"
+        Description:
+          type: string
+          description: "Plant description - use exactly 'Description'"
+          example: "Aromatic herb perfect for cooking"
+        Location:
+          type: string
+          description: "Location in garden - use exactly 'Location'"
+          example: "Herb Garden"
+        Light Requirements:
+          type: string
+          description: "Sunlight needs - use exactly 'Light Requirements'"
+          example: "Full Sun to Partial Shade"
+        Frost Tolerance:
+          type: string
+          description: "Cold hardiness - use exactly 'Frost Tolerance'"
+          example: "Tender annual, no frost tolerance"
+        Watering Needs:
+          type: string
+          description: "Watering requirements - use exactly 'Watering Needs'"
+          example: "Keep soil consistently moist"
+        Soil Preferences:
+          type: string
+          description: "Soil requirements - use exactly 'Soil Preferences'"
+          example: "Well-draining, fertile soil"
+        Pruning Instructions:
+          type: string
+          description: "Pruning guidance - use exactly 'Pruning Instructions'"
+          example: "Pinch flowers to encourage leaf growth"
+        Mulching Needs:
+          type: string
+          description: "Mulching recommendations - use exactly 'Mulching Needs'"
+          example: "Light mulch to retain moisture"
+        Fertilizing Schedule:
+          type: string
+          description: "Fertilization plan - use exactly 'Fertilizing Schedule'"
+          example: "Light fertilizer monthly"
+        Winterizing Instructions:
+          type: string
+          description: "Winter care - use exactly 'Winterizing Instructions'"
+          example: "Bring indoors or treat as annual"
+        Spacing Requirements:
+          type: string
+          description: "Spacing needs - use exactly 'Spacing Requirements'"
+          example: "12 inches apart"
+        Care Notes:
+          type: string
+          description: "Additional care tips - use exactly 'Care Notes'"
+          example: "Harvest regularly to prevent flowering"
+        Photo URL:
+          type: string
+          description: "Image URL - use exactly 'Photo URL'"
+          example: "https://example.com/basil.jpg"
+
+    PlantUpdate:
+      type: object
+      description: "Partial update object - all fields are optional. CRITICAL: Use exact field names as specified below."
+      properties:
+        Plant Name:
+          type: string
+          description: "Name of the plant - use exactly 'Plant Name'"
+        Description:
+          type: string
+          description: "Plant description - use exactly 'Description'"
+        Location:
+          type: string
+          description: "Location in garden - use exactly 'Location'"
+        Light Requirements:
+          type: string
+          description: "Sunlight needs - use exactly 'Light Requirements'"
+        Frost Tolerance:
+          type: string
+          description: "Cold hardiness - use exactly 'Frost Tolerance'"
+        Watering Needs:
+          type: string
+          description: "Watering requirements - use exactly 'Watering Needs'"
+        Soil Preferences:
+          type: string
+          description: "Soil requirements - use exactly 'Soil Preferences'"
+        Pruning Instructions:
+          type: string
+          description: "Pruning guidance - use exactly 'Pruning Instructions'"
+        Mulching Needs:
+          type: string
+          description: "Mulching recommendations - use exactly 'Mulching Needs'"
+        Fertilizing Schedule:
+          type: string
+          description: "Fertilization plan - use exactly 'Fertilizing Schedule'"
+        Winterizing Instructions:
+          type: string
+          description: "Winter care - use exactly 'Winterizing Instructions'"
+        Spacing Requirements:
+          type: string
+          description: "Spacing needs - use exactly 'Spacing Requirements'"
+        Care Notes:
+          type: string
+          description: "Additional care tips - use exactly 'Care Notes'"
+        Photo URL:
+          type: string
+          description: "Image URL - use exactly 'Photo URL'"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Plant Name is required" 

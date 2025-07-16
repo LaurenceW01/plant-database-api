@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: Plant Database API
+  description: Simple test schema for plant database API
+  version: 1.0.0
+
+servers:
+  - url: https://plant-database-api.onrender.com
+
+paths:
+  /api/plants:
+    get:
+      operationId: listPlants
+      summary: List all plants
+      description: Get a list of all plants in the database
+      responses:
+        '200':
+          description: List of plants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ID:
+                          type: string
+                        Plant Name:
+                          type: string
+                        Description:
+                          type: string
+                        Location:
+                          type: string
+
+  /api/plants/{plant_name}:
+    get:
+      operationId: getPlant
+      summary: Get a specific plant
+      description: Get details for a specific plant by name
+      parameters:
+        - name: plant_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plant details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plant:
+                    type: object
+                    properties:
+                      ID:
+                        type: string
+                      Plant Name:
+                        type: string
+                      Description:
+                        type: string
+                      Location:
+                        type: string 

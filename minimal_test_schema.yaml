@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: Plant Database API
+  description: Minimal test schema for plant database API
+  version: 1.0.0
+
+servers:
+  - url: https://plant-database-api.onrender.com
+
+paths:
+  /api/plants:
+    get:
+      operationId: listPlants
+      summary: List all plants
+      description: Get a paginated list of all plants in the database
+      parameters:
+        - name: q
+          in: query
+          description: Search query to find plants by name, description, or location
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of plants to return (default 20)
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          description: Number of plants to skip for pagination (default 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated list of plants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plants:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                  count:
+                    type: integer
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+                additionalProperties: true 
