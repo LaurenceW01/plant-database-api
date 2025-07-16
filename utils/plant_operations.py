@@ -145,15 +145,51 @@ def get_plant_data(plant_names=None) -> List[Dict]:
         headers = values[0]
         plants_data = []
         
+        # Get formulas for Photo URL column to handle IMAGE formulas properly
+        photo_url_field = get_canonical_field_name('Photo URL')
+        photo_url_col_idx = None
+        if photo_url_field in headers:
+            photo_url_col_idx = headers.index(photo_url_field)
+        
+        # Fetch formulas for the Photo URL column if it exists
+        photo_formulas = {}
+        if photo_url_col_idx is not None:
+            try:
+                col_letter = chr(65 + photo_url_col_idx)  # Convert index to column letter (A, B, C, ...)
+                formula_range = f"Plants!{col_letter}2:{col_letter}"  # Start from row 2 (skip header)
+                formula_result = sheets_client.values().get(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=formula_range,
+                    valueRenderOption='FORMULA'
+                ).execute()
+                
+                formula_values = formula_result.get('values', [])
+                for i, formula_row in enumerate(formula_values):
+                    if formula_row:  # If row has content
+                        row_num = i + 2  # Add 2 because we started from row 2
+                        photo_formulas[row_num] = formula_row[0]
+            except Exception as e:
+                print(f"Warning: Could not fetch Photo URL formulas: {e}")
+        
+        # Update the plant list cache timestamp when we successfully fetch data
+        # This ensures get_plant_list_cache_info() shows the cache as valid
+        global _plant_list_cache
+        if not plant_names:  # Only update for full data requests
+            current_time = time.time()
+            _plant_list_cache['last_updated'] = current_time
+        
         print("\n=== DEBUG: Sheet Headers ===")
         print(f"Headers: {headers}")
         
-        for row in values[1:]:
+        for i, row in enumerate(values[1:], start=2):  # Start from row 2
             row_data = row + [''] * (len(headers) - len(row))
             plant_dict = dict(zip(headers, row_data))
             
+            # Replace Photo URL field with actual formula if available
+            if photo_url_field and photo_url_col_idx is not None and i in photo_formulas:
+                plant_dict[photo_url_field] = photo_formulas[i]
+            
             # Debug log the photo URLs using field_config
-            photo_url_field = get_canonical_field_name('Photo URL')
             raw_photo_url_field = get_canonical_field_name('Raw Photo URL')
             
             print(f"\n=== DEBUG: Photo URLs for {plant_dict.get(get_canonical_field_name('Plant Name'), 'Unknown Plant')} ===")
@@ -608,6 +644,75 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
         
     except Exception as e:
         logger.error(f"Error adding plant {plant_name}: {e}")
+        return {"success": False, "error": str(e)}
+
+def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bool, str]]:
+    """
+    Add a new plant to the database with comprehensive field support.
+    
+    Args:
+        plant_data_dict (Dict[str, str]): Dictionary containing plant field data
+        
+    Returns:
+        Dict[str, Union[bool, str]]: Result with success status and message
+    """
+    try:
+        # Validate that Plant Name is provided
+        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_name = plant_data_dict.get(plant_name_field) if plant_name_field else None
+        if not plant_name:
+            return {"success": False, "error": "'Plant Name' is required"}
+        
+        # Get next available ID
+        next_id = get_next_id()
+        if not next_id:
+            return {"success": False, "error": "Could not generate plant ID"}
+        
+        # Prepare plant data using field_config
+        plant_data = {
+            get_canonical_field_name('ID'): next_id,
+            get_canonical_field_name('Last Updated'): datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Process all provided fields
+        for field_name, field_value in plant_data_dict.items():
+            canonical_field = get_canonical_field_name(field_name)
+            if canonical_field:
+                if canonical_field == get_canonical_field_name('Photo URL'):
+                    # Handle photo URL specially - store both IMAGE formula and raw URL
+                    photo_formula = f'=IMAGE("{field_value}")' if field_value else ''
+                    plant_data[canonical_field] = photo_formula
+                    plant_data[get_canonical_field_name('Raw Photo URL')] = field_value
+                else:
+                    plant_data[canonical_field] = field_value
+        
+        # Add empty values for all fields not provided
+        all_fields = get_all_field_names()
+        for field in all_fields:
+            if field not in plant_data:
+                plant_data[field] = ""
+        
+        # Convert to list format for Google Sheets
+        headers = get_all_field_names()
+        row_data = [plant_data.get(field, "") for field in headers]
+        
+        # Add to sheet
+        check_rate_limit()
+        sheets_client.values().append(
+            spreadsheetId=SPREADSHEET_ID,
+            range=RANGE_NAME,
+            valueInputOption='USER_ENTERED',
+            body={'values': [row_data]}
+        ).execute()
+        
+        # Invalidate cache
+        invalidate_plant_list_cache()
+        
+        logger.info(f"Successfully added plant with comprehensive fields: {plant_name}")
+        return {"success": True, "message": f"Added {plant_name} to garden"}
+        
+    except Exception as e:
+        logger.error(f"Error adding plant with fields: {e}")
         return {"success": False, "error": str(e)}
 
 def search_plants(query: str) -> List[Dict]:

@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'api')))
 import pytest
-from main import create_app  # Import the app factory
+from api.main import create_app  # Import the app factory
 
 # Use the app factory to create a test app instance with no rate limiting
 app = create_app(testing=True)
@@ -339,4 +339,261 @@ def test_add_plant_large_payload(client):
     response = client.post('/api/plants', json=payload, headers={"x-api-key": api_key})
     # Should not crash the server; accept 201, 400, or 413 (Payload Too Large)
     assert response.status_code in (201, 400, 413)
-    assert response.status_code != 500 
+    assert response.status_code != 500
+
+# === PHASE 5: DATABASE MODEL VERIFICATION TESTS ===
+# These tests ensure the database model remains unchanged as required by Phase 5
+
+def test_database_schema_consistency(client):
+    """Test that the database schema matches the expected field configuration"""
+    from models.field_config import get_all_field_names
+    from config.config import sheets_client, SPREADSHEET_ID, RANGE_NAME
+    
+    # Get the actual sheet headers
+    result = sheets_client.values().get(
+        spreadsheetId=SPREADSHEET_ID,
+        range='Plants!1:1'  # Get only the header row
+    ).execute()
+    
+    actual_headers = result.get('values', [[]])[0]
+    expected_headers = get_all_field_names()
+    
+    # Verify all expected fields are present in the correct order
+    assert len(actual_headers) >= len(expected_headers), f"Database has {len(actual_headers)} fields, expected at least {len(expected_headers)}"
+    
+    for i, expected_field in enumerate(expected_headers):
+        assert i < len(actual_headers), f"Missing field {expected_field} at position {i}"
+        assert actual_headers[i] == expected_field, f"Field mismatch at position {i}: got '{actual_headers[i]}', expected '{expected_field}'"
+
+def test_field_configuration_integrity(client):
+    """Test that all field configuration functions work correctly"""
+    from models.field_config import (
+        get_canonical_field_name, 
+        is_valid_field, 
+        get_all_field_names,
+        get_field_category,
+        FIELD_NAMES,
+        FIELD_ALIASES,
+        FIELD_CATEGORIES
+    )
+    
+    # Test canonical field name resolution
+    assert get_canonical_field_name('Plant Name') == 'Plant Name'
+    assert get_canonical_field_name('name') == 'Plant Name'
+    assert get_canonical_field_name('plant') == 'Plant Name'
+    assert get_canonical_field_name('InvalidField') is None
+    
+    # Test field validation
+    assert is_valid_field('Plant Name') == True
+    assert is_valid_field('name') == True
+    assert is_valid_field('InvalidField') == False
+    
+    # Test all configured fields are valid
+    for field in FIELD_NAMES:
+        assert is_valid_field(field), f"Configured field {field} should be valid"
+    
+    # Test all aliases resolve to valid fields
+    for alias, canonical in FIELD_ALIASES.items():
+        assert canonical in FIELD_NAMES, f"Alias {alias} maps to invalid field {canonical}"
+        assert get_canonical_field_name(alias) == canonical
+    
+    # Test field categories contain only valid fields
+    for category, fields in FIELD_CATEGORIES.items():
+        for field in fields:
+            assert field in FIELD_NAMES, f"Field {field} in category {category} is not in FIELD_NAMES"
+            assert get_field_category(field) == category
+
+def test_data_integrity_constraints(client):
+    """Test that data integrity constraints are properly enforced"""
+    import uuid
+    import os
+    
+    api_key = os.environ.get('GARDENLLM_API_KEY', 'test-secret-key')
+    
+    # Test 1: Plant Name is required
+    payload_no_name = {
+        "Description": "Plant without name",
+        "Location": "Test Garden"
+    }
+    response = client.post('/api/plants', json=payload_no_name, headers={"x-api-key": api_key})
+    assert response.status_code == 400
+    
+    # Test 2: Invalid field names are rejected
+    unique_name = f"TestDataIntegrity-{uuid.uuid4()}"
+    payload_invalid_field = {
+        "Plant Name": unique_name,
+        "InvalidFieldName": "Should be rejected"
+    }
+    response = client.post('/api/plants', json=payload_invalid_field, headers={"x-api-key": api_key})
+    assert response.status_code == 400
+    
+    # Test 3: Valid data is accepted and stored correctly
+    payload_valid = {
+        "Plant Name": unique_name,
+        "Description": "Test plant for data integrity",
+        "Location": "Test Garden",
+        "Light Requirements": "Full Sun",
+        "Watering Needs": "Moderate"
+    }
+    response = client.post('/api/plants', json=payload_valid, headers={"x-api-key": api_key})
+    assert response.status_code == 201
+    
+    # Verify the data was stored correctly
+    response = client.get(f'/api/plants/{unique_name}')
+    assert response.status_code == 200
+    plant_data = response.get_json()['plant']
+    assert plant_data['Plant Name'] == unique_name
+    assert plant_data['Description'] == "Test plant for data integrity"
+    assert plant_data['Location'] == "Test Garden"
+
+def test_crud_operations_preserve_schema(client):
+    """Test that all CRUD operations maintain database schema integrity"""
+    import uuid
+    import os
+    from models.field_config import get_all_field_names
+    
+    api_key = os.environ.get('GARDENLLM_API_KEY', 'test-secret-key')
+    unique_name = f"TestSchemaPreservation-{uuid.uuid4()}"
+    
+    # Get initial schema state
+    response = client.get('/api/plants')
+    assert response.status_code == 200
+    
+    # Create a plant with various field types
+    payload = {
+        "Plant Name": unique_name,
+        "Description": "Schema preservation test",
+        "Location": "Test Garden",
+        "Light Requirements": "Partial Shade",
+        "Frost Tolerance": "Hardy to -10°C",
+        "Watering Needs": "High",
+        "Soil Preferences": "Well-draining",
+        "Photo URL": "https://example.com/test.jpg"
+    }
+    
+    # Test CREATE operation
+    response = client.post('/api/plants', json=payload, headers={"x-api-key": api_key})
+    assert response.status_code == 201
+    
+    # Test READ operation and verify all expected fields are present
+    response = client.get(f'/api/plants/{unique_name}')
+    assert response.status_code == 200
+    plant_data = response.get_json()['plant']
+    
+    # Verify all required fields are present in the response
+    expected_fields = get_all_field_names()
+    for field in expected_fields:
+        assert field in plant_data, f"Expected field {field} missing from plant data"
+    
+    # Test UPDATE operation
+    update_payload = {
+        "Description": "Updated description for schema test",
+        "Care Notes": "Added care notes"
+    }
+    response = client.put(f'/api/plants/{unique_name}', json=update_payload, headers={"x-api-key": api_key})
+    assert response.status_code == 200
+    
+    # Verify update preserved schema
+    response = client.get(f'/api/plants/{unique_name}')
+    assert response.status_code == 200
+    updated_plant_data = response.get_json()['plant']
+    
+    # All fields should still be present
+    for field in expected_fields:
+        assert field in updated_plant_data, f"Field {field} missing after update"
+    
+    # Updated fields should have new values
+    assert updated_plant_data['Description'] == "Updated description for schema test"
+    assert updated_plant_data['Care Notes'] == "Added care notes"
+    
+    # Non-updated fields should retain original values
+    assert updated_plant_data['Plant Name'] == unique_name
+    assert updated_plant_data['Location'] == "Test Garden"
+
+def test_photo_url_handling(client):
+    """Test that photo URL fields are handled correctly to preserve IMAGE formula functionality"""
+    import uuid
+    import os
+    
+    api_key = os.environ.get('GARDENLLM_API_KEY', 'test-secret-key')
+    unique_name = f"TestPhotoURL-{uuid.uuid4()}"
+    
+    # Test adding plant with photo URL
+    payload = {
+        "Plant Name": unique_name,
+        "Description": "Plant with photo URL",
+        "Photo URL": "https://example.com/plant-photo.jpg"
+    }
+    
+    response = client.post('/api/plants', json=payload, headers={"x-api-key": api_key})
+    assert response.status_code == 201
+    
+    # Verify photo URL is stored correctly
+    response = client.get(f'/api/plants/{unique_name}')
+    assert response.status_code == 200
+    plant_data = response.get_json()['plant']
+    
+    # The API should handle both the Photo URL (IMAGE formula) and Raw Photo URL fields
+    assert 'Photo URL' in plant_data
+    assert 'Raw Photo URL' in plant_data
+    
+    # Test updating photo URL
+    update_payload = {
+        "Photo URL": "https://example.com/updated-photo.jpg"
+    }
+    response = client.put(f'/api/plants/{unique_name}', json=update_payload, headers={"x-api-key": api_key})
+    assert response.status_code == 200
+
+# === PHASE 5: INTEGRATION TESTS ===
+# These tests verify end-to-end functionality and integration between components
+
+def test_search_functionality_integration(client):
+    """Test comprehensive search functionality across all searchable fields"""
+    import uuid
+    import os
+    
+    api_key = os.environ.get('GARDENLLM_API_KEY', 'test-secret-key')
+    unique_identifier = str(uuid.uuid4())[:8]
+    
+    # Create test plants with different searchable attributes
+    test_plants = [
+        {
+            "Plant Name": f"SearchTestRose-{unique_identifier}",
+            "Description": f"Beautiful red rose for search testing {unique_identifier}",
+            "Location": f"Rose Garden {unique_identifier}"
+        },
+        {
+            "Plant Name": f"SearchTestLavender-{unique_identifier}",
+            "Description": f"Fragrant purple lavender {unique_identifier}",
+            "Location": f"Herb Garden {unique_identifier}"
+        }
+    ]
+    
+    # Add test plants
+    for plant in test_plants:
+        response = client.post('/api/plants', json=plant, headers={"x-api-key": api_key})
+        assert response.status_code == 201
+    
+    # Test search by plant name
+    response = client.get(f'/api/plants?q=SearchTestRose-{unique_identifier}')
+    assert response.status_code == 200
+    plants = response.get_json()['plants']
+    assert len(plants) >= 1
+    assert any(plant['Plant Name'] == f"SearchTestRose-{unique_identifier}" for plant in plants)
+    
+    # Test search by description keyword
+    response = client.get(f'/api/plants?q=fragrant')
+    assert response.status_code == 200
+    # Should find plants with "fragrant" in description
+    
+    # Test search by location
+    response = client.get(f'/api/plants?q=Rose Garden {unique_identifier}')
+    assert response.status_code == 200
+    plants = response.get_json()['plants']
+    assert len(plants) >= 1
+    
+    # Test partial search
+    response = client.get(f'/api/plants?q={unique_identifier}')
+    assert response.status_code == 200
+    plants = response.get_json()['plants']
+    assert len(plants) >= 2  # Should find both test plants 

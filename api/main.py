@@ -39,7 +39,7 @@ def add_plant():
     Expects a JSON payload with required plant fields.
     Returns a success message or error details.
     """
-    from utils.plant_operations import add_plant as add_plant_func
+    from utils.plant_operations import add_plant_with_fields
     from models.field_config import get_canonical_field_name, is_valid_field
     data = request.get_json()
     # Log the write operation for auditability
@@ -53,13 +53,13 @@ def add_plant():
     if invalid_fields:
         return jsonify({"error": f"Invalid field(s): {', '.join(invalid_fields)}"}), 400
     # Validate required fields (at least Plant Name)
-    plant_name = data.get(get_canonical_field_name('Plant Name')) or data.get('Plant Name') or data.get('name')
+    plant_name_field = get_canonical_field_name('Plant Name')
+    plant_name = data.get(plant_name_field) or data.get('Plant Name') or data.get('name')
     if not plant_name:
         return jsonify({"error": "'Plant Name' is required."}), 400
-    description = data.get(get_canonical_field_name('Description')) or data.get('Description') or data.get('description', '')
-    location = data.get(get_canonical_field_name('Location')) or data.get('Location') or data.get('location', '')
-    photo_url = data.get(get_canonical_field_name('Photo URL')) or data.get('Photo URL') or data.get('photo_url', '')
-    result = add_plant_func(plant_name, description, location, photo_url)
+    
+    # Use the comprehensive add_plant_with_fields function that handles all fields
+    result = add_plant_with_fields(data)
     if not result.get('success'):
         return jsonify({"error": result.get('error', 'Unknown error')}), 400
     return jsonify({"message": result.get('message', 'Plant added successfully')}), 201
@@ -129,15 +129,40 @@ def register_routes(app, limiter, require_api_key):
         """
         from utils.plant_operations import find_plant_by_id_or_name
         from config.config import sheets_client, SPREADSHEET_ID, RANGE_NAME
+        from models.field_config import get_canonical_field_name
+        
         plant_row, plant_data = find_plant_by_id_or_name(id_or_name)
         if not plant_row or not plant_data:
             return jsonify({"error": f"Plant with ID or name '{id_or_name}' not found."}), 404
+        
         result = sheets_client.values().get(
             spreadsheetId=SPREADSHEET_ID,
             range=RANGE_NAME
         ).execute()
         headers = result.get('values', [[]])[0]
         plant_dict = dict(zip(headers, plant_data))
+        
+        # Get Photo URL formula if the field exists
+        photo_url_field = get_canonical_field_name('Photo URL')
+        if photo_url_field and photo_url_field in headers:
+            try:
+                photo_url_col_idx = headers.index(photo_url_field)
+                col_letter = chr(65 + photo_url_col_idx)  # Convert index to column letter
+                actual_row_num = plant_row + 1  # plant_row is 0-based, sheets are 1-based
+                formula_range = f"Plants!{col_letter}{actual_row_num}"
+                
+                formula_result = sheets_client.values().get(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=formula_range,
+                    valueRenderOption='FORMULA'
+                ).execute()
+                
+                formula_values = formula_result.get('values', [])
+                if formula_values and formula_values[0]:
+                    plant_dict[photo_url_field] = formula_values[0][0]
+            except Exception as e:
+                print(f"Warning: Could not fetch Photo URL formula: {e}")
+        
         return jsonify({"plant": plant_dict}), 200
 
     # Register POST/PUT routes with or without rate limiting
