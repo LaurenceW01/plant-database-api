@@ -105,6 +105,20 @@ def register_routes(app, limiter, require_api_key):
         """
         return jsonify({"status": "ok", "message": "Plant Database API is running."}), 200
 
+    # Privacy policy route
+    @app.route('/privacy', methods=['GET'])
+    def privacy_policy():
+        """
+        Privacy policy endpoint.
+        Returns the privacy policy as HTML for ChatGPT Actions compliance.
+        """
+        try:
+            with open('privacy_policy.html', 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+        except FileNotFoundError:
+            return jsonify({"error": "Privacy policy not found"}), 404
+
     # List/search plants route
     @app.route('/api/plants', methods=['GET'])
     def list_or_search_plants():
