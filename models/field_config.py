@@ -100,16 +100,20 @@ FIELD_ALIASES = {
     # Care Notes field aliases
     'notes': 'Care Notes',
     'care notes': 'Care Notes',
+    'care instructions': 'Care Notes',
+    'instructions': 'Care Notes',
     # Photo URL field aliases
     'photo': 'Photo URL',
     'photo url': 'Photo URL',
     'image': 'Photo URL',
     'picture': 'Photo URL',
     'url': 'Photo URL',
+    'image url': 'Photo URL',
+    'photo link': 'Photo URL',
     # Raw Photo URL field aliases
     'raw photo url': 'Raw Photo URL',
     'direct photo url': 'Raw Photo URL',
-    'image url': 'Raw Photo URL',
+    'raw image url': 'Raw Photo URL',
     # Last Updated field aliases
     'last updated': 'Last Updated',
     'updated': 'Last Updated',
