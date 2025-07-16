@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
 from typing import List, Dict, Optional, Tuple, Union
 from config.config import sheets_client, SPREADSHEET_ID, RANGE_NAME
 from utils.sheets_client import check_rate_limit, get_next_id
@@ -304,7 +304,7 @@ def update_plant_legacy(plant_data: Dict) -> bool:
         photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
         raw_photo_url = photo_url  # Store the raw URL directly
         
-        est = pytz.timezone('US/Eastern')
+        est = ZoneInfo('US/Eastern')
         timestamp = datetime.now(est).strftime('%Y-%m-%d %H:%M:%S')
         
         # Build new row using field_config to get all field names

@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Dict, Optional, Set
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def format_google_photos_url(url: str) -> str:
 def get_current_time_est() -> str:
     """Get current time in EST timezone"""
     try:
-        est = pytz.timezone('US/Eastern')
+        est = ZoneInfo('US/Eastern')
         return datetime.now(est).strftime('%Y-%m-%d %H:%M:%S %Z')
     except Exception as e:
         logger.error(f"Error getting current time: {e}")
