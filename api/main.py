@@ -334,12 +334,43 @@ def create_app(testing=False):
     # Set config flags
     app.config['TESTING'] = testing
     app.config['RATELIMIT_ENABLED'] = not testing
-    # Set up Flask-Limiter for rate limiting
-    limiter = Limiter(
-        get_remote_address,
-        app=app,
-        default_limits=[]
-    )
+    # Set up Flask-Limiter with production-ready storage
+    if not testing:
+        # Try to use Redis for production rate limiting storage
+        redis_url = os.environ.get('REDIS_URL')
+        if redis_url:
+            # Production: Use Redis for persistent, scalable rate limiting
+            try:
+                limiter = Limiter(
+                    key_func=get_remote_address,
+                    app=app,
+                    default_limits=[],
+                    storage_uri=redis_url,
+                    on_breach=lambda limit: logging.warning(f"Rate limit exceeded: {limit}")
+                )
+                logging.info("Rate limiting configured with Redis storage")
+            except Exception as e:
+                logging.warning(f"Redis connection failed, falling back to in-memory storage: {e}")
+                limiter = Limiter(
+                    key_func=get_remote_address,
+                    app=app,
+                    default_limits=[]
+                )
+        else:
+            # Fallback: Use in-memory storage with warning
+            limiter = Limiter(
+                key_func=get_remote_address,
+                app=app,
+                default_limits=[]
+            )
+            logging.warning("REDIS_URL not set. Using in-memory rate limiting. Set REDIS_URL for production.")
+    else:
+        # Testing: Use simple in-memory storage without warnings
+        limiter = Limiter(
+            key_func=get_remote_address,
+            app=app,
+            default_limits=[]
+        )
     # Set up logging for auditability
     logging.basicConfig(
         level=logging.INFO,
