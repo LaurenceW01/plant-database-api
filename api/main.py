@@ -32,11 +32,46 @@ def require_api_key(func):
         return func(*args, **kwargs)
     return wrapper
 
+# Field name mapping for ChatGPT compatibility (underscore to space format)
+def map_underscore_fields_to_canonical(data):
+    """
+    Convert underscore field names from ChatGPT to canonical field names.
+    Maps fields like 'plant_name' to 'Plant Name' for API compatibility.
+    """
+    field_mapping = {
+        'plant_name': 'Plant Name',
+        'description': 'Description',
+        'location': 'Location',
+        'light_requirements': 'Light Requirements',
+        'frost_tolerance': 'Frost Tolerance',
+        'watering_needs': 'Watering Needs',
+        'soil_preferences': 'Soil Preferences',
+        'pruning_instructions': 'Pruning Instructions',
+        'mulching_needs': 'Mulching Needs',
+        'fertilizing_schedule': 'Fertilizing Schedule',
+        'winterizing_instructions': 'Winterizing Instructions',
+        'spacing_requirements': 'Spacing Requirements',
+        'care_notes': 'Care Notes',
+        'photo_url': 'Photo URL',
+        'raw_photo_url': 'Raw Photo URL',
+        'last_updated': 'Last Updated',
+        'id': 'ID'
+    }
+    
+    # Convert underscore fields to canonical names
+    canonical_data = {}
+    for key, value in data.items():
+        canonical_key = field_mapping.get(key.lower(), key)  # Use mapping or original key
+        canonical_data[canonical_key] = value
+    
+    return canonical_data
+
 # Define the add_plant and update_plant view functions (without decorators)
 def add_plant():
     """
     Add a new plant to the database.
     Expects a JSON payload with required plant fields.
+    Accepts both underscore format (from ChatGPT) and space format field names.
     Returns a success message or error details.
     """
     from utils.plant_operations import add_plant_with_fields
@@ -48,18 +83,22 @@ def add_plant():
     )
     if data is None:
         return jsonify({"error": "Missing JSON payload."}), 400
+    
+    # Convert underscore field names to canonical format for ChatGPT compatibility
+    canonical_data = map_underscore_fields_to_canonical(data)
+    
     # Validate all fields in the payload
-    invalid_fields = [k for k in data.keys() if not is_valid_field(k)]
+    invalid_fields = [k for k in canonical_data.keys() if not is_valid_field(k)]
     if invalid_fields:
         return jsonify({"error": f"Invalid field(s): {', '.join(invalid_fields)}"}), 400
     # Validate required fields (at least Plant Name)
     plant_name_field = get_canonical_field_name('Plant Name')
-    plant_name = data.get(plant_name_field) or data.get('Plant Name') or data.get('name')
+    plant_name = canonical_data.get(plant_name_field) or canonical_data.get('Plant Name') or canonical_data.get('name')
     if not plant_name:
         return jsonify({"error": "'Plant Name' is required."}), 400
     
     # Use the comprehensive add_plant_with_fields function that handles all fields
-    result = add_plant_with_fields(data)
+    result = add_plant_with_fields(canonical_data)
     if not result.get('success'):
         return jsonify({"error": result.get('error', 'Unknown error')}), 400
     return jsonify({"message": result.get('message', 'Plant added successfully')}), 201
@@ -68,6 +107,7 @@ def update_plant(id_or_name):
     """
     Update an existing plant by its ID or name.
     Expects a JSON payload with fields to update.
+    Accepts both underscore format (from ChatGPT) and space format field names.
     Returns a success message or error details.
     """
     from utils.plant_operations import update_plant as update_plant_func
@@ -79,11 +119,15 @@ def update_plant(id_or_name):
     )
     if data is None:
         return jsonify({"error": "Missing JSON payload."}), 400
+    
+    # Convert underscore field names to canonical format for ChatGPT compatibility
+    canonical_data = map_underscore_fields_to_canonical(data)
+    
     # Validate all fields in the payload
-    invalid_fields = [k for k in data.keys() if not is_valid_field(k)]
+    invalid_fields = [k for k in canonical_data.keys() if not is_valid_field(k)]
     if invalid_fields:
         return jsonify({"error": f"Invalid field(s): {', '.join(invalid_fields)}"}), 400
-    update_fields = {k: v for k, v in data.items() if is_valid_field(k)}
+    update_fields = {k: v for k, v in canonical_data.items() if is_valid_field(k)}
     if not update_fields:
         return jsonify({"error": "No valid fields to update."}), 400
     result = update_plant_func(id_or_name, update_fields)

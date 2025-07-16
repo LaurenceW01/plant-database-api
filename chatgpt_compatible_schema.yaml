@@ -1,0 +1,321 @@
+openapi: 3.1.0
+info:
+  title: Plant Database API
+  description: A comprehensive plant database API for managing garden plants with full CRUD operations.
+  version: 1.0.0
+
+servers:
+  - url: https://plant-database-api.onrender.com
+
+paths:
+  /api/plants:
+    get:
+      operationId: searchPlants
+      summary: Search or list all plants
+      description: Search for plants by name, description, or location. Returns paginated results.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query to find plants by name, description, or location
+          required: false
+          schema:
+            type: string
+            example: "tomato"
+        - name: limit
+          in: query
+          description: Maximum number of plants to return (default 20)
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          description: Number of plants to skip for pagination (default 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated list of plants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plants:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                  count:
+                    type: integer
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+
+    post:
+      operationId: addPlant
+      summary: Add a new plant to the database
+      description: Add a new plant. Only plant_name is required.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantInput'
+            examples:
+              minimal:
+                summary: Minimal plant addition
+                value:
+                  plant_name: "Basil"
+                  location: "Herb Garden"
+              comprehensive:
+                summary: Comprehensive plant addition
+                value:
+                  plant_name: "Japanese Maple"
+                  description: "Beautiful ornamental tree"
+                  location: "Front Yard"
+                  light_requirements: "Partial Shade to Full Sun"
+                  frost_tolerance: "Hardy to -15°C"
+                  watering_needs: "Regular watering"
+                  soil_preferences: "Well-draining soil"
+                  pruning_instructions: "Prune in late winter"
+                  mulching_needs: "3-inch layer of mulch"
+                  fertilizing_schedule: "Feed in early spring"
+                  winterizing_instructions: "Protect from harsh winds"
+                  spacing_requirements: "Plant 6-8 feet apart"
+                  care_notes: "Avoid wet feet"
+                  photo_url: "https://example.com/maple.jpg"
+      responses:
+        '201':
+          description: Plant added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/plants/{id_or_name}:
+    get:
+      operationId: getPlant
+      summary: Get a specific plant
+      description: Retrieve details for a specific plant by ID or name.
+      security: []
+      parameters:
+        - name: id_or_name
+          in: path
+          required: true
+          description: Plant ID or exact plant name
+          schema:
+            type: string
+            example: "Tomato"
+      responses:
+        '200':
+          description: Plant details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plant:
+                    type: object
+        '404':
+          description: Plant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      operationId: updatePlant
+      summary: Update an existing plant
+      description: Update specific fields of an existing plant. All fields are optional.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id_or_name
+          in: path
+          required: true
+          description: Plant ID or exact plant name to update
+          schema:
+            type: string
+            example: "Tomato"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantUpdate'
+            examples:
+              care_update:
+                summary: Update care instructions
+                value:
+                  watering_needs: "Water deeply twice per week"
+                  care_notes: "Mulch heavily during summer heat"
+      responses:
+        '200':
+          description: Plant updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API key required for write operations
+
+  schemas:
+    PlantInput:
+      type: object
+      required:
+        - plant_name
+      properties:
+        plant_name:
+          type: string
+          description: "Name of the plant (REQUIRED)"
+          example: "Basil"
+        description:
+          type: string
+          description: "Plant description"
+          example: "Aromatic herb perfect for cooking"
+        location:
+          type: string
+          description: "Location in garden"
+          example: "Herb Garden"
+        light_requirements:
+          type: string
+          description: "Sunlight needs"
+          example: "Full Sun to Partial Shade"
+        frost_tolerance:
+          type: string
+          description: "Cold hardiness information"
+          example: "Hardy to -10°C"
+        watering_needs:
+          type: string
+          description: "Watering requirements"
+          example: "Keep soil consistently moist"
+        soil_preferences:
+          type: string
+          description: "Soil requirements"
+          example: "Well-draining, fertile soil"
+        pruning_instructions:
+          type: string
+          description: "Pruning guidance"
+          example: "Pinch flowers to encourage leaf growth"
+        mulching_needs:
+          type: string
+          description: "Mulching recommendations"
+          example: "Light mulch to retain moisture"
+        fertilizing_schedule:
+          type: string
+          description: "Fertilization plan"
+          example: "Light fertilizer monthly"
+        winterizing_instructions:
+          type: string
+          description: "Winter care instructions"
+          example: "Bring indoors or treat as annual"
+        spacing_requirements:
+          type: string
+          description: "Spacing needs"
+          example: "12 inches apart"
+        care_notes:
+          type: string
+          description: "Additional care tips"
+          example: "Harvest regularly to prevent flowering"
+        photo_url:
+          type: string
+          description: "Image URL"
+          example: "https://example.com/basil.jpg"
+
+    PlantUpdate:
+      type: object
+      description: "Partial update object - all fields are optional"
+      properties:
+        plant_name:
+          type: string
+          description: "Name of the plant"
+        description:
+          type: string
+          description: "Plant description"
+        location:
+          type: string
+          description: "Location in garden"
+        light_requirements:
+          type: string
+          description: "Sunlight needs"
+        frost_tolerance:
+          type: string
+          description: "Cold hardiness information"
+        watering_needs:
+          type: string
+          description: "Watering requirements"
+        soil_preferences:
+          type: string
+          description: "Soil requirements"
+        pruning_instructions:
+          type: string
+          description: "Pruning guidance"
+        mulching_needs:
+          type: string
+          description: "Mulching recommendations"
+        fertilizing_schedule:
+          type: string
+          description: "Fertilization plan"
+        winterizing_instructions:
+          type: string
+          description: "Winter care instructions"
+        spacing_requirements:
+          type: string
+          description: "Spacing needs"
+        care_notes:
+          type: string
+          description: "Additional care tips"
+        photo_url:
+          type: string
+          description: "Image URL"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message 
