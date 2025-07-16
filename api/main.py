@@ -202,13 +202,56 @@ def register_routes(app, limiter, require_api_key):
         total_plants = len(plants)
         paginated_plants = plants[offset:offset + limit] if limit > 0 else plants
         
-        # Return paginated results with metadata
+        # Calculate pagination info for ChatGPT guidance
+        has_more = (offset + limit) < total_plants
+        next_offset = offset + limit if has_more else None
+        remaining_plants = max(0, total_plants - (offset + limit))
+        
+        # Return paginated results with metadata and ChatGPT guidance
         response = {
             "plants": paginated_plants,
             "total": total_plants,
             "count": len(paginated_plants),
             "offset": offset,
-            "limit": limit
+            "limit": limit,
+            "has_more": has_more,
+            "remaining": remaining_plants
+        }
+        
+        # Add helpful guidance for ChatGPT when there are more plants
+        if has_more:
+            response["pagination_info"] = {
+                "message": f"Showing {len(paginated_plants)} of {total_plants} plants. {remaining_plants} more plants available.",
+                "next_page_instruction": f"To get the next {min(limit, remaining_plants)} plants, use: GET /api/plants?offset={next_offset}&limit={limit}",
+                "get_all_instruction": "To get ALL remaining plants at once, use: GET /api/plants/all"
+            }
+        
+        return jsonify(response), 200
+
+    # Get all plants without pagination (ChatGPT-friendly endpoint)
+    @app.route('/api/plants/all', methods=['GET'])
+    def get_all_plants():
+        """
+        Get ALL plants without pagination limits.
+        This endpoint is designed for ChatGPT to easily access the complete plant database.
+        Optional query parameters:
+        - 'q': search by name, description, or location
+        Warning: This endpoint may return large amounts of data. Use with caution.
+        """
+        query = request.args.get('q', default='', type=str)
+        
+        if query:
+            plants = search_plants(query)
+        else:
+            plants = get_plant_data()
+        
+        # Return all results without pagination
+        response = {
+            "plants": plants,
+            "total": len(plants),
+            "count": len(plants),
+            "warning": "This endpoint returns ALL plants. For large databases, consider using paginated /api/plants endpoint.",
+            "pagination_alternative": "Use GET /api/plants?limit=20&offset=0 for paginated results"
         }
         return jsonify(response), 200
 

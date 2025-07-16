@@ -1,7 +1,16 @@
 openapi: 3.1.0
 info:
   title: Plant Database API
-  description: A comprehensive plant database API for managing garden plants with full CRUD operations.
+  description: |
+    A comprehensive plant database API for managing garden plants with full CRUD operations.
+    
+    ## Pagination for Large Datasets:
+    - **GET /api/plants**: Returns 20 plants per page by default. Check `has_more` field and use `pagination_info` for guidance on getting more plants.
+    - **GET /api/plants/all**: Returns ALL plants without pagination. Use when you need the complete dataset.
+    - **Parameters**: Use `offset` and `limit` for custom pagination, or `q` for searching.
+    
+    ## For ChatGPT: 
+    When there are more than 20 plants, the API will provide clear instructions in the `pagination_info` field on how to get additional plants.
   version: 1.0.0
 
 servers:
@@ -50,12 +59,32 @@ paths:
                       type: object
                   total:
                     type: integer
+                    description: Total number of plants in database
                   count:
                     type: integer
+                    description: Number of plants in this response
                   offset:
                     type: integer
+                    description: Number of plants skipped
                   limit:
                     type: integer
+                    description: Maximum plants per page
+                  has_more:
+                    type: boolean
+                    description: True if more plants are available
+                  remaining:
+                    type: integer
+                    description: Number of additional plants available
+                  pagination_info:
+                    type: object
+                    description: Guidance for getting more plants (when has_more is true)
+                    properties:
+                      message:
+                        type: string
+                      next_page_instruction:
+                        type: string
+                      get_all_instruction:
+                        type: string
 
     post:
       operationId: addPlant
@@ -114,6 +143,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /api/plants/all:
+    get:
+      operationId: getAllPlants
+      summary: Get ALL plants without pagination
+      description: Retrieve all plants in the database without pagination limits. Use this when you need the complete dataset. For large databases, this may return substantial data.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          description: Optional search query to filter all results
+          required: false
+          schema:
+            type: string
+            example: "tomato"
+      responses:
+        '200':
+          description: Complete list of all plants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plants:
+                    type: array
+                    items:
+                      type: object
+                    description: All plants in database
+                  total:
+                    type: integer
+                    description: Total number of plants
+                  count:
+                    type: integer
+                    description: Number of plants returned (same as total)
+                  warning:
+                    type: string
+                    description: Warning about large data size
+                  pagination_alternative:
+                    type: string
+                    description: Suggestion to use paginated endpoint for large datasets
 
   /api/plants/{id_or_name}:
     get:
