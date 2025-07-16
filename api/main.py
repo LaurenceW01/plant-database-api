@@ -110,15 +110,34 @@ def register_routes(app, limiter, require_api_key):
     def list_or_search_plants():
         """
         List all plants or search for plants by query string.
-        Optional query parameter 'q' can be used to search by name, description, or location.
+        Optional query parameters:
+        - 'q': search by name, description, or location
+        - 'limit': maximum number of plants to return (default: 20 for ChatGPT compatibility)
+        - 'offset': number of plants to skip (default: 0)
         Returns a JSON list of plant records.
         """
         query = request.args.get('q', default='', type=str)
+        limit = request.args.get('limit', default=20, type=int)  # Default limit for ChatGPT
+        offset = request.args.get('offset', default=0, type=int)
+        
         if query:
             plants = search_plants(query)
         else:
             plants = get_plant_data()
-        return jsonify({"plants": plants}), 200
+        
+        # Apply pagination
+        total_plants = len(plants)
+        paginated_plants = plants[offset:offset + limit] if limit > 0 else plants
+        
+        # Return paginated results with metadata
+        response = {
+            "plants": paginated_plants,
+            "total": total_plants,
+            "count": len(paginated_plants),
+            "offset": offset,
+            "limit": limit
+        }
+        return jsonify(response), 200
 
     # Get plant by ID or name route
     @app.route('/api/plants/<id_or_name>', methods=['GET'])
