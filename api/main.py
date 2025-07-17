@@ -450,19 +450,20 @@ def analyze_plant():
             image_base64 = base64.b64encode(image_data).decode('utf-8')
             
             # Prepare prompt for image analysis
-            prompt = f"""Analyze this plant image and provide a comprehensive assessment. Focus on:
+            prompt = f"""Analyze this plant image and provide a comprehensive assessment. IMPORTANT: Start your response with the plant identification.
 
-1. Plant identification (species/variety if possible)
-2. Health assessment (any visible issues, diseases, pests)
-3. Treatment recommendations if problems are found
-4. General care advice
+Please structure your response as follows:
+**PLANT IDENTIFICATION:** [Species/common name]
+**HEALTH ASSESSMENT:** [Current condition and any issues]
+**TREATMENT RECOMMENDATIONS:** [Specific actions needed]
+**GENERAL CARE:** [Ongoing care advice]
 
-Additional context:
-- Plant name: {plant_name if plant_name else 'Unknown'}
+Analysis details:
+- User provided name: {plant_name if plant_name else 'Not specified - please identify from image'}
 - User notes: {user_notes if user_notes else 'None provided'}
 - Analysis type: {analysis_type}
 
-Please provide your response in a clear, structured format suitable for a plant care journal."""
+Be specific about the plant species/variety so it can be properly logged."""
             
             # Call OpenAI Vision API
             try:
@@ -536,14 +537,57 @@ Format your response clearly and practically for plant care."""
         if not analysis_text:
             analysis_text = "No analysis available"
         
-        # For now, use the full analysis as diagnosis
+        # Extract plant identification from AI response for automatic logging
+        extracted_plant_name = plant_name  # Use provided name as fallback
         diagnosis = analysis_text
         treatment = ""
         symptoms = user_notes or ""
         confidence_score = 0.8  # Default confidence
         
-        # Try to extract treatment recommendations if present
-        if analysis_text and ("recommend" in analysis_text.lower() or "treatment" in analysis_text.lower()):
+        # Parse structured AI response to extract plant name and sections
+        if analysis_text and "**PLANT IDENTIFICATION:**" in analysis_text:
+            try:
+                lines = analysis_text.split('\n')
+                current_section = ""
+                diagnosis_lines = []
+                treatment_lines = []
+                
+                for line in lines:
+                    line = line.strip()
+                    if "**PLANT IDENTIFICATION:**" in line:
+                        # Extract plant name from identification line
+                        plant_id_text = line.replace("**PLANT IDENTIFICATION:**", "").strip()
+                        if plant_id_text and not extracted_plant_name:
+                            # Clean up the plant name (remove brackets, extra text)
+                            extracted_plant_name = plant_id_text.split('(')[0].split('[')[0].strip()
+                        current_section = "identification"
+                    elif "**HEALTH ASSESSMENT:**" in line:
+                        current_section = "health"
+                    elif "**TREATMENT RECOMMENDATIONS:**" in line:
+                        current_section = "treatment"
+                    elif "**GENERAL CARE:**" in line:
+                        current_section = "care"
+                    elif line and line.startswith("**"):
+                        current_section = "other"
+                    elif line:
+                        if current_section in ["health", "identification"]:
+                            diagnosis_lines.append(line)
+                        elif current_section in ["treatment", "care"]:
+                            treatment_lines.append(line)
+                
+                # Rebuild diagnosis and treatment from parsed sections
+                if diagnosis_lines:
+                    diagnosis = '\n'.join(diagnosis_lines).strip()
+                if treatment_lines:
+                    treatment = '\n'.join(treatment_lines).strip()
+                    
+            except Exception as e:
+                logging.warning(f"Failed to parse structured AI response: {e}")
+                # Fall back to original logic
+                pass
+        
+        # Fallback parsing for unstructured responses
+        if not treatment and analysis_text and ("recommend" in analysis_text.lower() or "treatment" in analysis_text.lower()):
             lines = analysis_text.split('\n')
             diagnosis_lines = []
             treatment_lines = []
@@ -562,11 +606,11 @@ Format your response clearly and practically for plant care."""
                 diagnosis = '\n'.join(diagnosis_lines).strip()
                 treatment = '\n'.join(treatment_lines).strip()
         
-        # Create log entry if plant name provided and photo was uploaded
+        # Create log entry if plant was identified and photo was uploaded
         log_entry_result = None
-        if plant_name and has_file and upload_result:
+        if extracted_plant_name and has_file and upload_result:
             log_entry_result = create_log_entry(
-                plant_name=plant_name,
+                plant_name=extracted_plant_name,
                 photo_url=upload_result['photo_url'],
                 raw_photo_url=upload_result['raw_photo_url'],
                 diagnosis=diagnosis,
@@ -591,6 +635,10 @@ Format your response clearly and practically for plant care."""
             }
         }
         
+        # Include identified plant name if extracted from photo
+        if extracted_plant_name and extracted_plant_name != plant_name:
+            response_data['analysis']['identified_plant'] = extracted_plant_name
+        
         # Add image upload info only if file was uploaded
         if has_file and upload_result:
             response_data['image_upload'] = {
@@ -606,20 +654,36 @@ Format your response clearly and practically for plant care."""
                 'plant_name': log_entry_result['plant_name'],
                 'created': True
             }
-        elif plant_name:
-            # Plant validation failed
-            plant_validation = validate_plant_for_log(plant_name)
+        elif extracted_plant_name and has_file:
+            # Plant was identified from photo but log creation failed (likely not in database)
+            plant_validation = validate_plant_for_log(extracted_plant_name)
             response_data['suggestions'] = {
                 'plant_not_found': True,
+                'identified_plant': extracted_plant_name,
                 'similar_plants': plant_validation.get('suggestions', []),
-                'create_new_plant': plant_validation.get('create_new_option', False)
+                'create_new_plant': plant_validation.get('create_new_option', False),
+                'message': f"I identified this as '{extracted_plant_name}' but it's not in your plant database. You can add it or link to a similar plant."
             }
         
         return jsonify(response_data)
         
     except Exception as e:
+        # Comprehensive error handling to prevent "Error talking to connector"
+        error_msg = str(e)
         logging.error(f"Error in analyze-plant endpoint: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        
+        # Return a user-friendly error response
+        return jsonify({
+            'success': False, 
+            'error': f'Server error during analysis: {error_msg}',
+            'advice_type': 'error',
+            'analysis': {
+                'diagnosis': 'Unable to complete analysis due to server error',
+                'treatment': 'Please try again or contact support if the problem persists',
+                'confidence': 0.0,
+                'analysis_type': analysis_type if 'analysis_type' in locals() else 'unknown'
+            }
+        }), 500
 
 def register_image_analysis_route(app, limiter, require_api_key):
     """Register the image analysis route with appropriate rate limiting and API key protection"""

@@ -272,6 +272,10 @@ paths:
                         type: string
                         enum: [photo_analysis, general_advice]
                         description: Whether this was photo analysis or general advice
+                      identified_plant:
+                        type: string
+                        description: Plant species/name identified from photo (when different from user input)
+                        example: "Hibiscus rosa-sinensis"
                   image_upload:
                     type: object
                     description: Only present when photo was uploaded
@@ -305,6 +309,10 @@ paths:
                       plant_not_found:
                         type: boolean
                         description: Whether the plant was found in database
+                      identified_plant:
+                        type: string
+                        description: Plant name identified from photo
+                        example: "Tropical Hibiscus"
                       similar_plants:
                         type: array
                         items:
@@ -313,6 +321,10 @@ paths:
                       create_new_plant:
                         type: boolean
                         description: Option to create new plant record
+                      message:
+                        type: string
+                        description: Helpful message about the identification and next steps
+                        example: "I identified this as 'Tropical Hibiscus' but it's not in your plant database."
       security:
         - ApiKeyAuth: []
 
