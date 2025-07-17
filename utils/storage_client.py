@@ -95,17 +95,26 @@ def validate_image_file(file: FileStorage) -> Tuple[bool, str]:
     if hasattr(file, 'content_length') and file.content_length > MAX_FILE_SIZE:
         return False, f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB"
     
-    # Check file extension
-    allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+    # Check file extension - including iPhone HEIC format
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'}
     file_extension = os.path.splitext(file.filename)[1].lower()
     if file_extension not in allowed_extensions:
-        return False, f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+        return False, f"Invalid file type. Allowed: {', '.join(sorted(allowed_extensions))}"
     
-    # Check MIME type if available
+    # Check MIME type if available - including iPhone HEIC MIME types
     if hasattr(file, 'mimetype') and file.mimetype:
-        allowed_mimetypes = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+        allowed_mimetypes = {
+            'image/jpeg', 
+            'image/png', 
+            'image/webp', 
+            'image/gif',
+            'image/heic',    # iPhone HEIC format
+            'image/heif',    # iPhone HEIF format
+            'image/x-heic',  # Alternative HEIC MIME type
+            'image/x-heif'   # Alternative HEIF MIME type
+        }
         if file.mimetype not in allowed_mimetypes:
-            return False, "Invalid file type detected"
+            return False, f"Invalid file type detected: {file.mimetype}. Your device may be using an unsupported format."
     
     return True, ""
 
@@ -147,13 +156,15 @@ def upload_plant_photo(file: FileStorage, plant_name: str = None) -> Dict[str, s
         if hasattr(file, 'mimetype') and file.mimetype:
             blob.content_type = file.mimetype
         else:
-            # Guess content type from extension
+            # Guess content type from extension - including iPhone HEIC formats
             extension_to_mimetype = {
                 '.jpg': 'image/jpeg',
                 '.jpeg': 'image/jpeg', 
                 '.png': 'image/png',
                 '.webp': 'image/webp',
-                '.gif': 'image/gif'
+                '.gif': 'image/gif',
+                '.heic': 'image/heic',   # iPhone HEIC format
+                '.heif': 'image/heif'    # iPhone HEIF format
             }
             file_extension = os.path.splitext(filename)[1].lower()
             blob.content_type = extension_to_mimetype.get(file_extension, 'image/jpeg')

@@ -250,7 +250,7 @@
         
         <!-- Upload Zone -->
         <div class="upload-zone" id="uploadZone">
-            <input type="file" class="file-input" id="fileInput" accept="image/*">
+            <input type="file" class="file-input" id="fileInput" accept="image/*,.heic,.heif">
             <div class="upload-icon">📸</div>
             <div class="upload-text">Drop your plant photo here</div>
             <div class="upload-hint">or click to select a file</div>
@@ -267,6 +267,11 @@
         <button class="upload-btn" id="uploadBtn">
             <span id="uploadText">Upload Photo</span>
             <span class="loading" id="loadingSpinner" style="display: none;"></span>
+        </button>
+        
+        <!-- Debug Button for Mobile Testing (only shown if issues occur) -->
+        <button class="change-file-btn" id="debugBtn" style="display: none; margin-top: 10px;" onclick="debugFileUpload()">
+            🔍 Test File Info (Debug)
         </button>
         
         <!-- Progress Bar -->
@@ -397,7 +402,7 @@
             // Add mobile-specific hints
             if (isMobile) {
                 const hint = uploadZone.querySelector('.upload-hint');
-                hint.textContent = 'Tap to take photo or select from gallery';
+                hint.textContent = 'Tap to take photo or select from gallery (HEIC photos from iPhone supported)';
             }
         }
         
@@ -519,9 +524,23 @@
             isProcessing = true;
             console.log('Starting upload for:', selectedFileObj.name);
             
-            // Prepare form data
-            const formData = new FormData();
-            formData.append('file', selectedFileObj);
+            // Enhanced mobile file validation
+            if (!validateFileForUpload(selectedFileObj)) {
+                isProcessing = false;
+                return; // Error message already shown by validator
+            }
+            
+            // Prepare form data with mobile compatibility and error handling
+            let formData;
+            try {
+                formData = new FormData();
+                formData.append('file', selectedFileObj);
+                console.log('FormData created successfully');
+            } catch (error) {
+                console.error('Failed to create FormData:', error);
+                handleUploadError('Failed to prepare file for upload. Please try again.');
+                return;
+            }
             
             // Show loading state
             uploadBtn.disabled = true;
@@ -530,12 +549,124 @@
             progressBar.style.display = 'block';
             statusMessage.style.display = 'none';
             
-            // Upload file with improved error handling
+            // Try modern fetch API first (better mobile support), fallback to XMLHttpRequest
+            if (window.fetch && !isMobile) {
+                // Use fetch for modern browsers (desktop)
+                uploadWithFetch(formData);
+            } else {
+                // Use XMLHttpRequest with enhanced mobile compatibility
+                uploadWithXHR(formData);
+            }
+        }
+        
+        function validateFileForUpload(file) {
+            console.log('Validating file for upload:', file.name, file.size, file.type);
+            
+            // Check if file object is valid
+            if (!file || !file.name) {
+                showStatus('Invalid file selected. Please try again.', 'error');
+                return false;
+            }
+            
+            // Enhanced file type checking for iPhone compatibility
+            const fileName = file.name.toLowerCase();
+            const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'];
+            const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (!hasValidExtension) {
+                if (fileName.endsWith('.dng') || fileName.endsWith('.raw')) {
+                    showStatus('📱 iPhone users: Please use regular Photo mode instead of ProRAW for plant photos.', 'error');
+                } else {
+                    showStatus(`Please select an image file. Supported: ${allowedExtensions.join(', ')}`, 'error');
+                }
+                return false;
+            }
+            
+            // Check MIME type (with iPhone HEIC support)
+            if (file.type) {
+                const allowedMimeTypes = [
+                    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+                    'image/heic', 'image/heif', 'image/x-heic', 'image/x-heif'
+                ];
+                
+                if (!allowedMimeTypes.includes(file.type)) {
+                    console.log('Unsupported MIME type:', file.type);
+                    
+                    // Special message for iPhone users with common issues
+                    if (isMobile && (file.type.includes('video') || fileName.includes('live'))) {
+                        showStatus('📱 iPhone Live Photos detected. Please select a regular photo instead.', 'error');
+                    } else {
+                        showStatus(`Unsupported file format: ${file.type}. Please try a regular photo.`, 'error');
+                    }
+                    return false;
+                }
+            } else if (isMobile) {
+                // On mobile, MIME type might not be detected for HEIC files
+                console.log('No MIME type detected (normal for some mobile files)');
+            }
+            
+            // Check file size
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showStatus('File too large. Please select an image smaller than 10MB.', 'error');
+                return false;
+            }
+            
+            // Mobile-specific: Check if file is actually readable
+            if (file.size === 0) {
+                showStatus('Invalid file selected. Please try again.', 'error');
+                return false;
+            }
+            
+            // Additional mobile validation: Try to create object URL
+            try {
+                const testUrl = URL.createObjectURL(file);
+                URL.revokeObjectURL(testUrl); // Clean up immediately
+                console.log('File validation passed');
+                return true;
+            } catch (error) {
+                console.error('File validation failed:', error);
+                
+                // iPhone-specific error message
+                if (isMobile) {
+                    showStatus('📱 Unable to process this image. Try taking a new photo in regular Photo mode (not Portrait or Live Photo).', 'error');
+                } else {
+                    showStatus('File cannot be processed. Please try a different image.', 'error');
+                }
+                return false;
+            }
+        }
+        
+        function uploadWithFetch(formData) {
+            console.log('Using fetch API for upload');
+            
+            fetch(`/upload/${token}`, {
+                method: 'POST',
+                body: formData,
+                // Don't set Content-Type header - let browser set it with boundary for multipart
+            })
+            .then(response => {
+                console.log('Fetch response received, status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                handleUploadSuccess(data);
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                handleUploadError('Network error with fetch. Please try again.');
+            });
+        }
+        
+        function uploadWithXHR(formData) {
+            console.log('Using XMLHttpRequest for upload (mobile compatibility mode)');
+            
             const xhr = new XMLHttpRequest();
             
-            // Set timeout for mobile networks
-            xhr.timeout = 60000; // 60 seconds
+            // Enhanced mobile timeout
+            xhr.timeout = isMobile ? 120000 : 60000; // 2 minutes for mobile, 1 minute for desktop
             
+            // Progress tracking
             xhr.upload.addEventListener('progress', (e) => {
                 if (e.lengthComputable) {
                     const percentComplete = (e.loaded / e.total) * 100;
@@ -544,65 +675,99 @@
                 }
             });
             
+            // Success handler
             xhr.addEventListener('load', () => {
-                uploadBtn.disabled = false;
-                uploadText.style.display = 'inline-block';
-                loadingSpinner.style.display = 'none';
-                progressBar.style.display = 'none';
-                isProcessing = false;
-                
-                console.log('Upload response received, status:', xhr.status);
+                console.log('XHR response received, status:', xhr.status);
+                console.log('XHR response text:', xhr.responseText);
                 
                 if (xhr.status === 200) {
                     try {
                         const response = JSON.parse(xhr.responseText);
                         console.log('Upload response:', response);
-                        
-                        if (response.success) {
-                            showStatus(`✅ Photo uploaded successfully to ${response.plant_name} log entry!`, 'success');
-                            // Hide upload controls after successful upload
-                            uploadZone.style.display = 'none';
-                            selectedFile.style.display = 'none';
-                            uploadBtn.style.display = 'none';
-                        } else {
-                            showStatus(`❌ Upload failed: ${response.error}`, 'error');
-                        }
+                        handleUploadSuccess(response);
                     } catch (parseError) {
                         console.error('Error parsing response:', parseError);
-                        showStatus('❌ Upload completed but response was invalid. Please refresh and try again.', 'error');
+                        handleUploadError('Upload completed but response was invalid. Please refresh and try again.');
                     }
                 } else {
                     try {
                         const errorResponse = JSON.parse(xhr.responseText);
-                        showStatus(`❌ Upload failed: ${errorResponse.error}`, 'error');
+                        handleUploadError(`Upload failed: ${errorResponse.error}`);
                     } catch (e) {
-                        showStatus(`❌ Upload failed (Error ${xhr.status}). Please try again.`, 'error');
+                        handleUploadError(`Upload failed (Error ${xhr.status}). Please try again.`);
                     }
                 }
             });
             
+            // Error handlers
             xhr.addEventListener('error', () => {
-                uploadBtn.disabled = false;
-                uploadText.style.display = 'inline-block';
-                loadingSpinner.style.display = 'none';
-                progressBar.style.display = 'none';
-                isProcessing = false;
-                console.error('Network error during upload');
-                showStatus('❌ Network error. Please check your connection and try again.', 'error');
+                console.error('XHR network error');
+                handleUploadError('Network error. Please check your connection and try again.');
             });
             
             xhr.addEventListener('timeout', () => {
-                uploadBtn.disabled = false;
-                uploadText.style.display = 'inline-block';
-                loadingSpinner.style.display = 'none';
-                progressBar.style.display = 'none';
-                isProcessing = false;
-                console.error('Upload timeout');
-                showStatus('❌ Upload timed out. Please try again with a smaller image.', 'error');
+                console.error('XHR timeout');
+                handleUploadError('Upload timed out. Please try again with a smaller image.');
             });
             
-            xhr.open('POST', `/upload/${token}`);
-            xhr.send(formData);
+            xhr.addEventListener('abort', () => {
+                console.error('XHR aborted');
+                handleUploadError('Upload was cancelled. Please try again.');
+            });
+            
+            // Mobile-specific: Add additional error handling
+            xhr.addEventListener('loadstart', () => {
+                console.log('Upload started successfully');
+            });
+            
+            try {
+                xhr.open('POST', `/upload/${token}`);
+                
+                // Mobile-specific headers
+                if (isMobile) {
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    xhr.setRequestHeader('Cache-Control', 'no-cache');
+                }
+                
+                console.log('Sending XHR request with FormData');
+                xhr.send(formData);
+                
+            } catch (error) {
+                console.error('Error sending XHR request:', error);
+                handleUploadError('Failed to start upload. Please try again.');
+            }
+        }
+        
+        function handleUploadSuccess(response) {
+            console.log('Upload successful:', response);
+            
+            uploadBtn.disabled = false;
+            uploadText.style.display = 'inline-block';
+            loadingSpinner.style.display = 'none';
+            progressBar.style.display = 'none';
+            isProcessing = false;
+            
+            if (response.success) {
+                showStatus(`✅ Photo uploaded successfully to ${response.plant_name} log entry!`, 'success');
+                // Hide upload controls after successful upload
+                uploadZone.style.display = 'none';
+                selectedFile.style.display = 'none';
+                uploadBtn.style.display = 'none';
+            } else {
+                showStatus(`❌ Upload failed: ${response.error}`, 'error');
+            }
+        }
+        
+        function handleUploadError(errorMessage) {
+            console.error('Upload error:', errorMessage);
+            
+            uploadBtn.disabled = false;
+            uploadText.style.display = 'inline-block';
+            loadingSpinner.style.display = 'none';
+            progressBar.style.display = 'none';
+            isProcessing = false;
+            
+            showStatus(`❌ ${errorMessage}`, 'error');
         }
 
         function changeFile() {
@@ -651,6 +816,61 @@
         console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
         console.log('User agent:', navigator.userAgent);
         console.log('Token:', token.substring(0, 8) + '...');
+        console.log('Fetch support:', typeof window.fetch !== 'undefined');
+        console.log('FormData support:', typeof FormData !== 'undefined');
+        
+        // Show debug button on mobile for troubleshooting
+        if (isMobile) {
+            const debugBtn = document.getElementById('debugBtn');
+            if (debugBtn) {
+                debugBtn.style.display = 'inline-block';
+            }
+        }
+        
+        function debugFileUpload() {
+            if (!selectedFileObj) {
+                showStatus('Please select a file first, then try debug test.', 'info');
+                return;
+            }
+            
+            const debugInfo = {
+                name: selectedFileObj.name,
+                size: selectedFileObj.size,
+                type: selectedFileObj.type,
+                lastModified: selectedFileObj.lastModified,
+                webkitRelativePath: selectedFileObj.webkitRelativePath || 'none'
+            };
+            
+            console.log('Debug file info:', debugInfo);
+            
+            // Check if it's a HEIC file
+            const fileName = selectedFileObj.name.toLowerCase();
+            const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || 
+                         selectedFileObj.type === 'image/heic' || selectedFileObj.type === 'image/heif';
+            
+            // Test FormData creation
+            try {
+                const testFormData = new FormData();
+                testFormData.append('file', selectedFileObj);
+                
+                let statusMessage = `✅ File Debug: ${selectedFileObj.name} (${formatFileSize(selectedFileObj.size)})`;
+                if (isHeic) {
+                    statusMessage += ' - iPhone HEIC format detected ✅';
+                }
+                statusMessage += ' - FormData OK';
+                
+                showStatus(statusMessage, 'success');
+                
+                // Show additional iPhone info
+                if (isMobile && isHeic) {
+                    console.log('iPhone HEIC file detected - this should work now!');
+                }
+                
+            } catch (error) {
+                console.error('FormData test failed:', error);
+                showStatus(`❌ File Debug Failed: ${error.message}`, 'error');
+            }
+        }
     </script>
 </body>
-</html> 
+</html>
