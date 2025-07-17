@@ -151,7 +151,13 @@
         .status-error {
             background: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border-left-color: #dc3545;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #0dcaf0;
         }
         
         .selected-file {
@@ -174,10 +180,28 @@
             color: #6c757d;
         }
         
+        .change-file-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .change-file-btn:hover {
+            background: #0056b3;
+        }
+        
         .footer {
             margin-top: 30px;
-            font-size: 12px;
+            text-align: center;
             color: #6c757d;
+            font-size: 14px;
         }
         
         .secure-icon {
@@ -236,6 +260,7 @@
         <div class="selected-file" id="selectedFile">
             <div class="file-name" id="fileName"></div>
             <div class="file-size" id="fileSize"></div>
+            <button class="change-file-btn" id="changeFileBtn" onclick="changeFile()">Change File</button>
         </div>
         
         <!-- Upload Button -->
@@ -285,12 +310,19 @@
         loadTokenInfo();
         
         // Event listeners
-        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('click', handleUploadZoneClick);
         uploadZone.addEventListener('dragover', handleDragOver);
         uploadZone.addEventListener('dragleave', handleDragLeave);
         uploadZone.addEventListener('drop', handleDrop);
         fileInput.addEventListener('change', handleFileSelect);
         uploadBtn.addEventListener('click', uploadFile);
+        
+        function handleUploadZoneClick() {
+            // Only allow file selection if no file is currently selected
+            if (!selectedFileObj) {
+                fileInput.click();
+            }
+        }
         
         function loadTokenInfo() {
             // For now, show placeholder. In a real implementation, you might
@@ -340,6 +372,13 @@
             }
             
             selectedFileObj = file;
+            
+            // Update upload zone to show file is selected
+            uploadZone.style.backgroundColor = '#e8f5e8';
+            uploadZone.style.borderColor = '#28a745';
+            uploadZone.querySelector('.upload-icon').textContent = '✅';
+            uploadZone.querySelector('.upload-text').textContent = 'File selected: ' + file.name;
+            uploadZone.querySelector('.upload-hint').textContent = 'Click "Upload Photo" below to continue';
             
             // Display selected file info
             fileName.textContent = file.name;
@@ -423,6 +462,23 @@
             
             xhr.open('POST', `/upload/${token}`);
             xhr.send(formData);
+        }
+
+        function changeFile() {
+            selectedFileObj = null; // Clear the selected file object
+            fileInput.value = ''; // Clear the file input
+            selectedFile.style.display = 'none';
+            uploadBtn.style.display = 'none';
+            
+            // Reset upload zone appearance
+            uploadZone.style.backgroundColor = '#f8f9fa';
+            uploadZone.style.borderColor = '#dee2e6';
+            uploadZone.querySelector('.upload-icon').textContent = '📸';
+            uploadZone.querySelector('.upload-text').textContent = 'Drop your plant photo here';
+            uploadZone.querySelector('.upload-hint').textContent = 'or click to select a file';
+            
+            // Clear any status messages
+            statusMessage.style.display = 'none';
         }
         
         function showStatus(message, type) {
