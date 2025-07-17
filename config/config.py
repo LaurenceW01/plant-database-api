@@ -7,6 +7,7 @@ from openai import OpenAI
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.discovery import Resource
+from google.cloud import storage
 import time
 import tempfile
 
@@ -22,6 +23,15 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 SPREADSHEET_ID = '1zmKVuDTbgColGuoHJDF0ZJxXB6N2WfwLkp7LZ0vqOag'
 SHEET_GID = '828349954'
 RANGE_NAME = 'Plants!A:Q'
+
+# Plant Log Sheet Setup (extends existing spreadsheet)
+LOG_SHEET_NAME = 'Plant_Log'
+LOG_RANGE_NAME = 'Plant_Log!A:Q'  # Adjust as needed based on log field count
+
+# Google Cloud Storage Setup
+STORAGE_SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+STORAGE_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'plant-database-photos')
+STORAGE_PROJECT_ID = os.getenv('GCS_PROJECT_ID', 'gardenllm')  # Your existing project ID
 
 # API Rate Limiting
 SHEETS_REQUESTS = {}  # Track API requests
@@ -88,6 +98,39 @@ def init_sheets_client():
         
     except Exception as e:
         logger.error(f"Error initializing sheets client: {e}")
+        raise
+
+# Initialize Google Cloud Storage client
+def init_storage_client():
+    """Initialize and return Google Cloud Storage client"""
+    try:
+        creds_json = os.getenv('GOOGLE_CREDENTIALS')
+        if creds_json:
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+                f.write(creds_json)
+                temp_creds_path = f.name
+            
+            try:
+                creds = service_account.Credentials.from_service_account_file(
+                    temp_creds_path, scopes=STORAGE_SCOPES)
+            finally:
+                os.unlink(temp_creds_path)
+        else:
+            local_creds_path = os.path.join(os.path.dirname(__file__), 'gardenllm-5607a1d9d8f3.json')
+            if not os.path.exists(local_creds_path):
+                raise FileNotFoundError(f"Service account file not found: {local_creds_path}")
+            creds = service_account.Credentials.from_service_account_file(
+                local_creds_path, scopes=STORAGE_SCOPES)
+        
+        client = storage.Client(credentials=creds, project=STORAGE_PROJECT_ID)
+        
+        # Test connection by listing buckets (lightweight operation)
+        list(client.list_buckets(max_results=1))
+        logger.info("Successfully connected to Google Cloud Storage")
+        return client
+        
+    except Exception as e:
+        logger.error(f"Error initializing storage client: {e}")
         raise
 
 # Initialize sheets client with retry logic

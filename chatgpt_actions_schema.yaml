@@ -1,14 +1,17 @@
 openapi: 3.1.0
 info:
-  title: Plant Database API
-  description: A comprehensive plant database API for managing garden plants with full CRUD operations. Supports adding, updating, retrieving, and searching plant information including care instructions, growing conditions, and photos.
-  version: 1.0.0
-
+  title: Plant Database API with Photo Logging
+  description: Comprehensive plant database API with full CRUD operations for plant management PLUS new plant health logging with photo storage
+  version: 2.0.0
 servers:
-  - url: https://plant-database-api.onrender.com
-    description: Production server (replace with your actual render.com URL)
+  - url: https://plant-database-api-production.up.railway.app
+    description: Production server
 
 paths:
+  # =============================================
+  # EXISTING PLANT MANAGEMENT OPERATIONS
+  # =============================================
+  
   /api/plants:
     get:
       operationId: searchPlants
@@ -206,6 +209,288 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  # =============================================
+  # NEW PLANT LOGGING OPERATIONS
+  # =============================================
+
+  /api/analyze-plant:
+    post:
+      operationId: analyzeAndLogPlant
+      summary: Analyze plant photo and automatically create log entry
+      description: |
+        Upload a plant photo for AI analysis and automatically save the results 
+        as a plant log entry. This combines image analysis with persistent logging.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Plant photo to analyze (JPG, PNG, WebP, GIF)
+                plant_name:
+                  type: string
+                  description: Name of the plant (optional - will link to existing plant if found)
+                  example: "Tomato Plant #1"
+                user_notes:
+                  type: string
+                  description: Additional user observations or notes
+                  example: "Noticed yellowing leaves yesterday"
+                analysis_type:
+                  type: string
+                  enum: [health_assessment, identification, general_care, follow_up]
+                  default: health_assessment
+                  description: Type of analysis being requested
+      responses:
+        '200':
+          description: Analysis complete and log entry created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  analysis:
+                    type: object
+                    properties:
+                      diagnosis:
+                        type: string
+                        description: Plant health diagnosis
+                      treatment:
+                        type: string
+                        description: Recommended treatment plan
+                      confidence:
+                        type: number
+                        description: Analysis confidence score (0-1)
+                  log_entry:
+                    type: object
+                    properties:
+                      log_id:
+                        type: string
+                        description: Unique identifier for the log entry
+                      plant_name:
+                        type: string
+                        description: Plant name used for the log entry
+                      photo_url:
+                        type: string
+                        description: Public URL of the uploaded photo
+                      stored:
+                        type: boolean
+                        description: Whether the log entry was successfully saved
+                  plant_suggestions:
+                    type: object
+                    properties:
+                      link_to_existing:
+                        type: array
+                        items:
+                          type: string
+                        description: Existing plants that might match
+                      create_new_plant:
+                        type: boolean
+                        description: Option to create new plant record
+      security:
+        - ApiKeyAuth: []
+
+  /api/plants/log:
+    post:
+      operationId: createPlantLog
+      summary: Create manual plant log entry with optional photo
+      description: |
+        Create a plant log entry manually. Useful for follow-up entries or 
+        when you want to add notes without AI analysis.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - plant_name
+              properties:
+                plant_name:
+                  type: string
+                  description: Name of the plant (must exist in database)
+                  example: "Tomato Plant #1"
+                file:
+                  type: string
+                  format: binary
+                  description: Optional plant photo
+                log_title:
+                  type: string
+                  description: Title for this log entry
+                  example: "Weekly health check"
+                user_notes:
+                  type: string
+                  description: Observations and notes
+                diagnosis:
+                  type: string
+                  description: Plant health assessment
+                treatment:
+                  type: string
+                  description: Treatment or care recommendations
+                follow_up_required:
+                  type: boolean
+                  description: Whether follow-up is needed
+                follow_up_date:
+                  type: string
+                  format: date
+                  description: When to check again (YYYY-MM-DD)
+      responses:
+        '200':
+          description: Log entry created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  log_id:
+                    type: string
+                  message:
+                    type: string
+      security:
+        - ApiKeyAuth: []
+
+  /api/plants/{plant_name}/log:
+    get:
+      operationId: getPlantLogHistory
+      summary: Get log history for a specific plant
+      description: Retrieve all log entries for a plant in chronological order
+      parameters:
+        - name: plant_name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Name of the plant
+          example: "Tomato Plant #1"
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [standard, journal]
+            default: standard
+          description: Response format (standard JSON or human-readable journal)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of entries to return
+      responses:
+        '200':
+          description: Plant log history retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plant_name:
+                    type: string
+                  plant_id:
+                    type: string
+                  total_entries:
+                    type: integer
+                  log_entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        log_id:
+                          type: string
+                        log_date:
+                          type: string
+                        log_title:
+                          type: string
+                        diagnosis:
+                          type: string
+                        treatment:
+                          type: string
+                        photo_url:
+                          type: string
+                        user_notes:
+                          type: string
+                        confidence:
+                          type: number
+
+  /api/plants/log/search:
+    get:
+      operationId: searchPlantLogs
+      summary: Search across all plant logs
+      description: Search plant logs by various criteria
+      parameters:
+        - name: plant_name
+          in: query
+          schema:
+            type: string
+          description: Filter by specific plant name
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: General search term (searches diagnosis, symptoms, notes)
+        - name: symptoms
+          in: query
+          schema:
+            type: string
+          description: Search by symptoms (comma-separated)
+          example: "yellowing,wilting"
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date for date range search (YYYY-MM-DD)
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date for date range search (YYYY-MM-DD)
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [standard, journal]
+            default: standard
+          description: Response format
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_matches:
+                    type: integer
+                  search_query:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        log_id:
+                          type: string
+                        plant_name:
+                          type: string
+                        log_date:
+                          type: string
+                        matched_content:
+                          type: string
+                        photo_url:
+                          type: string
+                        relevance_score:
+                          type: number
 
 components:
   securitySchemes:
