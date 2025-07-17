@@ -274,6 +274,11 @@
             🔍 Test File Info (Debug)
         </button>
         
+        <!-- Manual File Check Button (Mobile) -->
+        <button class="change-file-btn" id="manualCheckBtn" style="display: none; margin-top: 10px; background: #ff9800;" onclick="manualFileCheck()">
+            📁 Check for Selected File
+        </button>
+        
         <!-- Progress Bar -->
         <div class="progress-bar" id="progressBar">
             <div class="progress-fill" id="progressFill"></div>
@@ -343,11 +348,38 @@
         // File input change handler with improved validation
         console.log('Setting up file input change handler');
         fileInput.addEventListener('change', handleFileSelectImproved);
+        
+        // Add additional event handlers for mobile compatibility
+        fileInput.addEventListener('input', (e) => {
+            console.log('File input "input" event triggered');
+            addDebugLog('File input "input" event detected');
+            handleFileSelectImproved(e);
+        });
+        
+        // Monitor file input when it loses focus (user might have selected file)
+        fileInput.addEventListener('blur', (e) => {
+            console.log('File input blurred, checking for files...');
+            addDebugLog('File picker closed, checking for selected files...');
+            
+            // Small delay to allow file selection to complete
+            setTimeout(() => {
+                if (e.target.files && e.target.files.length > 0) {
+                    console.log('Files detected on blur event');
+                    addDebugLog(`Files found on blur: ${e.target.files.length}`);
+                    handleFileSelectImproved(e);
+                } else {
+                    console.log('No files detected on blur');
+                    addDebugLog('No files selected (blur check)');
+                }
+            }, 100);
+        });
+        
         uploadBtn.addEventListener('click', uploadFile);
         
         // Add focus and blur handlers for debugging
         fileInput.addEventListener('focus', () => {
             console.log('File input focused');
+            addDebugLog('File picker opening...');
             showStatus('📱 File picker opening...', 'info');
         });
         
@@ -440,6 +472,8 @@
                     console.log('Resetting isProcessing flag after click');
                     if (isMobile) {
                         addDebugLog('File picker should be open now');
+                        // Start polling for file selection on mobile
+                        startFileSelectionPolling();
                     }
                     isProcessing = false;
                 }, 500);
@@ -983,6 +1017,11 @@
                 debugBtn.style.display = 'inline-block';
             }
             
+            const manualCheckBtn = document.getElementById('manualCheckBtn');
+            if (manualCheckBtn) {
+                manualCheckBtn.style.display = 'inline-block';
+            }
+            
             // Show debug log panel on mobile
             const debugInfo = document.getElementById('debugInfo');
             if (debugInfo) {
@@ -992,6 +1031,43 @@
                 addDebugLog(`File API support: ${typeof FileReader !== 'undefined'}`);
                 addDebugLog(`Blob support: ${typeof Blob !== 'undefined'}`);
             }
+        }
+        
+        // Manual file check function for mobile users
+        function manualFileCheck() {
+            addDebugLog('=== MANUAL FILE CHECK START ===');
+            console.log('Manual file check triggered');
+            
+            // Stop any polling
+            stopFileSelectionPolling();
+            
+            // Check file input state
+            const inputState = checkFileInputState();
+            
+            if (inputState.hasFiles) {
+                addDebugLog(`Found ${inputState.fileCount} file(s) in input!`);
+                showStatus(`📁 Found ${inputState.fileCount} file(s)! Processing...`, 'success');
+                
+                // Process the first file
+                const file = fileInput.files[0];
+                const syntheticEvent = {
+                    type: 'manual',
+                    target: fileInput
+                };
+                
+                try {
+                    handleFileSelectImproved(syntheticEvent);
+                } catch (error) {
+                    console.error('Error in manual file processing:', error);
+                    addDebugLog(`Manual processing error: ${error.message}`);
+                    showStatus(`❌ Error processing file: ${error.message}`, 'error');
+                }
+            } else {
+                addDebugLog('No files found in input');
+                showStatus('❌ No files found. Please select a file first.', 'error');
+            }
+            
+            addDebugLog('=== MANUAL FILE CHECK END ===');
         }
         
         // Function to add debug log entries
@@ -1007,11 +1083,27 @@
         function debugFileUpload() {
             addDebugLog('=== MANUAL DEBUG TEST START ===');
             
+            // First, check the current file input state
+            addDebugLog('Checking file input state...');
+            const inputState = checkFileInputState();
+            
+            if (!selectedFileObj && inputState.hasFiles) {
+                addDebugLog('Found files in input but not in selectedFileObj!');
+                // Try to process the files from input
+                const file = fileInput.files[0];
+                addDebugLog(`Processing file from input: ${file.name}`);
+                handleFileImproved(file);
+                return;
+            }
+            
             if (!selectedFileObj) {
                 showStatus('Please select a file first, then try debug test.', 'info');
                 addDebugLog('No file selected for debug test');
                 return;
             }
+            
+            // Stop any ongoing polling
+            stopFileSelectionPolling();
             
             const debugInfo = {
                 name: selectedFileObj.name,
@@ -1062,6 +1154,77 @@
             }
             
             addDebugLog('=== MANUAL DEBUG TEST END ===');
+        }
+
+        // Mobile polling mechanism to detect file selection
+        let pollingInterval = null;
+        let pollingAttempts = 0;
+        const maxPollingAttempts = 30; // Poll for 15 seconds (500ms intervals)
+        
+        function startFileSelectionPolling() {
+            if (!isMobile) return; // Only for mobile
+            
+            console.log('Starting file selection polling...');
+            addDebugLog('Starting file selection monitoring...');
+            
+            pollingAttempts = 0;
+            
+            pollingInterval = setInterval(() => {
+                pollingAttempts++;
+                console.log(`Polling attempt ${pollingAttempts}: checking file input...`);
+                
+                if (fileInput.files && fileInput.files.length > 0) {
+                    console.log('Files detected via polling!');
+                    addDebugLog(`Files detected via polling: ${fileInput.files.length}`);
+                    clearInterval(pollingInterval);
+                    
+                    // Create synthetic event for handleFileSelectImproved
+                    const syntheticEvent = {
+                        type: 'polling',
+                        target: fileInput
+                    };
+                    handleFileSelectImproved(syntheticEvent);
+                    
+                } else if (pollingAttempts >= maxPollingAttempts) {
+                    console.log('Polling timeout - no files detected');
+                    addDebugLog('File selection timeout - no files found');
+                    clearInterval(pollingInterval);
+                    showStatus('⏰ File selection timed out. Please try again.', 'error');
+                }
+            }, 500); // Check every 500ms
+        }
+        
+        function stopFileSelectionPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                console.log('File selection polling stopped');
+            }
+        }
+        
+        // Enhanced debug function with file input state checking
+        function checkFileInputState() {
+            const state = {
+                hasFiles: !!(fileInput.files && fileInput.files.length > 0),
+                fileCount: fileInput.files ? fileInput.files.length : 0,
+                value: fileInput.value,
+                accept: fileInput.accept,
+                capture: fileInput.capture || 'none',
+                disabled: fileInput.disabled,
+                readOnly: fileInput.readOnly
+            };
+            
+            console.log('File input state:', state);
+            addDebugLog(`File input state: ${JSON.stringify(state)}`);
+            
+            if (state.hasFiles) {
+                for (let i = 0; i < state.fileCount; i++) {
+                    const file = fileInput.files[i];
+                    addDebugLog(`File ${i}: ${file.name} (${formatFileSize(file.size)})`);
+                }
+            }
+            
+            return state;
         }
     </script>
 </body>
