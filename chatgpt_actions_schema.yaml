@@ -359,6 +359,129 @@ paths:
       security:
         - ApiKeyAuth: []
 
+  /api/plants/log/simple:
+    post:
+      operationId: createPlantLogSimple
+      summary: Create plant log entry with JSON (ChatGPT-friendly)
+      description: |
+        Create a plant log entry using simple JSON format instead of multipart form data.
+        Ideal for ChatGPT and AI systems that have restrictions with file uploads.
+        This endpoint focuses on text-based logging without photo upload.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - plant_name
+              properties:
+                plant_name:
+                  type: string
+                  description: Name of the plant (must exist in database)
+                  example: "Tomato Plant #1"
+                log_title:
+                  type: string
+                  description: Title for this log entry
+                  example: "Weekly health check"
+                user_notes:
+                  type: string
+                  description: Observations and notes
+                  example: "Noticed yellowing on lower leaves"
+                diagnosis:
+                  type: string
+                  description: Plant health assessment
+                  example: "Minor nitrogen deficiency indicated by yellowing"
+                treatment:
+                  type: string
+                  description: Treatment or care recommendations
+                  example: "Apply balanced fertilizer and increase watering"
+                symptoms:
+                  type: string
+                  description: Symptoms observed
+                  example: "Yellow leaf edges, slight wilting"
+                analysis_type:
+                  type: string
+                  enum: [health_assessment, identification, general_care, follow_up]
+                  default: health_assessment
+                  description: Type of analysis
+                confidence_score:
+                  type: number
+                  minimum: 0.0
+                  maximum: 1.0
+                  default: 0.8
+                  description: Confidence level of the assessment
+                follow_up_required:
+                  type: boolean
+                  default: false
+                  description: Whether follow-up is needed
+                follow_up_date:
+                  type: string
+                  format: date
+                  description: When to check again (YYYY-MM-DD)
+                  example: "2024-01-22"
+            examples:
+              health_check:
+                summary: Health assessment log
+                value:
+                  plant_name: "Tomato Plant #1"
+                  log_title: "Weekly Health Check"
+                  user_notes: "Noticed yellowing on lower leaves yesterday"
+                  diagnosis: "Minor nitrogen deficiency indicated by yellowing"
+                  treatment: "Apply balanced fertilizer and increase watering frequency"
+                  symptoms: "Yellow leaf edges, slight wilting in afternoon"
+                  follow_up_required: true
+                  follow_up_date: "2024-01-22"
+      responses:
+        '201':
+          description: Log entry created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  log_id:
+                    type: string
+                    example: "LOG-20240115-001"
+                  plant_name:
+                    type: string
+                    example: "Tomato Plant #1"
+                  message:
+                    type: string
+                    example: "Log entry created successfully"
+                  log_entry:
+                    type: object
+                    description: Complete log entry data
+        '400':
+          description: Validation error or plant not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Plant not found in database"
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    description: Similar plant names if plant not found
+        '401':
+          description: Unauthorized - missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - ApiKeyAuth: []
+
   /api/plants/{plant_name}/log:
     get:
       operationId: getPlantLogHistory

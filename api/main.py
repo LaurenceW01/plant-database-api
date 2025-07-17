@@ -582,6 +582,58 @@ def create_plant_log():
         logging.error(f"Error creating plant log: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def create_plant_log_simple():
+    """
+    Create a new plant log entry using JSON (ChatGPT-friendly).
+    No file upload - focuses on text-based logging.
+    """
+    try:
+        from utils.plant_log_operations import create_log_entry
+        
+        data = request.get_json()
+        if data is None:
+            return jsonify({'success': False, 'error': 'Missing JSON payload'}), 400
+        
+        # Get required and optional fields
+        plant_name = data.get('plant_name', '').strip()
+        user_notes = data.get('user_notes', '').strip()
+        diagnosis = data.get('diagnosis', '').strip()
+        treatment = data.get('treatment', '').strip()
+        symptoms = data.get('symptoms', '').strip()
+        analysis_type = data.get('analysis_type', 'health_assessment').strip()
+        confidence_score = float(data.get('confidence_score', 0.8))
+        follow_up_required = data.get('follow_up_required', False)
+        follow_up_date = data.get('follow_up_date', '').strip()
+        log_title = data.get('log_title', '').strip()
+        
+        if not plant_name:
+            return jsonify({'success': False, 'error': 'plant_name is required'}), 400
+        
+        # Create log entry without file upload
+        result = create_log_entry(
+            plant_name=plant_name,
+            photo_url="",  # No photo for simple JSON endpoint
+            raw_photo_url="",
+            diagnosis=diagnosis,
+            treatment=treatment,
+            symptoms=symptoms,
+            user_notes=user_notes,
+            confidence_score=confidence_score,
+            analysis_type=analysis_type,
+            follow_up_required=follow_up_required,
+            follow_up_date=follow_up_date,
+            log_title=log_title
+        )
+        
+        if result.get('success'):
+            return jsonify(result), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logging.error(f"Error creating simple plant log: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def get_plant_log_history(plant_name):
     """Get log history for a specific plant in journal format"""
     try:
@@ -674,10 +726,17 @@ def search_plant_logs():
 def register_plant_log_routes(app, limiter, require_api_key):
     """Register plant log API routes"""
     if not app.config.get('TESTING', False):
-        # POST /api/plants/log - Create log entry (requires API key)
+        # POST /api/plants/log - Create log entry with file upload (requires API key)
         app.add_url_rule(
             '/api/plants/log',
             view_func=limiter.limit('10 per minute')(require_api_key(create_plant_log)),
+            methods=['POST']
+        )
+        
+        # POST /api/plants/log/simple - Create log entry with JSON (ChatGPT-friendly)
+        app.add_url_rule(
+            '/api/plants/log/simple',
+            view_func=limiter.limit('10 per minute')(require_api_key(create_plant_log_simple)),
             methods=['POST']
         )
         
@@ -702,6 +761,7 @@ def register_plant_log_routes(app, limiter, require_api_key):
     else:
         # Testing mode - no rate limits
         app.add_url_rule('/api/plants/log', view_func=require_api_key(create_plant_log), methods=['POST'])
+        app.add_url_rule('/api/plants/log/simple', view_func=require_api_key(create_plant_log_simple), methods=['POST'])
         app.add_url_rule('/api/plants/<plant_name>/log', view_func=get_plant_log_history, methods=['GET'])
         app.add_url_rule('/api/plants/log/<log_id>', view_func=get_log_entry_details, methods=['GET'])
         app.add_url_rule('/api/plants/log/search', view_func=search_plant_logs, methods=['GET'])
