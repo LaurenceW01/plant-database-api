@@ -217,12 +217,57 @@ paths:
   /api/analyze-plant:
     post:
       operationId: analyzeAndLogPlant
-      summary: Analyze plant photo or provide plant advice
+      summary: Get plant advice or analyze photos (photos are always optional)
       description: |
-        Upload plant photo for AI analysis (multipart/form-data) or get text advice by plant name (application/json). Photo analysis creates log entries automatically.
+        Get plant care advice, health assessment, or analyze photos. Photos are COMPLETELY OPTIONAL. 
+        Use JSON format for text-based advice (recommended for ChatGPT). 
+        Use multipart only when you actually have a photo to upload.
       requestBody:
         required: true
         content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plant_name:
+                  type: string
+                  description: Name of the plant (required for advice)
+                  example: "Red Sister"
+                user_notes:
+                  type: string
+                  description: Questions, concerns, or observations about the plant
+                  example: "What plants are in my database? How often should I water?"
+                location:
+                  type: string
+                  description: Location where the plant issue is occurring (garden area, room, greenhouse, etc.)
+                  example: "Living room windowsill"
+                analysis_type:
+                  type: string
+                  enum: [health_assessment, identification, general_care, follow_up]
+                  default: general_care
+                  description: Type of advice being requested
+            examples:
+              plant_advice:
+                summary: Request plant care advice (text only, no photo needed)
+                value:
+                  plant_name: "Red Sister"
+                  user_notes: "What plants are there? How should I care for them?"
+                  location: "Garden"
+                  analysis_type: "general_care"
+              health_assessment:
+                summary: Ask about plant health (text only, no photo needed)
+                value:
+                  plant_name: "Tomato"
+                  user_notes: "Leaves are wilting, what should I do?"
+                  location: "Vegetable garden"
+                  analysis_type: "health_assessment"
+              general_questions:
+                summary: Ask general plant questions without photos
+                value:
+                  plant_name: "Tropical Hibiscus"
+                  user_notes: "Flower appears wilted and crinkled despite moist conditions. What should I do?"
+                  location: "Front porch"
+                  analysis_type: "health_assessment"
           multipart/form-data:
             schema:
               type: object
@@ -230,10 +275,10 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: Plant photo to analyze (JPG, PNG, WebP, GIF) - OPTIONAL
+                  description: Plant photo to analyze (JPG, PNG, WebP, GIF) - COMPLETELY OPTIONAL, only use if you have an actual photo
                 plant_name:
                   type: string
-                  description: Name of the plant (required for advice without photo)
+                  description: Name of the plant
                   example: "Tomato Plant #1"
                 user_notes:
                   type: string
@@ -248,50 +293,6 @@ paths:
                   enum: [health_assessment, identification, general_care, follow_up]
                   default: general_care
                   description: Type of analysis or advice being requested
-          application/json:
-            schema:
-              type: object
-              properties:
-                plant_name:
-                  type: string
-                  description: Name of the plant (optional if photo is provided for identification)
-                  example: "Red Sister"
-                user_notes:
-                  type: string
-                  description: Questions, concerns, or observations about the plant
-                  example: "Leaves are wilting, what should I do?"
-                location:
-                  type: string
-                  description: Location where the plant issue is occurring (garden area, room, greenhouse, etc.)
-                  example: "Living room windowsill"
-                analysis_type:
-                  type: string
-                  enum: [health_assessment, identification, general_care, follow_up]
-                  default: health_assessment
-                  description: Type of advice being requested
-                image_data:
-                  type: string
-                  description: Base64 encoded image data for photo analysis (optional)
-                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
-                photo_data:
-                  type: string
-                  description: Alternative field name for image data (optional)
-                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
-            examples:
-              plant_advice:
-                summary: Request plant care advice (text only)
-                value:
-                  plant_name: "Red Sister"
-                  user_notes: "Leaves are wilting, what should I do?"
-                  location: "Living room windowsill"
-                  analysis_type: "health_assessment"
-              photo_analysis:
-                summary: Analyze plant photo for identification and health assessment
-                value:
-                  user_notes: "What's wrong with this plant?"
-                  location: "Front garden bed 2"
-                  analysis_type: "health_assessment"
-                  image_data: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
       responses:
         '200':
           description: Analysis complete or plant advice provided

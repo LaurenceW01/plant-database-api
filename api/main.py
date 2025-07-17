@@ -401,17 +401,22 @@ def analyze_plant():
         
         # Handle both JSON and form-data requests
         if request.content_type and 'application/json' in request.content_type:
-            # JSON request - check if it contains photo data or just text
+            # JSON request - TEXT ONLY (ChatGPT cannot send actual photos via JSON)
             json_data = request.get_json() or {}
             plant_name = json_data.get('plant_name', '').strip()
             user_notes = json_data.get('user_notes', '').strip()
             analysis_type = json_data.get('analysis_type', 'general_care').strip()
             location = json_data.get('location', '').strip()
             
-            # Check if ChatGPT sent image data in JSON (base64 encoded)
-            image_data_b64 = json_data.get('image_data') or json_data.get('photo_data') or json_data.get('file')
-            has_photo_data = bool(image_data_b64)
-            has_file = False  # No actual file upload in JSON mode
+            # JSON mode is TEXT ONLY - no photo processing
+            # Note: ChatGPT may send invalid file references like 'file-ABC123' which we ignore
+            has_photo_data = False
+            has_file = False
+            image_data_b64 = None
+            
+            # Log warning if ChatGPT tries to send photo references
+            if json_data.get('photo_data') or json_data.get('image_data') or json_data.get('file'):
+                logging.warning(f"ChatGPT sent invalid photo reference in JSON request: {json_data.get('photo_data') or json_data.get('image_data') or json_data.get('file')} - ignoring and proceeding with text-only advice")
         else:
             # Form-data request (direct photo upload)
             plant_name = request.form.get('plant_name', '').strip()
@@ -470,24 +475,10 @@ def analyze_plant():
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                 
             else:
-                # JSON PHOTO DATA (ChatGPT mode - no storage)
-                try:
-                    # ChatGPT might send base64 image data directly
-                    if image_data_b64:
-                        # Remove data URL prefix if present (data:image/jpeg;base64,)
-                        if image_data_b64.startswith('data:'):
-                            image_base64 = image_data_b64.split(',')[1]
-                        else:
-                            image_base64 = image_data_b64
-                        
-                        # Validate base64 format
-                        try:
-                            base64.b64decode(image_base64)
-                        except Exception:
-                            return jsonify({'success': False, 'error': 'Invalid image data format'}), 400
-                            
-                except Exception as e:
-                    return jsonify({'success': False, 'error': f'Failed to process image data: {str(e)}'}), 400
+                # JSON requests don't support photo processing
+                # This branch should never execute since has_photo_data is always False for JSON
+                logging.error("Unexpected code path: JSON request trying to process photo data")
+                pass
             
             # Only proceed with OpenAI analysis if we have valid image data
             if image_base64:
