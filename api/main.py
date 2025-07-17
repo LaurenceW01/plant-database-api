@@ -830,6 +830,98 @@ def create_app(testing=False):
         
         return jsonify(debug_data)
     
+    # ChatGPT Debug endpoint - logs exactly what ChatGPT sends
+    @app.route('/api/debug/chatgpt', methods=['GET', 'POST', 'PUT'])
+    def debug_chatgpt():
+        """
+        Debug endpoint to capture exactly what ChatGPT is sending.
+        Logs all headers, method, content type, and body for debugging 403 errors.
+        NO AUTHENTICATION REQUIRED - purely for debugging.
+        """
+        import json
+        from datetime import datetime
+        
+        # Capture all request details
+        debug_data = {
+            "timestamp": datetime.now().isoformat(),
+            "method": request.method,
+            "url": request.url,
+            "remote_addr": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', 'Not provided'),
+            "content_type": request.content_type,
+            "content_length": request.content_length,
+            "headers": {},
+            "form_data": {},
+            "json_data": None,
+            "files": {},
+            "args": dict(request.args),
+            "endpoint": "debug_chatgpt",
+            "auth_analysis": {}
+        }
+        
+        # Capture all headers (safely)
+        for header_name, header_value in request.headers:
+            debug_data["headers"][header_name] = header_value
+        
+        # Check for API key specifically
+        api_key_header = request.headers.get('x-api-key')
+        debug_data["auth_analysis"] = {
+            "x_api_key_present": api_key_header is not None,
+            "x_api_key_value": api_key_header[:10] + "..." if api_key_header else None,
+            "authorization_header": request.headers.get('Authorization'),
+            "auth_header_count": len([h[0] for h in request.headers if 'auth' in h[0].lower() or 'key' in h[0].lower()])
+        }
+        
+        # Capture form data if present
+        try:
+            if request.form:
+                debug_data["form_data"] = dict(request.form)
+        except Exception as e:
+            debug_data["form_data"] = f"Error reading form data: {str(e)}"
+        
+        # Capture JSON data if present
+        try:
+            if request.is_json:
+                debug_data["json_data"] = request.get_json()
+        except Exception as e:
+            debug_data["json_data"] = f"Error reading JSON data: {str(e)}"
+        
+        # Capture file uploads if present
+        try:
+            if request.files:
+                for file_key, file_obj in request.files.items():
+                    debug_data["files"][file_key] = {
+                        "filename": file_obj.filename,
+                        "content_type": file_obj.content_type,
+                        "size": len(file_obj.read()) if file_obj else 0
+                    }
+                    # Reset file pointer
+                    if file_obj:
+                        file_obj.seek(0)
+        except Exception as e:
+            debug_data["files"] = f"Error reading files: {str(e)}"
+        
+        # Log to server console for debugging
+        logging.info(f"CHATGPT_DEBUG | {request.method} {request.url} | Headers: {dict(request.headers)} | API Key: {'Present' if api_key_header else 'Missing'}")
+        
+        # Return comprehensive debug info
+        return jsonify({
+            "success": True,
+            "message": "Debug endpoint reached successfully - no authentication required",
+            "request_details": debug_data,
+            "server_response": {
+                "your_ip": request.remote_addr,
+                "server_time": datetime.now().isoformat(),
+                "endpoint_working": True,
+                "auth_required": False
+            },
+            "next_steps": {
+                "if_you_see_this": "The request successfully reached our server",
+                "check_for_api_key": "Look at auth_analysis section to see if x-api-key header is present",
+                "test_real_endpoint": "Try calling /api/plants/log with the x-api-key header"
+            }
+        }), 200
+    
     return app
 
 
