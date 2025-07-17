@@ -219,9 +219,7 @@ paths:
       operationId: analyzeAndLogPlant
       summary: Analyze plant photo or provide plant advice
       description: |
-        Upload a plant photo for AI analysis OR get general plant advice without a photo.
-        When a photo is provided, creates automatic log entry. When no photo is provided,
-        gives general plant care advice based on plant name and user notes.
+        Upload plant photo for AI analysis (multipart/form-data) or get text advice by plant name (application/json). Photo analysis creates log entries automatically.
       requestBody:
         required: true
         content:
@@ -246,6 +244,32 @@ paths:
                   enum: [health_assessment, identification, general_care, follow_up]
                   default: general_care
                   description: Type of analysis or advice being requested
+          application/json:
+            schema:
+              type: object
+              required:
+                - plant_name
+              properties:
+                plant_name:
+                  type: string
+                  description: Name of the plant for advice
+                  example: "Red Sister"
+                user_notes:
+                  type: string
+                  description: Questions, concerns, or observations about the plant
+                  example: "Leaves are wilting, what should I do?"
+                analysis_type:
+                  type: string
+                  enum: [health_assessment, identification, general_care, follow_up]
+                  default: general_care
+                  description: Type of advice being requested
+            examples:
+              plant_advice:
+                summary: Request plant care advice
+                value:
+                  plant_name: "Red Sister"
+                  user_notes: "Leaves are wilting, what should I do?"
+                  analysis_type: "health_assessment"
       responses:
         '200':
           description: Analysis complete or plant advice provided

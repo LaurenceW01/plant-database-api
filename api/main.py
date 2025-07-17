@@ -398,13 +398,21 @@ def analyze_plant():
         # Log comprehensive debug info to server console
         logging.info(f"ANALYZE_PLANT_DEBUG | {debug_info}")
         
-        # Get parameters
-        plant_name = request.form.get('plant_name', '').strip()
-        user_notes = request.form.get('user_notes', '').strip()
-        analysis_type = request.form.get('analysis_type', 'general_care').strip()
-        
-        # Check if image file is present - now optional
-        has_file = 'file' in request.files and request.files['file'].filename != ''
+        # Handle both JSON and form-data requests
+        if request.content_type and 'application/json' in request.content_type:
+            # JSON request (text-only advice)
+            json_data = request.get_json() or {}
+            plant_name = json_data.get('plant_name', '').strip()
+            user_notes = json_data.get('user_notes', '').strip()
+            analysis_type = json_data.get('analysis_type', 'general_care').strip()
+            has_file = False
+        else:
+            # Form-data request (photo upload)
+            plant_name = request.form.get('plant_name', '').strip()
+            user_notes = request.form.get('user_notes', '').strip()
+            analysis_type = request.form.get('analysis_type', 'general_care').strip()
+            # Check if image file is present
+            has_file = 'file' in request.files and request.files['file'].filename != ''
         
         # If no file provided, require plant_name for general advice
         if not has_file and not plant_name:
