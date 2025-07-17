@@ -217,39 +217,38 @@ paths:
   /api/analyze-plant:
     post:
       operationId: analyzeAndLogPlant
-      summary: Analyze plant photo and automatically create log entry
+      summary: Analyze plant photo or provide plant advice
       description: |
-        Upload a plant photo for AI analysis and automatically save the results 
-        as a plant log entry. This combines image analysis with persistent logging.
+        Upload a plant photo for AI analysis OR get general plant advice without a photo.
+        When a photo is provided, creates automatic log entry. When no photo is provided,
+        gives general plant care advice based on plant name and user notes.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required:
-                - file
               properties:
                 file:
                   type: string
                   format: binary
-                  description: Plant photo to analyze (JPG, PNG, WebP, GIF)
+                  description: Plant photo to analyze (JPG, PNG, WebP, GIF) - OPTIONAL
                 plant_name:
                   type: string
-                  description: Name of the plant (optional - will link to existing plant if found)
+                  description: Name of the plant (required for advice without photo)
                   example: "Tomato Plant #1"
                 user_notes:
                   type: string
-                  description: Additional user observations or notes
-                  example: "Noticed yellowing leaves yesterday"
+                  description: Questions, concerns, or observations about the plant
+                  example: "How often should I water? Noticed yellowing leaves yesterday"
                 analysis_type:
                   type: string
                   enum: [health_assessment, identification, general_care, follow_up]
-                  default: health_assessment
-                  description: Type of analysis being requested
+                  default: general_care
+                  description: Type of analysis or advice being requested
       responses:
         '200':
-          description: Analysis complete and log entry created
+          description: Analysis complete or plant advice provided
           content:
             application/json:
               schema:
@@ -262,15 +261,33 @@ paths:
                     properties:
                       diagnosis:
                         type: string
-                        description: Plant health diagnosis
+                        description: Plant health diagnosis or care advice
                       treatment:
                         type: string
-                        description: Recommended treatment plan
+                        description: Recommended treatment or care instructions
                       confidence:
                         type: number
                         description: Analysis confidence score (0-1)
+                      advice_type:
+                        type: string
+                        enum: [photo_analysis, general_advice]
+                        description: Whether this was photo analysis or general advice
+                  image_upload:
+                    type: object
+                    description: Only present when photo was uploaded
+                    properties:
+                      photo_url:
+                        type: string
+                        description: Public URL of the uploaded photo
+                      filename:
+                        type: string
+                        description: Name of the uploaded file
+                      upload_time:
+                        type: string
+                        description: When the photo was uploaded
                   log_entry:
                     type: object
+                    description: Only present when photo was uploaded and log created
                     properties:
                       log_id:
                         type: string
@@ -278,16 +295,17 @@ paths:
                       plant_name:
                         type: string
                         description: Plant name used for the log entry
-                      photo_url:
-                        type: string
-                        description: Public URL of the uploaded photo
-                      stored:
+                      created:
                         type: boolean
                         description: Whether the log entry was successfully saved
-                  plant_suggestions:
+                  suggestions:
                     type: object
+                    description: Plant suggestions when plant not found
                     properties:
-                      link_to_existing:
+                      plant_not_found:
+                        type: boolean
+                        description: Whether the plant was found in database
+                      similar_plants:
                         type: array
                         items:
                           type: string

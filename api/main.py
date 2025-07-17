@@ -398,18 +398,20 @@ def analyze_plant():
         # Log comprehensive debug info to server console
         logging.info(f"ANALYZE_PLANT_DEBUG | {debug_info}")
         
-        # Check if image file is present in request
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'error': 'No image file provided'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No image file selected'}), 400
-        
-        # Get optional parameters
+        # Get parameters
         plant_name = request.form.get('plant_name', '').strip()
         user_notes = request.form.get('user_notes', '').strip()
-        analysis_type = request.form.get('analysis_type', 'health_assessment').strip()
+        analysis_type = request.form.get('analysis_type', 'general_care').strip()
+        
+        # Check if image file is present - now optional
+        has_file = 'file' in request.files and request.files['file'].filename != ''
+        
+        # If no file provided, require plant_name for general advice
+        if not has_file and not plant_name:
+            return jsonify({
+                'success': False, 
+                'error': 'Either a photo file or plant_name is required. Provide plant_name for general advice without photo.'
+            }), 400
         
         # Import required modules
         from utils.storage_client import upload_plant_photo, is_storage_available
@@ -417,30 +419,38 @@ def analyze_plant():
         from config.config import openai_client
         import base64
         
-        # Check if storage is available
-        if not is_storage_available():
-            return jsonify({
-                'success': False, 
-                'error': 'Image storage not available. Check Google Cloud Storage configuration.'
-            }), 500
+        # Initialize variables
+        upload_result = None
+        analysis_text = ""
         
-        # Validate image file
-        try:
-            upload_result = upload_plant_photo(file, plant_name)
-        except ValueError as e:
-            return jsonify({'success': False, 'error': str(e)}), 400
-        except Exception as e:
-            return jsonify({'success': False, 'error': f'Failed to upload image: {str(e)}'}), 500
-        
-        # Reset file pointer for OpenAI analysis
-        file.seek(0)
-        image_data = file.read()
-        
-        # Convert image to base64 for OpenAI Vision API
-        image_base64 = base64.b64encode(image_data).decode('utf-8')
-        
-        # Prepare prompt for plant analysis
-        prompt = f"""Analyze this plant image and provide a comprehensive assessment. Focus on:
+        if has_file:
+            # PHOTO ANALYSIS PATH: Analyze uploaded image
+            file = request.files['file']
+            
+            # Check if storage is available for photo upload
+            if not is_storage_available():
+                return jsonify({
+                    'success': False, 
+                    'error': 'Image storage not available. Check Google Cloud Storage configuration.'
+                }), 500
+            
+            # Validate and upload image file
+            try:
+                upload_result = upload_plant_photo(file, plant_name)
+            except ValueError as e:
+                return jsonify({'success': False, 'error': str(e)}), 400
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Failed to upload image: {str(e)}'}), 500
+            
+            # Reset file pointer for OpenAI analysis
+            file.seek(0)
+            image_data = file.read()
+            
+            # Convert image to base64 for OpenAI Vision API
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            
+            # Prepare prompt for image analysis
+            prompt = f"""Analyze this plant image and provide a comprehensive assessment. Focus on:
 
 1. Plant identification (species/variety if possible)
 2. Health assessment (any visible issues, diseases, pests)
@@ -453,34 +463,73 @@ Additional context:
 - Analysis type: {analysis_type}
 
 Please provide your response in a clear, structured format suitable for a plant care journal."""
-        
-        # Call OpenAI Vision API
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-4o",  # Updated from deprecated gpt-4-vision-preview
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_base64}"
+            
+            # Call OpenAI Vision API
+            try:
+                response = openai_client.chat.completions.create(
+                    model="gpt-4o",  # Updated from deprecated gpt-4-vision-preview
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_base64}"
+                                    }
                                 }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens=500
-            )
+                            ]
+                        }
+                    ],
+                    max_tokens=500
+                )
+                
+                analysis_text = response.choices[0].message.content
+                
+            except Exception as e:
+                # If OpenAI analysis fails, still continue with uploaded photo
+                analysis_text = f"Image analysis failed: {str(e)}"
+                logging.error(f"OpenAI Vision API error: {e}")
+        
+        else:
+            # TEXT-ONLY ADVICE PATH: Provide general plant advice without photo
             
-            analysis_text = response.choices[0].message.content
+            # Prepare prompt for general plant advice
+            prompt = f"""Provide comprehensive plant care advice for the following:
+
+Plant: {plant_name}
+User Questions/Notes: {user_notes if user_notes else 'General care advice needed'}
+Analysis Type: {analysis_type}
+
+Please provide detailed advice covering:
+1. Watering requirements and schedule
+2. Light and location preferences
+3. Soil and fertilization needs
+4. Common problems and prevention
+5. Seasonal care tips
+6. Any specific concerns mentioned in user notes
+
+Format your response clearly and practically for plant care."""
             
-        except Exception as e:
-            # If OpenAI analysis fails, still create log entry with uploaded photo
-            analysis_text = f"Image analysis failed: {str(e)}"
-            logging.error(f"OpenAI Vision API error: {e}")
+            # Call OpenAI text completion API
+            try:
+                response = openai_client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    max_tokens=500
+                )
+                
+                analysis_text = response.choices[0].message.content
+                
+            except Exception as e:
+                analysis_text = f"Unable to provide plant advice: {str(e)}"
+                logging.error(f"OpenAI text API error: {e}")
         
         # Parse analysis into structured components
         # Ensure analysis_text is a string
@@ -513,9 +562,9 @@ Please provide your response in a clear, structured format suitable for a plant 
                 diagnosis = '\n'.join(diagnosis_lines).strip()
                 treatment = '\n'.join(treatment_lines).strip()
         
-        # Create log entry if plant name provided
+        # Create log entry if plant name provided and photo was uploaded
         log_entry_result = None
-        if plant_name:
+        if plant_name and has_file and upload_result:
             log_entry_result = create_log_entry(
                 plant_name=plant_name,
                 photo_url=upload_result['photo_url'],
@@ -537,14 +586,18 @@ Please provide your response in a clear, structured format suitable for a plant 
                 'diagnosis': diagnosis,
                 'treatment': treatment if treatment else diagnosis,
                 'confidence': confidence_score,
-                'analysis_type': analysis_type
-            },
-            'image_upload': {
+                'analysis_type': analysis_type,
+                'advice_type': 'photo_analysis' if has_file else 'general_advice'
+            }
+        }
+        
+        # Add image upload info only if file was uploaded
+        if has_file and upload_result:
+            response_data['image_upload'] = {
                 'photo_url': upload_result['raw_photo_url'],
                 'filename': upload_result['filename'],
                 'upload_time': upload_result['upload_time']
             }
-        }
         
         # Add log entry info if created
         if log_entry_result and log_entry_result.get('success'):
