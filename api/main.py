@@ -847,8 +847,8 @@ def create_plant_log():
         # Create log entry
         result = create_log_entry(
             plant_name=plant_name,
-            photo_url=photo_url,
-            raw_photo_url=raw_photo_url,
+            photo_url="",  # No photo in JSON mode
+            raw_photo_url="", 
             diagnosis=diagnosis,
             treatment=treatment,
             symptoms=symptoms,
@@ -857,12 +857,43 @@ def create_plant_log():
             analysis_type=analysis_type,
             follow_up_required=follow_up_required,
             follow_up_date=follow_up_date,
-            log_title=log_title,
-            location=location
+            location=location,
+            log_title=log_title
         )
         
-        if result.get('success'):
-            return jsonify(result), 201
+        if result['success']:
+            # Generate upload token and URL for adding photos later
+            from utils.upload_token_manager import generate_upload_token
+            
+            upload_token = generate_upload_token(
+                log_id=result['log_id'],
+                plant_name=plant_name,
+                expiration_hours=24
+            )
+            
+            upload_url = f"{request.host_url.rstrip('/')}/upload/{upload_token}"
+            
+            # Detect if user mentioned photos in their input
+            photo_keywords = ['photo', 'picture', 'image', 'pic', 'camera', 'take', 'show', 'visual', 'upload']
+            text_to_check = f"{user_notes} {diagnosis} {treatment} {symptoms}".lower()
+            photo_mentioned = any(keyword in text_to_check for keyword in photo_keywords)
+            
+            # Customize response based on whether photos were mentioned
+            if photo_mentioned:
+                upload_instructions = f"🔥 PHOTO UPLOAD READY: Since you mentioned photos, use this link to upload them: {upload_url}"
+                message = f"Log entry created successfully with photo upload ready"
+            else:
+                upload_instructions = f"To add a photo to this log entry, visit: {upload_url}"
+                message = f"Log entry created successfully"
+            
+            # Enhance the response with upload information
+            enhanced_result = result.copy()
+            enhanced_result['upload_url'] = upload_url
+            enhanced_result['upload_instructions'] = upload_instructions
+            enhanced_result['message'] = message
+            enhanced_result['photo_mentioned'] = photo_mentioned
+            
+            return jsonify(enhanced_result), 201
         else:
             return jsonify(result), 400
             
@@ -1300,7 +1331,7 @@ def create_app(testing=False):
     """
     Create and configure the Flask app. If testing=True, disables rate limiting.
     """
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='../templates')  # Configure template folder
     CORS(app)
     # Set config flags
     app.config['TESTING'] = testing
