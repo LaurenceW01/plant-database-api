@@ -324,6 +324,388 @@ def register_routes(app, limiter, require_api_key):
             methods=['PUT']
         )
 
+# Enhanced analyze-plant endpoint with log integration
+def analyze_plant():
+    """
+    Enhanced image analysis endpoint that integrates with plant logging.
+    Uploads images to Google Cloud Storage and creates log entries automatically.
+    """
+    try:
+        # Check if image file is present in request
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No image file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No image file selected'}), 400
+        
+        # Get optional parameters
+        plant_name = request.form.get('plant_name', '').strip()
+        user_notes = request.form.get('user_notes', '').strip()
+        analysis_type = request.form.get('analysis_type', 'health_assessment').strip()
+        
+        # Import required modules
+        from utils.storage_client import upload_plant_photo, is_storage_available
+        from utils.plant_log_operations import create_log_entry, validate_plant_for_log
+        from config.config import openai_client
+        import base64
+        
+        # Check if storage is available
+        if not is_storage_available():
+            return jsonify({
+                'success': False, 
+                'error': 'Image storage not available. Check Google Cloud Storage configuration.'
+            }), 500
+        
+        # Validate image file
+        try:
+            upload_result = upload_plant_photo(file, plant_name)
+        except ValueError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Failed to upload image: {str(e)}'}), 500
+        
+        # Reset file pointer for OpenAI analysis
+        file.seek(0)
+        image_data = file.read()
+        
+        # Convert image to base64 for OpenAI Vision API
+        image_base64 = base64.b64encode(image_data).decode('utf-8')
+        
+        # Prepare prompt for plant analysis
+        prompt = f"""Analyze this plant image and provide a comprehensive assessment. Focus on:
+
+1. Plant identification (species/variety if possible)
+2. Health assessment (any visible issues, diseases, pests)
+3. Treatment recommendations if problems are found
+4. General care advice
+
+Additional context:
+- Plant name: {plant_name if plant_name else 'Unknown'}
+- User notes: {user_notes if user_notes else 'None provided'}
+- Analysis type: {analysis_type}
+
+Please provide your response in a clear, structured format suitable for a plant care journal."""
+        
+        # Call OpenAI Vision API
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4-vision-preview",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            analysis_text = response.choices[0].message.content
+            
+        except Exception as e:
+            # If OpenAI analysis fails, still create log entry with uploaded photo
+            analysis_text = f"Image analysis failed: {str(e)}"
+            logging.error(f"OpenAI Vision API error: {e}")
+        
+        # Parse analysis into structured components
+        # Ensure analysis_text is a string
+        if not analysis_text:
+            analysis_text = "No analysis available"
+        
+        # For now, use the full analysis as diagnosis
+        diagnosis = analysis_text
+        treatment = ""
+        symptoms = user_notes or ""
+        confidence_score = 0.8  # Default confidence
+        
+        # Try to extract treatment recommendations if present
+        if analysis_text and ("recommend" in analysis_text.lower() or "treatment" in analysis_text.lower()):
+            lines = analysis_text.split('\n')
+            diagnosis_lines = []
+            treatment_lines = []
+            in_treatment_section = False
+            
+            for line in lines:
+                if any(keyword in line.lower() for keyword in ['recommend', 'treatment', 'care', 'action']):
+                    in_treatment_section = True
+                    treatment_lines.append(line)
+                elif in_treatment_section and line.strip():
+                    treatment_lines.append(line)
+                elif not in_treatment_section and line.strip():
+                    diagnosis_lines.append(line)
+            
+            if treatment_lines:
+                diagnosis = '\n'.join(diagnosis_lines).strip()
+                treatment = '\n'.join(treatment_lines).strip()
+        
+        # Create log entry if plant name provided
+        log_entry_result = None
+        if plant_name:
+            log_entry_result = create_log_entry(
+                plant_name=plant_name,
+                photo_url=upload_result['photo_url'],
+                raw_photo_url=upload_result['raw_photo_url'],
+                diagnosis=diagnosis,
+                treatment=treatment,
+                symptoms=symptoms,
+                user_notes=user_notes,
+                confidence_score=confidence_score,
+                analysis_type=analysis_type,
+                follow_up_required=False,
+                follow_up_date=""
+            )
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'analysis': {
+                'diagnosis': diagnosis,
+                'treatment': treatment if treatment else diagnosis,
+                'confidence': confidence_score,
+                'analysis_type': analysis_type
+            },
+            'image_upload': {
+                'photo_url': upload_result['raw_photo_url'],
+                'filename': upload_result['filename'],
+                'upload_time': upload_result['upload_time']
+            }
+        }
+        
+        # Add log entry info if created
+        if log_entry_result and log_entry_result.get('success'):
+            response_data['log_entry'] = {
+                'log_id': log_entry_result['log_id'],
+                'plant_name': log_entry_result['plant_name'],
+                'created': True
+            }
+        elif plant_name:
+            # Plant validation failed
+            plant_validation = validate_plant_for_log(plant_name)
+            response_data['suggestions'] = {
+                'plant_not_found': True,
+                'similar_plants': plant_validation.get('suggestions', []),
+                'create_new_plant': plant_validation.get('create_new_option', False)
+            }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        logging.error(f"Error in analyze-plant endpoint: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def register_image_analysis_route(app, limiter, require_api_key):
+    """Register the image analysis route with appropriate rate limiting"""
+    if not app.config.get('TESTING', False):
+        app.add_url_rule(
+            '/api/analyze-plant',
+            view_func=limiter.limit('5 per minute')(analyze_plant),  # Stricter limit for image processing
+            methods=['POST']
+        )
+    else:
+        app.add_url_rule(
+            '/api/analyze-plant',
+            view_func=analyze_plant,
+            methods=['POST']
+        )
+
+# Plant Log endpoints
+def create_plant_log():
+    """
+    Create a new plant log entry.
+    Expects multipart/form-data with file upload and log details.
+    """
+    try:
+        from utils.plant_log_operations import create_log_entry
+        from utils.storage_client import upload_plant_photo, is_storage_available
+        
+        # Get form data
+        plant_name = request.form.get('plant_name', '').strip()
+        user_notes = request.form.get('user_notes', '').strip()
+        diagnosis = request.form.get('diagnosis', '').strip()
+        treatment = request.form.get('treatment', '').strip()
+        symptoms = request.form.get('symptoms', '').strip()
+        analysis_type = request.form.get('analysis_type', 'health_assessment').strip()
+        confidence_score = float(request.form.get('confidence_score', 0.8))
+        follow_up_required = request.form.get('follow_up_required', 'false').lower() == 'true'
+        follow_up_date = request.form.get('follow_up_date', '').strip()
+        log_title = request.form.get('log_title', '').strip()
+        
+        if not plant_name:
+            return jsonify({'success': False, 'error': 'plant_name is required'}), 400
+        
+        photo_url = ""
+        raw_photo_url = ""
+        
+        # Handle optional file upload
+        if 'file' in request.files and request.files['file'].filename:
+            file = request.files['file']
+            if is_storage_available():
+                try:
+                    upload_result = upload_plant_photo(file, plant_name)
+                    photo_url = upload_result['photo_url']
+                    raw_photo_url = upload_result['raw_photo_url']
+                except Exception as e:
+                    return jsonify({'success': False, 'error': f'Failed to upload image: {str(e)}'}), 500
+            else:
+                return jsonify({'success': False, 'error': 'Image storage not available'}), 500
+        
+        # Create log entry
+        result = create_log_entry(
+            plant_name=plant_name,
+            photo_url=photo_url,
+            raw_photo_url=raw_photo_url,
+            diagnosis=diagnosis,
+            treatment=treatment,
+            symptoms=symptoms,
+            user_notes=user_notes,
+            confidence_score=confidence_score,
+            analysis_type=analysis_type,
+            follow_up_required=follow_up_required,
+            follow_up_date=follow_up_date,
+            log_title=log_title
+        )
+        
+        if result.get('success'):
+            return jsonify(result), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logging.error(f"Error creating plant log: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def get_plant_log_history(plant_name):
+    """Get log history for a specific plant in journal format"""
+    try:
+        from utils.plant_log_operations import get_plant_log_entries, format_log_entries_as_journal
+        
+        # Get query parameters
+        limit = request.args.get('limit', default=20, type=int)
+        offset = request.args.get('offset', default=0, type=int)
+        format_type = request.args.get('format', default='standard', type=str)
+        
+        # Get log entries
+        result = get_plant_log_entries(plant_name, limit, offset)
+        
+        if not result.get('success'):
+            return jsonify(result), 404 if 'not found' in result.get('error', '').lower() else 400
+        
+        # Format as journal if requested
+        if format_type == 'journal':
+            journal_entries = format_log_entries_as_journal(result['log_entries'])
+            result['journal_entries'] = journal_entries
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logging.error(f"Error getting plant log history: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def get_log_entry_details(log_id):
+    """Get details of a specific log entry"""
+    try:
+        from utils.plant_log_operations import get_log_entry_by_id, format_log_entries_as_journal
+        
+        format_type = request.args.get('format', default='standard', type=str)
+        
+        result = get_log_entry_by_id(log_id)
+        
+        if not result.get('success'):
+            return jsonify(result), 404 if 'not found' in result.get('error', '').lower() else 400
+        
+        # Format as journal if requested
+        if format_type == 'journal':
+            journal_entries = format_log_entries_as_journal([result['log_entry']])
+            if journal_entries:
+                result['journal_entry'] = journal_entries[0]
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logging.error(f"Error getting log entry: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def search_plant_logs():
+    """Search plant log entries with various filters"""
+    try:
+        from utils.plant_log_operations import search_log_entries, format_log_entries_as_journal
+        
+        # Get query parameters
+        plant_name = request.args.get('plant_name', default='', type=str)
+        query = request.args.get('q', default='', type=str)
+        symptoms = request.args.get('symptoms', default='', type=str)
+        date_from = request.args.get('date_from', default='', type=str)
+        date_to = request.args.get('date_to', default='', type=str)
+        limit = request.args.get('limit', default=20, type=int)
+        format_type = request.args.get('format', default='standard', type=str)
+        
+        # Search log entries
+        result = search_log_entries(
+            plant_name=plant_name,
+            query=query,
+            symptoms=symptoms,
+            date_from=date_from,
+            date_to=date_to,
+            limit=limit
+        )
+        
+        if not result.get('success'):
+            return jsonify(result), 400
+        
+        # Format as journal if requested
+        if format_type == 'journal':
+            journal_entries = format_log_entries_as_journal(result['search_results'])
+            result['journal_entries'] = journal_entries
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logging.error(f"Error searching plant logs: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def register_plant_log_routes(app, limiter, require_api_key):
+    """Register plant log API routes"""
+    if not app.config.get('TESTING', False):
+        # POST /api/plants/log - Create log entry (requires API key)
+        app.add_url_rule(
+            '/api/plants/log',
+            view_func=limiter.limit('10 per minute')(require_api_key(create_plant_log)),
+            methods=['POST']
+        )
+        
+        # GET routes (no API key required for reading)
+        app.add_url_rule(
+            '/api/plants/<plant_name>/log',
+            view_func=limiter.limit('30 per minute')(get_plant_log_history),
+            methods=['GET']
+        )
+        
+        app.add_url_rule(
+            '/api/plants/log/<log_id>',
+            view_func=limiter.limit('30 per minute')(get_log_entry_details),
+            methods=['GET']
+        )
+        
+        app.add_url_rule(
+            '/api/plants/log/search',
+            view_func=limiter.limit('30 per minute')(search_plant_logs),
+            methods=['GET']
+        )
+    else:
+        # Testing mode - no rate limits
+        app.add_url_rule('/api/plants/log', view_func=require_api_key(create_plant_log), methods=['POST'])
+        app.add_url_rule('/api/plants/<plant_name>/log', view_func=get_plant_log_history, methods=['GET'])
+        app.add_url_rule('/api/plants/log/<log_id>', view_func=get_log_entry_details, methods=['GET'])
+        app.add_url_rule('/api/plants/log/search', view_func=search_plant_logs, methods=['GET'])
+
 # App factory function
 def create_app(testing=False):
     """
@@ -382,9 +764,78 @@ def create_app(testing=False):
     )
     # Register all routes after config is set
     register_routes(app, limiter, require_api_key)
+    # Register image analysis route
+    register_image_analysis_route(app, limiter, require_api_key)
+    # Register plant log routes
+    register_plant_log_routes(app, limiter, require_api_key)
+    
+    # Debug endpoint to check route registration and import status
+    @app.route('/api/debug/info', methods=['GET'])
+    def debug_info():
+        """Debug endpoint to check what routes are registered and import status"""
+        import sys
+        
+        debug_data = {
+            "registered_routes": [],
+            "import_status": {},
+            "python_path": sys.path[:3],  # First few paths
+            "available_modules": {}
+        }
+        
+        # Get all registered routes
+        for rule in app.url_map.iter_rules():
+            debug_data["registered_routes"].append({
+                "endpoint": rule.endpoint,
+                "methods": list(rule.methods) if rule.methods else [],
+                "rule": str(rule)
+            })
+        
+        # Check import status for critical modules
+        try:
+            from utils.storage_client import upload_plant_photo, is_storage_available
+            debug_data["import_status"]["storage_client"] = "SUCCESS"
+            debug_data["available_modules"]["storage_available"] = is_storage_available()
+        except Exception as e:
+            debug_data["import_status"]["storage_client"] = f"FAILED: {str(e)}"
+        
+        try:
+            from utils.plant_log_operations import create_log_entry
+            debug_data["import_status"]["plant_log_operations"] = "SUCCESS"
+        except Exception as e:
+            debug_data["import_status"]["plant_log_operations"] = f"FAILED: {str(e)}"
+        
+        try:
+            from config.config import openai_client
+            debug_data["import_status"]["openai_client"] = "SUCCESS"
+        except Exception as e:
+            debug_data["import_status"]["openai_client"] = f"FAILED: {str(e)}"
+        
+        try:
+            from PIL import Image
+            debug_data["import_status"]["PIL"] = "SUCCESS"
+        except Exception as e:
+            debug_data["import_status"]["PIL"] = f"FAILED: {str(e)}"
+        
+        try:
+            import httpx
+            debug_data["import_status"]["httpx"] = "SUCCESS"
+        except Exception as e:
+            debug_data["import_status"]["httpx"] = f"FAILED: {str(e)}"
+        
+        try:
+            from werkzeug.datastructures import FileStorage
+            debug_data["import_status"]["werkzeug"] = "SUCCESS"
+        except Exception as e:
+            debug_data["import_status"]["werkzeug"] = f"FAILED: {str(e)}"
+        
+        return jsonify(debug_data)
+    
     return app
+
+
 
 # Only run the app if this file is executed directly (not imported)
 if __name__ == '__main__':
+    import os
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
