@@ -91,6 +91,24 @@ def add_plant():
     """
     from utils.plant_operations import add_plant_with_fields
     from models.field_config import get_canonical_field_name, is_valid_field
+    
+    # Log comprehensive debug information about what ChatGPT is sending
+    debug_info = {
+        "method": request.method,
+        "url": request.url,
+        "remote_addr": request.remote_addr,
+        "user_agent": request.headers.get('User-Agent', 'Not provided'),
+        "content_type": request.content_type,
+        "content_length": request.content_length,
+        "x_api_key_present": request.headers.get('x-api-key') is not None,
+        "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
+        "json_data": request.get_json() if request.is_json else None,
+        "all_headers": dict(request.headers)
+    }
+    
+    # Log comprehensive debug info to server console
+    logging.info(f"ADD_PLANT_DEBUG | {debug_info}")
+    
     data = request.get_json()
     # Log the write operation for auditability
     logging.info(
@@ -127,6 +145,25 @@ def update_plant(id_or_name):
     """
     from utils.plant_operations import update_plant as update_plant_func
     from models.field_config import is_valid_field
+    
+    # Log comprehensive debug information about what ChatGPT is sending
+    debug_info = {
+        "method": request.method,
+        "url": request.url,
+        "remote_addr": request.remote_addr,
+        "user_agent": request.headers.get('User-Agent', 'Not provided'),
+        "content_type": request.content_type,
+        "content_length": request.content_length,
+        "x_api_key_present": request.headers.get('x-api-key') is not None,
+        "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
+        "json_data": request.get_json() if request.is_json else None,
+        "plant_identifier": id_or_name,
+        "all_headers": dict(request.headers)
+    }
+    
+    # Log comprehensive debug info to server console
+    logging.info(f"UPDATE_PLANT_DEBUG | {debug_info}")
+    
     data = request.get_json()
     # Log the write operation for auditability
     logging.info(
@@ -331,6 +368,36 @@ def analyze_plant():
     Uploads images to Google Cloud Storage and creates log entries automatically.
     """
     try:
+        # Log comprehensive debug information about what ChatGPT is sending
+        debug_info = {
+            "method": request.method,
+            "url": request.url,
+            "remote_addr": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', 'Not provided'),
+            "content_type": request.content_type,
+            "content_length": request.content_length,
+            "x_api_key_present": request.headers.get('x-api-key') is not None,
+            "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
+            "form_data_keys": list(request.form.keys()) if request.form else [],
+            "files_present": list(request.files.keys()) if request.files else [],
+            "all_headers": dict(request.headers)
+        }
+        
+        # Add file details if present
+        if request.files:
+            debug_info["file_details"] = {}
+            for file_key, file_obj in request.files.items():
+                debug_info["file_details"][file_key] = {
+                    "filename": file_obj.filename,
+                    "content_type": file_obj.content_type,
+                    "size": len(file_obj.read()) if file_obj else 0
+                }
+                if file_obj:
+                    file_obj.seek(0)  # Reset file pointer after reading size
+        
+        # Log comprehensive debug info to server console
+        logging.info(f"ANALYZE_PLANT_DEBUG | {debug_info}")
+        
         # Check if image file is present in request
         if 'file' not in request.files:
             return jsonify({'success': False, 'error': 'No image file provided'}), 400
@@ -526,6 +593,37 @@ def create_plant_log():
         from utils.plant_log_operations import create_log_entry
         from utils.storage_client import upload_plant_photo, is_storage_available
         
+        # Log comprehensive debug information about what ChatGPT is sending
+        debug_info = {
+            "method": request.method,
+            "url": request.url,
+            "remote_addr": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', 'Not provided'),
+            "content_type": request.content_type,
+            "content_length": request.content_length,
+            "x_api_key_present": request.headers.get('x-api-key') is not None,
+            "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
+            "form_data_keys": list(request.form.keys()) if request.form else [],
+            "form_data_values": {k: v[:100] + "..." if len(str(v)) > 100 else v for k, v in request.form.items()} if request.form else {},
+            "files_present": list(request.files.keys()) if request.files else [],
+            "all_headers": dict(request.headers)
+        }
+        
+        # Add file details if present
+        if request.files:
+            debug_info["file_details"] = {}
+            for file_key, file_obj in request.files.items():
+                debug_info["file_details"][file_key] = {
+                    "filename": file_obj.filename,
+                    "content_type": file_obj.content_type,
+                    "size": len(file_obj.read()) if file_obj else 0
+                }
+                if file_obj:
+                    file_obj.seek(0)  # Reset file pointer after reading size
+        
+        # Log comprehensive debug info to server console
+        logging.info(f"CREATE_PLANT_LOG_DEBUG | {debug_info}")
+        
         # Get form data
         plant_name = request.form.get('plant_name', '').strip()
         user_notes = request.form.get('user_notes', '').strip()
@@ -589,6 +687,23 @@ def create_plant_log_simple():
     """
     try:
         from utils.plant_log_operations import create_log_entry
+        
+        # Log comprehensive debug information about what ChatGPT is sending
+        debug_info = {
+            "method": request.method,
+            "url": request.url,
+            "remote_addr": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', 'Not provided'),
+            "content_type": request.content_type,
+            "content_length": request.content_length,
+            "x_api_key_present": request.headers.get('x-api-key') is not None,
+            "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
+            "json_data": request.get_json() if request.is_json else None,
+            "all_headers": dict(request.headers)
+        }
+        
+        # Log comprehensive debug info to server console
+        logging.info(f"CREATE_PLANT_LOG_SIMPLE_DEBUG | {debug_info}")
         
         data = request.get_json()
         if data is None:
