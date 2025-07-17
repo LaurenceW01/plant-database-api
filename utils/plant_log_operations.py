@@ -16,6 +16,7 @@ from models.field_config import (
 from utils.sheets_client import check_rate_limit
 from config.config import sheets_client, SPREADSHEET_ID, LOG_SHEET_NAME, LOG_RANGE_NAME
 from utils.plant_operations import find_plant_by_id_or_name, search_plants
+from utils.upload_token_manager import generate_upload_token, generate_upload_url
 
 logger = logging.getLogger(__name__)
 
@@ -231,16 +232,121 @@ def create_log_entry(
         
         logger.info(f"Created log entry {log_id} for plant {canonical_plant_name}")
         
+        # Generate upload token for two-step photo upload
+        upload_token = generate_upload_token(log_id, canonical_plant_name)
+        upload_url = generate_upload_url(upload_token)
+        
         return {
             "success": True,
             "log_entry": log_data,
             "log_id": log_id,
             "plant_name": canonical_plant_name,
+            "upload_token": upload_token,
+            "upload_url": upload_url,
+            "upload_instructions": f"To add a photo to this log entry, visit: {upload_url}",
             "sheets_result": result
         }
         
     except Exception as e:
         logger.error(f"Failed to create log entry: {e}")
+        return {"success": False, "error": str(e)}
+
+def update_log_entry_photo(log_id: str, photo_url: str, raw_photo_url: str) -> Dict[str, Any]:
+    """
+    Update an existing log entry with photo URLs after photo upload.
+    
+    Args:
+        log_id (str): The log entry ID to update
+        photo_url (str): Photo URL (IMAGE formula for sheets)
+        raw_photo_url (str): Direct photo URL
+        
+    Returns:
+        Dict containing success status and update details
+    """
+    try:
+        # Rate limiting
+        check_rate_limit()
+        
+        # Get all log entries to find the row to update
+        result = sheets_client.values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range=LOG_RANGE_NAME
+        ).execute()
+        
+        values = result.get('values', [])
+        if not values:
+            return {"success": False, "error": "No log entries found"}
+        
+        # Find headers
+        headers = values[0] if values else []
+        if 'Log ID' not in headers:
+            return {"success": False, "error": "Log ID column not found in sheet"}
+        
+        # Find the row with matching log ID
+        log_id_col = headers.index('Log ID')
+        photo_url_col = headers.index('Photo URL') if 'Photo URL' in headers else -1
+        raw_photo_url_col = headers.index('Raw Photo URL') if 'Raw Photo URL' in headers else -1
+        last_updated_col = headers.index('Last Updated') if 'Last Updated' in headers else -1
+        
+        target_row = None
+        for i, row in enumerate(values[1:], start=2):  # Start from row 2 (skip header)
+            if len(row) > log_id_col and row[log_id_col] == log_id:
+                target_row = i
+                break
+        
+        if target_row is None:
+            return {"success": False, "error": f"Log entry with ID {log_id} not found"}
+        
+        # Prepare updates
+        updates = []
+        
+        # Update Photo URL if column exists
+        if photo_url_col >= 0:
+            updates.append({
+                'range': f'{LOG_SHEET_NAME}!{chr(65 + photo_url_col)}{target_row}',
+                'values': [[photo_url]]
+            })
+        
+        # Update Raw Photo URL if column exists
+        if raw_photo_url_col >= 0:
+            updates.append({
+                'range': f'{LOG_SHEET_NAME}!{chr(65 + raw_photo_url_col)}{target_row}',
+                'values': [[raw_photo_url]]
+            })
+        
+        # Update Last Updated timestamp
+        if last_updated_col >= 0:
+            updates.append({
+                'range': f'{LOG_SHEET_NAME}!{chr(65 + last_updated_col)}{target_row}',
+                'values': [[datetime.now().isoformat()]]
+            })
+        
+        if not updates:
+            return {"success": False, "error": "No photo URL columns found to update"}
+        
+        # Perform batch update
+        batch_update_body = {
+            'valueInputOption': 'USER_ENTERED',
+            'data': updates
+        }
+        
+        update_result = sheets_client.values().batchUpdate(
+            spreadsheetId=SPREADSHEET_ID,
+            body=batch_update_body
+        ).execute()
+        
+        logger.info(f"Updated log entry {log_id} with photo URLs")
+        
+        return {
+            "success": True,
+            "log_id": log_id,
+            "message": f"Photo URLs updated for log entry {log_id}",
+            "updates_applied": len(updates),
+            "sheets_result": update_result
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to update log entry photo: {e}")
         return {"success": False, "error": str(e)}
 
 def get_plant_log_entries(plant_name: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:

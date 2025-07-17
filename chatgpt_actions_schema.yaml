@@ -214,6 +214,150 @@ paths:
   # NEW PLANT LOGGING OPERATIONS
   # =============================================
 
+  /upload/{token}:
+    get:
+      operationId: getUploadPage
+      summary: Get photo upload page for a specific log entry
+      description: |
+        Display a user-friendly upload page for adding photos to an existing log entry.
+        This endpoint uses the upload token provided when creating log entries.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token provided when the log entry was created
+          example: "abc123xyz"
+      responses:
+        '200':
+          description: Upload page displayed successfully
+          content:
+            text/html:
+              schema:
+                type: string
+                description: HTML upload page with drag-drop functionality
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid or expired upload token"
+        '404':
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Upload token not found"
+      security: []
+    
+    post:
+      operationId: uploadPhotoToLog
+      summary: Upload photo to existing log entry using token
+      description: |
+        Upload a photo to an existing log entry using the secure upload token.
+        This completes the two-step process: 1) Create log entry, 2) Upload photo.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token provided when the log entry was created
+          example: "abc123xyz"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Photo file to upload (JPG, PNG, WebP, GIF)
+      responses:
+        '200':
+          description: Photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Photo uploaded successfully to Tropical Hibiscus log entry"
+                  log_id:
+                    type: string
+                    example: "LOG-20240117-605"
+                  plant_name:
+                    type: string
+                    example: "Tropical Hibiscus"
+                  photo_upload:
+                    type: object
+                    properties:
+                      filename:
+                        type: string
+                        example: "plant-log/Tropical_Hibiscus_20240117_150326_5ab5d577.jpg"
+                      photo_url:
+                        type: string
+                        example: "https://storage.googleapis.com/plant-database-photos/plant-log/Tropical_Hibiscus_20240117_150326_5ab5d577.jpg"
+                      file_size:
+                        type: integer
+                        example: 2048
+                      upload_time:
+                        type: string
+                        example: "2025-01-17T15:03:27.119379"
+                  log_update:
+                    type: object
+                    properties:
+                      updated:
+                        type: boolean
+                        example: true
+                      message:
+                        type: string
+                        example: "Photo URLs updated for log entry LOG-20240117-605"
+        '400':
+          description: Invalid token, file, or upload error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Invalid file format or token expired"
+        '500':
+          description: Server error during upload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Failed to upload photo to storage"
+      security: []
+
   /api/analyze-plant:
     post:
       operationId: analyzeAndLogPlant
@@ -359,6 +503,14 @@ paths:
                       created:
                         type: boolean
                         description: Whether the log entry was successfully saved
+                      upload_url:
+                        type: string
+                        description: Secure upload link for adding photos to this log entry
+                        example: "https://plant-database-api.onrender.com/upload/abc123xyz"
+                      upload_instructions:
+                        type: string
+                        description: User-friendly instructions for photo upload
+                        example: "To add a photo to this log entry, visit: https://plant-database-api.onrender.com/upload/abc123xyz"
                   suggestions:
                     type: object
                     description: Plant suggestions when plant not found
@@ -548,9 +700,27 @@ paths:
                   message:
                     type: string
                     example: "Log entry created successfully"
+                  upload_url:
+                    type: string
+                    example: "https://plant-database-api.onrender.com/upload/abc123xyz"
+                    description: "Secure upload link for adding photos to this log entry"
+                  upload_instructions:
+                    type: string
+                    example: "To add a photo to this log entry, visit: https://plant-database-api.onrender.com/upload/abc123xyz"
+                    description: "User-friendly instructions for photo upload"
                   log_entry:
                     type: object
                     description: Complete log entry data
+              examples:
+                with_upload_link:
+                  summary: Successful log creation with upload link
+                  value:
+                    success: true
+                    log_id: "LOG-20240115-001"
+                    plant_name: "Tomato Plant #1"
+                    message: "Log entry created successfully"
+                    upload_url: "https://plant-database-api.onrender.com/upload/abc123xyz"
+                    upload_instructions: "To add a photo to this log entry, visit: https://plant-database-api.onrender.com/upload/abc123xyz"
         '400':
           description: Validation error or plant not found
           content:

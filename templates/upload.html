@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Plant Photo - Plant Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .upload-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .plant-info {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .plant-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .log-id {
+            font-size: 14px;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin: 30px 0;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #28a745;
+            background: #e8f5e8;
+            transform: translateY(-2px);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #6c757d;
+        }
+        
+        .upload-text {
+            font-size: 18px;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .upload-hint {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .upload-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .upload-btn:hover {
+            background: #218838;
+        }
+        
+        .upload-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .selected-file {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #28a745;
+            margin-bottom: 5px;
+        }
+        
+        .file-size {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .secure-icon {
+            color: #28a745;
+            margin-right: 5px;
+        }
+        
+        @media (max-width: 480px) {
+            .upload-container {
+                padding: 20px;
+            }
+            
+            .plant-name {
+                font-size: 20px;
+            }
+            
+            .upload-zone {
+                padding: 30px 15px;
+            }
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #28a745;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <!-- Plant Information -->
+        <div class="plant-info">
+            <div class="plant-name" id="plantName">Loading...</div>
+            <div class="log-id" id="logId">Log ID: Loading...</div>
+        </div>
+        
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" class="file-input" id="fileInput" accept="image/*">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Drop your plant photo here</div>
+            <div class="upload-hint">or click to select a file</div>
+        </div>
+        
+        <!-- Selected File Display -->
+        <div class="selected-file" id="selectedFile">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+        
+        <!-- Upload Button -->
+        <button class="upload-btn" id="uploadBtn">
+            <span id="uploadText">Upload Photo</span>
+            <span class="loading" id="loadingSpinner" style="display: none;"></span>
+        </button>
+        
+        <!-- Progress Bar -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <!-- Status Message -->
+        <div class="status-message" id="statusMessage"></div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <span class="secure-icon">🔒</span>
+            Secure upload • Photo will be linked to your plant log entry
+        </div>
+    </div>
+
+    <script>
+        // Extract token from URL
+        const urlParts = window.location.pathname.split('/');
+        const token = urlParts[urlParts.length - 1];
+        
+        // DOM elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const selectedFile = document.getElementById('selectedFile');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const statusMessage = document.getElementById('statusMessage');
+        const plantName = document.getElementById('plantName');
+        const logId = document.getElementById('logId');
+        const uploadText = document.getElementById('uploadText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        let selectedFileObj = null;
+        
+        // Load token information
+        loadTokenInfo();
+        
+        // Event listeners
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', handleDragOver);
+        uploadZone.addEventListener('dragleave', handleDragLeave);
+        uploadZone.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadBtn.addEventListener('click', uploadFile);
+        
+        function loadTokenInfo() {
+            // For now, show placeholder. In a real implementation, you might
+            // fetch token info from the server to display plant name
+            plantName.textContent = 'Plant Photo Upload';
+            logId.textContent = 'Token: ' + token.substring(0, 8) + '...';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+        
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        }
+        
+        function handleFile(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showStatus('Please select an image file (JPG, PNG, etc.)', 'error');
+                return;
+            }
+            
+            // Validate file size (10MB limit)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showStatus('File too large. Please select an image smaller than 10MB.', 'error');
+                return;
+            }
+            
+            selectedFileObj = file;
+            
+            // Display selected file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            selectedFile.style.display = 'block';
+            uploadBtn.style.display = 'inline-block';
+            
+            // Hide any previous status messages
+            statusMessage.style.display = 'none';
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function uploadFile() {
+            if (!selectedFileObj) {
+                showStatus('Please select a file first.', 'error');
+                return;
+            }
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', selectedFileObj);
+            
+            // Show loading state
+            uploadBtn.disabled = true;
+            uploadText.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            progressBar.style.display = 'block';
+            statusMessage.style.display = 'none';
+            
+            // Upload file
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressFill.style.width = percentComplete + '%';
+                }
+            });
+            
+            xhr.addEventListener('load', () => {
+                uploadBtn.disabled = false;
+                uploadText.style.display = 'inline-block';
+                loadingSpinner.style.display = 'none';
+                progressBar.style.display = 'none';
+                
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showStatus(`✅ Photo uploaded successfully to ${response.plant_name} log entry!`, 'success');
+                        // Hide upload controls after successful upload
+                        uploadZone.style.display = 'none';
+                        selectedFile.style.display = 'none';
+                        uploadBtn.style.display = 'none';
+                    } else {
+                        showStatus(`❌ Upload failed: ${response.error}`, 'error');
+                    }
+                } else {
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        showStatus(`❌ Upload failed: ${errorResponse.error}`, 'error');
+                    } catch (e) {
+                        showStatus('❌ Upload failed. Please try again.', 'error');
+                    }
+                }
+            });
+            
+            xhr.addEventListener('error', () => {
+                uploadBtn.disabled = false;
+                uploadText.style.display = 'inline-block';
+                loadingSpinner.style.display = 'none';
+                progressBar.style.display = 'none';
+                showStatus('❌ Network error. Please check your connection and try again.', 'error');
+            });
+            
+            xhr.open('POST', `/upload/${token}`);
+            xhr.send(formData);
+        }
+        
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

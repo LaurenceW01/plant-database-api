@@ -1030,6 +1030,212 @@ def search_plant_logs():
         logging.error(f"Error searching plant logs: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def upload_photo_to_log(token):
+    """
+    Upload a photo to an existing log entry using a secure upload token.
+    This endpoint supports the two-step photo upload workflow where users 
+    first create a log entry, then upload photos using the provided token.
+    """
+    try:
+        # Add debugging to identify where the 500 error occurs
+        logging.info(f"UPLOAD_DEBUG: Starting upload_photo_to_log function")
+        
+        from utils.upload_token_manager import validate_upload_token, mark_token_used
+        logging.info(f"UPLOAD_DEBUG: Imported upload_token_manager")
+        
+        from utils.storage_client import upload_plant_photo, is_storage_available
+        logging.info(f"UPLOAD_DEBUG: Imported storage_client")
+        
+        from utils.plant_log_operations import update_log_entry_photo
+        logging.info(f"UPLOAD_DEBUG: Imported plant_log_operations")
+        
+        # Token is passed as function parameter from Flask route
+        logging.info(f"UPLOAD_DEBUG: Received token parameter: {token[:20] if token else 'None'}...")
+        
+        if not token:
+            logging.error(f"UPLOAD_DEBUG: No token provided")
+            return jsonify({
+                'success': False, 
+                'error': 'Upload token is required'
+            }), 400
+        
+        # Validate upload token
+        logging.info(f"UPLOAD_DEBUG: Validating token...")
+        is_valid, token_data, error_message = validate_upload_token(token)
+        logging.info(f"UPLOAD_DEBUG: Token validation result: valid={is_valid}, data={token_data}")
+        
+        if not is_valid or not token_data:
+            logging.error(f"UPLOAD_DEBUG: Token validation failed: {error_message}")
+            return jsonify({
+                'success': False,
+                'error': f'Invalid upload token: {error_message}'
+            }), 401
+        
+        # Check if photo file is provided
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No photo file provided. Please select a photo to upload.'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No photo file selected. Please choose a file.'
+            }), 400
+        
+        # Validate storage availability
+        if not is_storage_available():
+            return jsonify({
+                'success': False,
+                'error': 'Photo storage is currently unavailable. Please try again later.'
+            }), 500
+        
+        # Extract log information from token
+        log_id = token_data.get('log_id', '')
+        plant_name = token_data.get('plant_name', '')
+        
+        # Upload photo to storage
+        try:
+            upload_result = upload_plant_photo(file, plant_name)
+        except ValueError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+        except Exception as e:
+            return jsonify({
+                'success': False, 
+                'error': f'Failed to upload photo: {str(e)}'
+            }), 500
+        
+        # Update log entry with photo URLs
+        update_result = update_log_entry_photo(
+            log_id, 
+            upload_result['photo_url'], 
+            upload_result['raw_photo_url']
+        )
+        
+        if not update_result.get('success'):
+            # Photo uploaded but log update failed - log warning but continue
+            logging.warning(f"Photo uploaded but log update failed for {log_id}: {update_result.get('error')}")
+        
+        # Mark token as used to prevent reuse
+        user_ip = request.remote_addr or "unknown"
+        mark_token_used(token, user_ip)
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'message': f'Photo uploaded successfully to {plant_name} log entry',
+            'log_id': log_id,
+            'plant_name': plant_name,
+            'photo_upload': {
+                'photo_url': upload_result['raw_photo_url'],
+                'filename': upload_result['filename'],
+                'upload_time': upload_result['upload_time'],
+                'file_size': upload_result.get('file_size', 'unknown')
+            },
+            'log_update': {
+                'updated': update_result.get('success', False),
+                'message': update_result.get('message', 'Log entry updated with photo')
+            }
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error in upload_photo_to_log endpoint: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error during photo upload'
+        }), 500
+
+def serve_upload_page(token):
+    """
+    Serve the HTML upload page for a specific token.
+    Validates the token before serving the page.
+    """
+    try:
+        from utils.upload_token_manager import validate_upload_token
+        from flask import render_template
+        
+        # Validate the token before serving the page
+        is_valid, token_data, error_message = validate_upload_token(token)
+        if not is_valid or not token_data:
+            return f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Invalid Upload Token</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                    .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
+                </style>
+            </head>
+            <body>
+                <div class="error">
+                    <h2>❌ Invalid Upload Token</h2>
+                    <p>{error_message or 'This upload link has expired or is invalid.'}</p>
+                    <p>Please request a new upload link from your plant logging session.</p>
+                </div>
+            </body>
+            </html>
+            """, 401
+        
+        # Token is valid, serve the upload page
+        try:
+            return render_template('upload.html')
+        except Exception as template_error:
+            # Fallback to inline HTML if template file not found
+            logging.warning(f"Template not found, serving inline HTML: {template_error}")
+            
+            # Read the template file directly as fallback
+            try:
+                with open('templates/upload.html', 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                return html_content
+            except Exception as file_error:
+                logging.error(f"Could not read upload template: {file_error}")
+                return f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Upload Error</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                        .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="error">
+                        <h2>❌ Upload Page Error</h2>
+                        <p>Could not load the upload page. Please try again later.</p>
+                    </div>
+                </body>
+                </html>
+                """, 500
+        
+    except Exception as e:
+        logging.error(f"Error serving upload page: {e}")
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Server Error</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                .error { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }
+            </style>
+        </head>
+        <body>
+            <div class="error">
+                <h2>❌ Server Error</h2>
+                <p>There was an error loading the upload page. Please try again later.</p>
+            </div>
+        </body>
+        </html>
+        """, 500
+
 def register_plant_log_routes(app, limiter, require_api_key):
     """Register plant log API routes"""
     if not app.config.get('TESTING', False):
@@ -1045,6 +1251,20 @@ def register_plant_log_routes(app, limiter, require_api_key):
             '/api/plants/log/simple',
             view_func=limiter.limit('10 per minute')(require_api_key(create_plant_log_simple)),
             methods=['POST']
+        )
+        
+        # POST /upload/{token} - Upload photo to existing log entry (no API key needed, token is auth)
+        app.add_url_rule(
+            '/upload/<token>',
+            view_func=limiter.limit('20 per minute')(upload_photo_to_log),
+            methods=['POST']
+        )
+        
+        # GET /upload/{token} - Serve upload page for specific token (no API key needed, token is auth)
+        app.add_url_rule(
+            '/upload/<token>',
+            view_func=limiter.limit('60 per minute')(serve_upload_page),
+            methods=['GET']
         )
         
         # GET routes (no API key required for reading)
@@ -1069,6 +1289,8 @@ def register_plant_log_routes(app, limiter, require_api_key):
         # Testing mode - no rate limits
         app.add_url_rule('/api/plants/log', view_func=require_api_key(create_plant_log), methods=['POST'])
         app.add_url_rule('/api/plants/log/simple', view_func=require_api_key(create_plant_log_simple), methods=['POST'])
+        app.add_url_rule('/upload/<token>', view_func=upload_photo_to_log, methods=['POST'])
+        app.add_url_rule('/upload/<token>', view_func=serve_upload_page, methods=['GET'])
         app.add_url_rule('/api/plants/<plant_name>/log', view_func=get_plant_log_history, methods=['GET'])
         app.add_url_rule('/api/plants/log/<log_id>', view_func=get_log_entry_details, methods=['GET'])
         app.add_url_rule('/api/plants/log/search', view_func=search_plant_logs, methods=['GET'])
