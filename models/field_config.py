@@ -52,6 +52,8 @@ LOG_FIELD_NAMES = [
     'Plant Name',
     # Backup reference to plant ID from main database
     'Plant ID',
+    # Location where the plant issue occurred (garden area, room, greenhouse, etc.)
+    'Location',
     # Human-readable log date ("January 15, 2024 at 2:30 PM")
     'Log Date',
     # Title for the log entry (auto-generated or user-provided)

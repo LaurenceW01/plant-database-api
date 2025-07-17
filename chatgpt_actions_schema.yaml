@@ -239,6 +239,10 @@ paths:
                   type: string
                   description: Questions, concerns, or observations about the plant
                   example: "How often should I water? Noticed yellowing leaves yesterday"
+                location:
+                  type: string
+                  description: Location where the plant issue is occurring (garden area, room, greenhouse, etc.)
+                  example: "Front garden bed 2"
                 analysis_type:
                   type: string
                   enum: [health_assessment, identification, general_care, follow_up]
@@ -247,29 +251,47 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - plant_name
               properties:
                 plant_name:
                   type: string
-                  description: Name of the plant for advice
+                  description: Name of the plant (optional if photo is provided for identification)
                   example: "Red Sister"
                 user_notes:
                   type: string
                   description: Questions, concerns, or observations about the plant
                   example: "Leaves are wilting, what should I do?"
+                location:
+                  type: string
+                  description: Location where the plant issue is occurring (garden area, room, greenhouse, etc.)
+                  example: "Living room windowsill"
                 analysis_type:
                   type: string
                   enum: [health_assessment, identification, general_care, follow_up]
-                  default: general_care
+                  default: health_assessment
                   description: Type of advice being requested
+                image_data:
+                  type: string
+                  description: Base64 encoded image data for photo analysis (optional)
+                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
+                photo_data:
+                  type: string
+                  description: Alternative field name for image data (optional)
+                  example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
             examples:
               plant_advice:
-                summary: Request plant care advice
+                summary: Request plant care advice (text only)
                 value:
                   plant_name: "Red Sister"
                   user_notes: "Leaves are wilting, what should I do?"
+                  location: "Living room windowsill"
                   analysis_type: "health_assessment"
+              photo_analysis:
+                summary: Analyze plant photo for identification and health assessment
+                value:
+                  user_notes: "What's wrong with this plant?"
+                  location: "Front garden bed 2"
+                  analysis_type: "health_assessment"
+                  image_data: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ..."
       responses:
         '200':
           description: Analysis complete or plant advice provided
@@ -300,6 +322,16 @@ paths:
                         type: string
                         description: Plant species/name identified from photo (when different from user input)
                         example: "Hibiscus rosa-sinensis"
+                      photo_processed:
+                        type: boolean
+                        description: Whether a photo was analyzed
+                      photo_stored:
+                        type: boolean
+                        description: Whether the photo was stored in cloud storage
+                      note:
+                        type: string
+                        description: Explanation of what processing occurred
+                        example: "Photo was analyzed but not stored (ChatGPT mode)"
                   image_upload:
                     type: object
                     description: Only present when photo was uploaded
@@ -380,6 +412,10 @@ paths:
                   type: string
                   description: Title for this log entry
                   example: "Weekly health check"
+                location:
+                  type: string
+                  description: Location where the plant issue is occurring
+                  example: "Greenhouse shelf 3"
                 user_notes:
                   type: string
                   description: Observations and notes
@@ -438,6 +474,10 @@ paths:
                   type: string
                   description: Title for this log entry
                   example: "Weekly health check"
+                location:
+                  type: string
+                  description: Location where the plant issue is occurring
+                  example: "Back patio planter box"
                 user_notes:
                   type: string
                   description: Observations and notes
@@ -480,6 +520,7 @@ paths:
                 value:
                   plant_name: "Tomato Plant #1"
                   log_title: "Weekly Health Check"
+                  location: "Vegetable garden row 2"
                   user_notes: "Noticed yellowing on lower leaves yesterday"
                   diagnosis: "Minor nitrogen deficiency indicated by yellowing"
                   treatment: "Apply balanced fertilizer and increase watering frequency"

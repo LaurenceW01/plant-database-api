@@ -129,7 +129,8 @@ def create_log_entry(
     analysis_type: str = "health_assessment",
     follow_up_required: bool = False,
     follow_up_date: str = "",
-    log_title: str = ""
+    log_title: str = "",
+    location: str = ""
 ) -> Dict[str, Any]:
     """
     Create a new plant log entry with strict plant validation.
@@ -147,6 +148,7 @@ def create_log_entry(
         follow_up_required (bool): Whether follow-up needed
         follow_up_date (str): When to follow up
         log_title (str): Title for the log entry
+        location (str): Location where the plant issue occurred
         
     Returns:
         Dict containing success status and log entry data
@@ -188,6 +190,7 @@ def create_log_entry(
             'Log ID': log_id,
             'Plant Name': canonical_plant_name,
             'Plant ID': str(plant_id) if plant_id else "",
+            'Location': location,
             'Log Date': log_date,
             'Log Title': log_title,
             'Photo URL': photo_url,
@@ -422,7 +425,7 @@ def format_log_entries_as_journal(log_entries: List[Dict]) -> List[Dict]:
     return journal_entries
 
 def search_log_entries(
-    plant_name: str = None, 
+    plant_name: Optional[str] = None, 
     query: str = "", 
     symptoms: str = "", 
     date_from: str = "", 

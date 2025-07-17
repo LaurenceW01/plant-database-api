@@ -380,6 +380,7 @@ def analyze_plant():
             "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
             "form_data_keys": list(request.form.keys()) if request.form else [],
             "files_present": list(request.files.keys()) if request.files else [],
+            "json_data": request.get_json() if request.is_json else None,
             "all_headers": dict(request.headers)
         }
         
@@ -400,25 +401,32 @@ def analyze_plant():
         
         # Handle both JSON and form-data requests
         if request.content_type and 'application/json' in request.content_type:
-            # JSON request (text-only advice)
+            # JSON request - check if it contains photo data or just text
             json_data = request.get_json() or {}
             plant_name = json_data.get('plant_name', '').strip()
             user_notes = json_data.get('user_notes', '').strip()
             analysis_type = json_data.get('analysis_type', 'general_care').strip()
-            has_file = False
+            location = json_data.get('location', '').strip()
+            
+            # Check if ChatGPT sent image data in JSON (base64 encoded)
+            image_data_b64 = json_data.get('image_data') or json_data.get('photo_data') or json_data.get('file')
+            has_photo_data = bool(image_data_b64)
+            has_file = False  # No actual file upload in JSON mode
         else:
-            # Form-data request (photo upload)
+            # Form-data request (direct photo upload)
             plant_name = request.form.get('plant_name', '').strip()
             user_notes = request.form.get('user_notes', '').strip()
             analysis_type = request.form.get('analysis_type', 'general_care').strip()
+            location = request.form.get('location', '').strip()
             # Check if image file is present
             has_file = 'file' in request.files and request.files['file'].filename != ''
+            has_photo_data = has_file
         
-        # If no file provided, require plant_name for general advice
-        if not has_file and not plant_name:
+        # If no photo data provided, require plant_name for general advice
+        if not has_photo_data and not plant_name:
             return jsonify({
                 'success': False, 
-                'error': 'Either a photo file or plant_name is required. Provide plant_name for general advice without photo.'
+                'error': 'Either photo data or plant_name is required. Provide plant_name for general advice without photo.'
             }), 400
         
         # Import required modules
@@ -430,35 +438,61 @@ def analyze_plant():
         # Initialize variables
         upload_result = None
         analysis_text = ""
+        image_base64 = None
         
-        if has_file:
-            # PHOTO ANALYSIS PATH: Analyze uploaded image
-            file = request.files['file']
+        if has_photo_data:
+            # PHOTO ANALYSIS PATH: Analyze image (with or without storage)
             
-            # Check if storage is available for photo upload
-            if not is_storage_available():
-                return jsonify({
-                    'success': False, 
-                    'error': 'Image storage not available. Check Google Cloud Storage configuration.'
-                }), 500
+            if has_file:
+                # DIRECT FILE UPLOAD (multipart/form-data)
+                file = request.files['file']
+                
+                # Check if storage is available for photo upload
+                if not is_storage_available():
+                    return jsonify({
+                        'success': False, 
+                        'error': 'Image storage not available. Check Google Cloud Storage configuration.'
+                    }), 500
+                
+                # Validate and upload image file
+                try:
+                    upload_result = upload_plant_photo(file, plant_name)
+                except ValueError as e:
+                    return jsonify({'success': False, 'error': str(e)}), 400
+                except Exception as e:
+                    return jsonify({'success': False, 'error': f'Failed to upload image: {str(e)}'}), 500
+                
+                # Reset file pointer for OpenAI analysis
+                file.seek(0)
+                image_data = file.read()
+                
+                # Convert image to base64 for OpenAI Vision API
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+                
+            else:
+                # JSON PHOTO DATA (ChatGPT mode - no storage)
+                try:
+                    # ChatGPT might send base64 image data directly
+                    if image_data_b64:
+                        # Remove data URL prefix if present (data:image/jpeg;base64,)
+                        if image_data_b64.startswith('data:'):
+                            image_base64 = image_data_b64.split(',')[1]
+                        else:
+                            image_base64 = image_data_b64
+                        
+                        # Validate base64 format
+                        try:
+                            base64.b64decode(image_base64)
+                        except Exception:
+                            return jsonify({'success': False, 'error': 'Invalid image data format'}), 400
+                            
+                except Exception as e:
+                    return jsonify({'success': False, 'error': f'Failed to process image data: {str(e)}'}), 400
             
-            # Validate and upload image file
-            try:
-                upload_result = upload_plant_photo(file, plant_name)
-            except ValueError as e:
-                return jsonify({'success': False, 'error': str(e)}), 400
-            except Exception as e:
-                return jsonify({'success': False, 'error': f'Failed to upload image: {str(e)}'}), 500
-            
-            # Reset file pointer for OpenAI analysis
-            file.seek(0)
-            image_data = file.read()
-            
-            # Convert image to base64 for OpenAI Vision API
-            image_base64 = base64.b64encode(image_data).decode('utf-8')
-            
-            # Prepare prompt for image analysis
-            prompt = f"""Analyze this plant image and provide a comprehensive assessment. IMPORTANT: Start your response with the plant identification.
+            # Only proceed with OpenAI analysis if we have valid image data
+            if image_base64:
+                # Prepare prompt for image analysis
+                prompt = f"""Analyze this plant image and provide a comprehensive assessment. IMPORTANT: Start your response with the plant identification.
 
 Please structure your response as follows:
 **PLANT IDENTIFICATION:** [Species/common name]
@@ -472,34 +506,36 @@ Analysis details:
 - Analysis type: {analysis_type}
 
 Be specific about the plant species/variety so it can be properly logged."""
-            
-            # Call OpenAI Vision API
-            try:
-                response = openai_client.chat.completions.create(
-                    model="gpt-4o",  # Updated from deprecated gpt-4-vision-preview
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": prompt},
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/jpeg;base64,{image_base64}"
+                
+                # Call OpenAI Vision API
+                try:
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o",  # Updated from deprecated gpt-4-vision-preview
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": prompt},
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:image/jpeg;base64,{image_base64}"
+                                        }
                                     }
-                                }
-                            ]
-                        }
-                    ],
-                    max_tokens=500
-                )
-                
-                analysis_text = response.choices[0].message.content
-                
-            except Exception as e:
-                # If OpenAI analysis fails, still continue with uploaded photo
-                analysis_text = f"Image analysis failed: {str(e)}"
-                logging.error(f"OpenAI Vision API error: {e}")
+                                ]
+                            }
+                        ],
+                        max_tokens=500
+                    )
+                    
+                    analysis_text = response.choices[0].message.content
+                    
+                except Exception as e:
+                    # If OpenAI analysis fails, provide fallback
+                    analysis_text = f"Image analysis failed: {str(e)}"
+                    logging.error(f"OpenAI Vision API error: {e}")
+            else:
+                analysis_text = "No valid image data provided for analysis"
         
         else:
             # TEXT-ONLY ADVICE PATH: Provide general plant advice without photo
@@ -614,13 +650,17 @@ Format your response clearly and practically for plant care."""
                 diagnosis = '\n'.join(diagnosis_lines).strip()
                 treatment = '\n'.join(treatment_lines).strip()
         
-        # Create log entry if plant was identified and photo was uploaded
+        # Create log entry if plant was identified
         log_entry_result = None
-        if extracted_plant_name and has_file and upload_result:
+        if extracted_plant_name and has_photo_data:
+            # Create log entry with or without photo storage
+            photo_url = upload_result['photo_url'] if upload_result else ""
+            raw_photo_url = upload_result['raw_photo_url'] if upload_result else ""
+            
             log_entry_result = create_log_entry(
                 plant_name=extracted_plant_name,
-                photo_url=upload_result['photo_url'],
-                raw_photo_url=upload_result['raw_photo_url'],
+                photo_url=photo_url,
+                raw_photo_url=raw_photo_url,
                 diagnosis=diagnosis,
                 treatment=treatment,
                 symptoms=symptoms,
@@ -628,7 +668,8 @@ Format your response clearly and practically for plant care."""
                 confidence_score=confidence_score,
                 analysis_type=analysis_type,
                 follow_up_required=False,
-                follow_up_date=""
+                follow_up_date="",
+                location=location
             )
         
         # Prepare response
@@ -639,13 +680,27 @@ Format your response clearly and practically for plant care."""
                 'treatment': treatment if treatment else diagnosis,
                 'confidence': confidence_score,
                 'analysis_type': analysis_type,
-                'advice_type': 'photo_analysis' if has_file else 'general_advice'
+                'advice_type': 'photo_analysis' if has_photo_data else 'text_advice_only'
             }
         }
         
         # Include identified plant name if extracted from photo
         if extracted_plant_name and extracted_plant_name != plant_name:
             response_data['analysis']['identified_plant'] = extracted_plant_name
+        
+        # Clear messaging about what actually happened
+        if has_file:
+            response_data['analysis']['photo_processed'] = True
+            response_data['analysis']['photo_stored'] = True
+            response_data['analysis']['note'] = "Photo was analyzed and uploaded to storage"
+        elif has_photo_data:
+            response_data['analysis']['photo_processed'] = True
+            response_data['analysis']['photo_stored'] = False
+            response_data['analysis']['note'] = "Photo was analyzed but not stored (ChatGPT mode)"
+        else:
+            response_data['analysis']['photo_processed'] = False
+            response_data['analysis']['photo_stored'] = False
+            response_data['analysis']['note'] = "Text-only advice provided - no photo was analyzed"
         
         # Add image upload info only if file was uploaded
         if has_file and upload_result:
@@ -655,14 +710,21 @@ Format your response clearly and practically for plant care."""
                 'upload_time': upload_result['upload_time']
             }
         
-        # Add log entry info if created
+        # Add log entry info if created, or explain why no log was created
         if log_entry_result and log_entry_result.get('success'):
+            log_message = "Log entry successfully created in your plant database"
+            if has_file:
+                log_message += " (with photo)"
+            else:
+                log_message += " (text-based, no photo stored)"
+                
             response_data['log_entry'] = {
                 'log_id': log_entry_result['log_id'],
                 'plant_name': log_entry_result['plant_name'],
-                'created': True
+                'created': True,
+                'message': log_message
             }
-        elif extracted_plant_name and has_file:
+        elif extracted_plant_name and has_photo_data:
             # Plant was identified from photo but log creation failed (likely not in database)
             plant_validation = validate_plant_for_log(extracted_plant_name)
             response_data['suggestions'] = {
@@ -671,6 +733,16 @@ Format your response clearly and practically for plant care."""
                 'similar_plants': plant_validation.get('suggestions', []),
                 'create_new_plant': plant_validation.get('create_new_option', False),
                 'message': f"I identified this as '{extracted_plant_name}' but it's not in your plant database. You can add it or link to a similar plant."
+            }
+            response_data['log_entry'] = {
+                'created': False,
+                'message': f"No log entry created - '{extracted_plant_name}' not found in plant database"
+            }
+        else:
+            # No photo data or no plant identified
+            response_data['log_entry'] = {
+                'created': False,
+                'message': "No log entry created - text advice only (no photo analysis performed)"
             }
         
         return jsonify(response_data)
@@ -760,6 +832,7 @@ def create_plant_log():
         follow_up_required = request.form.get('follow_up_required', 'false').lower() == 'true'
         follow_up_date = request.form.get('follow_up_date', '').strip()
         log_title = request.form.get('log_title', '').strip()
+        location = request.form.get('location', '').strip()
         
         if not plant_name:
             return jsonify({'success': False, 'error': 'plant_name is required'}), 400
@@ -793,7 +866,8 @@ def create_plant_log():
             analysis_type=analysis_type,
             follow_up_required=follow_up_required,
             follow_up_date=follow_up_date,
-            log_title=log_title
+            log_title=log_title,
+            location=location
         )
         
         if result.get('success'):
@@ -845,6 +919,7 @@ def create_plant_log_simple():
         follow_up_required = data.get('follow_up_required', False)
         follow_up_date = data.get('follow_up_date', '').strip()
         log_title = data.get('log_title', '').strip()
+        location = data.get('location', '').strip()
         
         if not plant_name:
             return jsonify({'success': False, 'error': 'plant_name is required'}), 400
@@ -862,7 +937,8 @@ def create_plant_log_simple():
             analysis_type=analysis_type,
             follow_up_required=follow_up_required,
             follow_up_date=follow_up_date,
-            log_title=log_title
+            log_title=log_title,
+            location=location
         )
         
         if result.get('success'):
