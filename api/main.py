@@ -502,17 +502,17 @@ Please provide your response in a clear, structured format suitable for a plant 
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def register_image_analysis_route(app, limiter, require_api_key):
-    """Register the image analysis route with appropriate rate limiting"""
+    """Register the image analysis route with appropriate rate limiting and API key protection"""
     if not app.config.get('TESTING', False):
         app.add_url_rule(
             '/api/analyze-plant',
-            view_func=limiter.limit('5 per minute')(analyze_plant),  # Stricter limit for image processing
+            view_func=limiter.limit('5 per minute')(require_api_key(analyze_plant)),  # Added API key requirement
             methods=['POST']
         )
     else:
         app.add_url_rule(
             '/api/analyze-plant',
-            view_func=analyze_plant,
+            view_func=require_api_key(analyze_plant),  # Added API key requirement for testing too
             methods=['POST']
         )
 
