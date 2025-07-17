@@ -390,7 +390,7 @@ Please provide your response in a clear, structured format suitable for a plant 
         # Call OpenAI Vision API
         try:
             response = openai_client.chat.completions.create(
-                model="gpt-4-vision-preview",
+                model="gpt-4o",  # Updated from deprecated gpt-4-vision-preview
                 messages=[
                     {
                         "role": "user",
