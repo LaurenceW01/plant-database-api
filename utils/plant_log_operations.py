@@ -5,6 +5,7 @@ Handles CRUD operations for plant log entries with strict plant validation and j
 
 import logging
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional, Any, Tuple
 from models.field_config import (
     get_all_log_field_names, 
@@ -19,6 +20,28 @@ from utils.plant_operations import find_plant_by_id_or_name, search_plants
 from utils.upload_token_manager import generate_upload_token, generate_upload_url
 
 logger = logging.getLogger(__name__)
+
+def get_houston_timestamp() -> str:
+    """
+    Get current timestamp in Houston Central Time format.
+    
+    Returns:
+        str: Formatted timestamp string (YYYY-MM-DD HH:MM:SS)
+    """
+    # Houston, Texas is in Central Time (US/Central)
+    central = ZoneInfo('US/Central')
+    return datetime.now(central).strftime('%Y-%m-%d %H:%M:%S')
+
+def get_houston_timestamp_iso() -> str:
+    """
+    Get current timestamp in Houston Central Time ISO format.
+    
+    Returns:
+        str: ISO formatted timestamp string with timezone
+    """
+    # Houston, Texas is in Central Time (US/Central)
+    central = ZoneInfo('US/Central')
+    return datetime.now(central).isoformat()
 
 def initialize_log_sheet():
     """Initialize the Plant Log sheet with headers if it doesn't exist"""
@@ -204,7 +227,7 @@ def create_log_entry(
             'Analysis Type': analysis_type,
             'Follow-up Required': 'TRUE' if follow_up_required else 'FALSE',
             'Follow-up Date': follow_up_date,
-            'Last Updated': datetime.now().isoformat()
+            'Last Updated': get_houston_timestamp_iso()
         }
         
         # Validate all field data
@@ -318,7 +341,7 @@ def update_log_entry_photo(log_id: str, photo_url: str, raw_photo_url: str) -> D
         if last_updated_col >= 0:
             updates.append({
                 'range': f'{LOG_SHEET_NAME}!{chr(65 + last_updated_col)}{target_row}',
-                'values': [[datetime.now().isoformat()]]
+                'values': [[get_houston_timestamp_iso()]]
             })
         
         if not updates:

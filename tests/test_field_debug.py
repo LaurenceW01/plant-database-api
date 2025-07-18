@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
-Quick diagnostic script to test field processing
+Debug test to examine field processing and Plant ID handling in detail.
 """
 
 import sys
 import os
 sys.path.insert(0, os.path.abspath('.'))
 
-from models.field_config import get_canonical_field_name, get_all_field_names, is_valid_field
 from datetime import datetime
+from zoneinfo import ZoneInfo
+from models.field_config import get_canonical_field_name, get_all_field_names, is_valid_field
+from utils.plant_operations import get_houston_timestamp
 
 def test_field_processing():
-    """Test how fields are being processed"""
+    """Debug comprehensive field processing with step-by-step logging"""
     
     # Test payload similar to what API receives
     test_payload = {
@@ -87,7 +89,7 @@ def simulate_add_plant_with_fields():
     # Step 1: Initialize plant_data
     plant_data = {
         get_canonical_field_name('ID'): "999",
-        get_canonical_field_name('Last Updated'): datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        get_canonical_field_name('Last Updated'): get_houston_timestamp()
     }
     
     print(f"Step 1 - Initial plant_data: {plant_data}")

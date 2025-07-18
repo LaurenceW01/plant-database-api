@@ -10,6 +10,17 @@ import time
 
 logger = logging.getLogger(__name__)
 
+def get_houston_timestamp() -> str:
+    """
+    Get current timestamp in Houston Central Time format.
+    
+    Returns:
+        str: Formatted timestamp string (YYYY-MM-DD HH:MM:SS)
+    """
+    # Houston, Texas is in Central Time (US/Central)
+    central = ZoneInfo('US/Central')
+    return datetime.now(central).strftime('%Y-%m-%d %H:%M:%S')
+
 def get_all_plants() -> List[Dict]:
     """Get all plants from the Google Sheet"""
     try:
@@ -304,8 +315,8 @@ def update_plant_legacy(plant_data: Dict) -> bool:
         photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
         raw_photo_url = photo_url  # Store the raw URL directly
         
-        est = ZoneInfo('US/Eastern')
-        timestamp = datetime.now(est).strftime('%Y-%m-%d %H:%M:%S')
+        # Use Houston Central Time for consistent timestamps
+        timestamp = get_houston_timestamp()
         
         # Build new row using field_config to get all field names
         field_names = get_all_field_names()
@@ -614,7 +625,7 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
             get_canonical_field_name('Location'): location,
             get_canonical_field_name('Photo URL'): photo_formula,
             get_canonical_field_name('Raw Photo URL'): raw_photo_url,
-            get_canonical_field_name('Last Updated'): datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            get_canonical_field_name('Last Updated'): get_houston_timestamp()
         }
         
         # Add empty values for all other fields
@@ -671,7 +682,7 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
         # Prepare plant data using field_config
         plant_data = {
             get_canonical_field_name('ID'): next_id,
-            get_canonical_field_name('Last Updated'): datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            get_canonical_field_name('Last Updated'): get_houston_timestamp()
         }
         
         # Process all provided fields
