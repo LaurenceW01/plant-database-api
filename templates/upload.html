@@ -279,6 +279,15 @@
             📁 Check for Selected File
         </button>
         
+        <!-- Debug Log Download Buttons (mobile only) -->
+        <button class="change-file-btn" id="downloadLogsBtn" style="display: none; margin-top: 10px; background: #28a745;" onclick="downloadDebugLogs()">
+            📥 Download Debug Logs
+        </button>
+        
+        <button class="change-file-btn" id="sendLogsBtn" style="display: none; margin-top: 10px; background: #007bff;" onclick="sendAllLogsToServer()">
+            📤 Send Logs to Server
+        </button>
+        
         <!-- Progress Bar -->
         <div class="progress-bar" id="progressBar">
             <div class="progress-fill" id="progressFill"></div>
@@ -323,6 +332,10 @@
         let selectedFileObj = null;
         let isProcessing = false; // Prevent double processing
         let uploadZoneClickTimeout = null; // Debounce clicks
+        
+        // Debug log collection
+        let debugLogArray = [];
+        let sessionStartTime = new Date().toISOString();
         
         // Detect mobile device for better compatibility
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -497,6 +510,20 @@
                 }
                 
                 addDebugLog('File input click triggered successfully');
+                
+                // Start continuous monitoring for file interception
+                if (isMobile) {
+                    addDebugLog('Starting file interception monitoring...');
+                    startFileInterceptionMonitoring();
+                }
+                
+                // Check for multiple file inputs that might be interfering
+                const allFileInputs = document.querySelectorAll('input[type="file"]');
+                addDebugLog(`Total file inputs found: ${allFileInputs.length}`);
+                for (let i = 0; i < allFileInputs.length; i++) {
+                    const input = allFileInputs[i];
+                    addDebugLog(`File input ${i}: id="${input.id}", accept="${input.accept}", value="${input.value}"`);
+                }
                 
                 // Reset processing flag with appropriate timing
                 const resetTimeout = isMobile ? 1000 : 200; // Longer timeout for mobile
@@ -922,21 +949,26 @@
             // Enable debug tools for mobile (visible by default on mobile)
             const debugBtn = document.getElementById('debugBtn');
             const manualCheckBtn = document.getElementById('manualCheckBtn');
+            const downloadLogsBtn = document.getElementById('downloadLogsBtn');
+            const sendLogsBtn = document.getElementById('sendLogsBtn');
             const debugInfo = document.getElementById('debugInfo');
             
             if (debugBtn) debugBtn.style.display = 'inline-block';
             if (manualCheckBtn) manualCheckBtn.style.display = 'inline-block';
+            if (downloadLogsBtn) downloadLogsBtn.style.display = 'inline-block';
+            if (sendLogsBtn) sendLogsBtn.style.display = 'inline-block';
             if (debugInfo) {
                 debugInfo.style.display = 'block';
                 addDebugLog('Mobile mode initialized');
                 addDebugLog(`Device: ${navigator.userAgent}`);
                 addDebugLog('File selection methods: change, input, blur, polling');
+                addDebugLog('Log collection enabled - use download/send buttons below');
             }
             
             // Show an initial helpful message for mobile users
             setTimeout(() => {
                 if (!selectedFileObj) {
-                    showStatus('📱 Mobile mode active - debugging tools available below', 'info');
+                    showStatus('📱 Mobile mode active - debug logs will be collected automatically', 'info');
                 }
             }, 1000);
         }
@@ -1007,6 +1039,27 @@
                         showStatus('📁 File detected via input value! But files object is blocked.', 'error');
                         addDebugLog('DIAGNOSIS: File selection successful but files object access blocked by browser security');
                     }
+                } else {
+                    addDebugLog('Input value is empty - investigating potential interception...');
+                    
+                    // Check for DOM manipulation or iframe restrictions
+                    addDebugLog('=== INTERCEPTION INVESTIGATION ===');
+                    addDebugLog(`Document URL: ${document.URL}`);
+                    addDebugLog(`Window location: ${window.location.href}`);
+                    addDebugLog(`Parent window exists: ${window.parent !== window}`);
+                    addDebugLog(`In iframe: ${window !== window.top}`);
+                    addDebugLog(`File input parent: ${fileInput.parentElement ? fileInput.parentElement.tagName : 'none'}`);
+                    addDebugLog(`File input form: ${fileInput.form ? 'present' : 'none'}`);
+                    
+                    // Check if file input has been replaced or modified
+                    const newFileInput = document.getElementById('fileInput');
+                    addDebugLog(`File input still exists: ${!!newFileInput}`);
+                    addDebugLog(`Same file input object: ${newFileInput === fileInput}`);
+                    
+                    if (newFileInput !== fileInput) {
+                        addDebugLog('🚨 CRITICAL: File input has been replaced! This explains the issue!');
+                        showStatus('🚨 File input was replaced after selection! ChatGPT app interference detected.', 'error');
+                    }
                 }
                 
                 // Method 2: Try to trigger events manually
@@ -1029,14 +1082,17 @@
                         handleFileSelectImproved(syntheticEvent);
                     } else {
                         addDebugLog('Still no files detected after manual trigger');
-                        addDebugLog('=== DIAGNOSIS ===');
+                        addDebugLog('=== FINAL DIAGNOSIS ===');
+                        
                         if (fileInput.value && fileInput.value.length > 0) {
                             addDebugLog('ISSUE: File was selected but browser is blocking access to files object');
                             addDebugLog('This is likely a security restriction in the mobile browser/ChatGPT app');
                             showStatus('🚫 Browser security is blocking file access. This may be a ChatGPT mobile app limitation.', 'error');
                         } else {
-                            addDebugLog('ISSUE: No file was actually selected, or file picker failed to open');
-                            showStatus('❌ No file detected. File picker may not be working in this environment.', 'error');
+                            addDebugLog('ISSUE: File selection is being intercepted or blocked');
+                            addDebugLog('LIKELY CAUSE: ChatGPT mobile app is intercepting file selections before they reach our code');
+                            addDebugLog('RECOMMENDATION: This may require ChatGPT app to be updated to support file uploads properly');
+                            showStatus('🚫 File selection intercepted. ChatGPT mobile app may not support file uploads in this way.', 'error');
                         }
                     }
                 }, 500);
@@ -1052,10 +1108,113 @@
         // Function to add debug log entries
         function addDebugLog(message) {
             const debugLog = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            // Add to visual log
             if (debugLog) {
-                const timestamp = new Date().toLocaleTimeString();
-                debugLog.innerHTML += `[${timestamp}] ${message}<br>`;
+                debugLog.innerHTML += logEntry + '<br>';
                 debugLog.scrollTop = debugLog.scrollHeight; // Auto-scroll to bottom
+            }
+            
+            // Add to downloadable log array
+            debugLogArray.push({
+                timestamp: new Date().toISOString(),
+                localTime: timestamp,
+                message: message,
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            });
+            
+            // Send critical logs to server immediately
+            if (message.includes('CRITICAL') || message.includes('ERROR') || message.includes('DIAGNOSIS') || message.includes('SUCCESS')) {
+                sendLogToServer(logEntry);
+            }
+        }
+        
+        // Send debug log to server
+        function sendLogToServer(logMessage) {
+            try {
+                fetch('/api/debug-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        logMessage: logMessage,
+                        userAgent: navigator.userAgent,
+                        isMobile: isMobile,
+                        timestamp: new Date().toISOString()
+                    })
+                }).catch(error => {
+                    console.log('Failed to send log to server:', error);
+                });
+            } catch (error) {
+                console.log('Error sending log to server:', error);
+            }
+        }
+        
+        // Download debug logs as text file
+        function downloadDebugLogs() {
+            const logContent = [
+                `=== MOBILE UPLOAD DEBUG LOG ===`,
+                `Session Start: ${sessionStartTime}`,
+                `User Agent: ${navigator.userAgent}`,
+                `Device Type: ${isMobile ? 'Mobile' : 'Desktop'}`,
+                `URL: ${window.location.href}`,
+                `Token: ${token}`,
+                ``,
+                `=== DEBUG MESSAGES ===`
+            ];
+            
+            debugLogArray.forEach(entry => {
+                logContent.push(`${entry.timestamp} | ${entry.message}`);
+            });
+            
+            logContent.push('');
+            logContent.push('=== END OF LOG ===');
+            
+            const blob = new Blob([logContent.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mobile-upload-debug-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('📁 Debug log downloaded! Please share this file for analysis.', 'success');
+        }
+        
+        // Send all logs to server at once
+        function sendAllLogsToServer() {
+            try {
+                fetch('/api/debug-log-bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        sessionStart: sessionStartTime,
+                        logs: debugLogArray,
+                        userAgent: navigator.userAgent,
+                        isMobile: isMobile,
+                        url: window.location.href
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        showStatus('📤 All logs sent to server successfully!', 'success');
+                    } else {
+                        showStatus('❌ Failed to send logs to server', 'error');
+                    }
+                }).catch(error => {
+                    showStatus('❌ Error sending logs to server', 'error');
+                });
+            } catch (error) {
+                showStatus('❌ Error preparing logs for server', 'error');
             }
         }
         
@@ -1223,6 +1382,63 @@
                 clearInterval(pollingInterval);
                 pollingInterval = null;
                 console.log('File selection polling stopped');
+            }
+        }
+        
+        // Enhanced continuous monitoring for file interception detection
+        let continuousMonitoringActive = false;
+        let fileInterceptionMonitor = null;
+        
+        function startFileInterceptionMonitoring() {
+            if (continuousMonitoringActive) return;
+            
+            continuousMonitoringActive = true;
+            addDebugLog('=== STARTING FILE INTERCEPTION MONITORING ===');
+            
+            let lastValue = fileInput.value;
+            let lastFileCount = fileInput.files ? fileInput.files.length : 0;
+            let monitoringCount = 0;
+            
+            fileInterceptionMonitor = setInterval(() => {
+                monitoringCount++;
+                const currentValue = fileInput.value;
+                const currentFileCount = fileInput.files ? fileInput.files.length : 0;
+                
+                // Check for any changes
+                if (currentValue !== lastValue || currentFileCount !== lastFileCount) {
+                    addDebugLog(`CHANGE DETECTED at monitor ${monitoringCount}:`);
+                    addDebugLog(`Value: "${lastValue}" → "${currentValue}"`);
+                    addDebugLog(`Files: ${lastFileCount} → ${currentFileCount}`);
+                    
+                    // Check if file appeared then disappeared
+                    if (lastFileCount === 0 && currentFileCount > 0) {
+                        addDebugLog('🎉 FILES APPEARED! Attempting immediate processing...');
+                        const syntheticEvent = { type: 'interception-monitor', target: fileInput };
+                        handleFileSelectImproved(syntheticEvent);
+                    } else if (lastFileCount > 0 && currentFileCount === 0) {
+                        addDebugLog('⚠️ FILES DISAPPEARED! Something cleared them!');
+                        addDebugLog('POSSIBLE INTERCEPTION: File was selected but then removed by external code');
+                    }
+                    
+                    lastValue = currentValue;
+                    lastFileCount = currentFileCount;
+                }
+                
+                // Stop after 60 seconds
+                if (monitoringCount > 120) { // 120 * 500ms = 60 seconds
+                    clearInterval(fileInterceptionMonitor);
+                    continuousMonitoringActive = false;
+                    addDebugLog('File interception monitoring stopped (timeout)');
+                }
+            }, 500);
+        }
+        
+        function stopFileInterceptionMonitoring() {
+            if (fileInterceptionMonitor) {
+                clearInterval(fileInterceptionMonitor);
+                fileInterceptionMonitor = null;
+                continuousMonitoringActive = false;
+                addDebugLog('File interception monitoring stopped');
             }
         }
         

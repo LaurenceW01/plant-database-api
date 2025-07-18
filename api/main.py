@@ -1542,6 +1542,78 @@ def create_app(testing=False):
             }
         }), 200
     
+    @app.route('/api/debug-log', methods=['POST'])
+    def debug_log():
+        """
+        Receive debug log messages from mobile upload debugging.
+        Logs the information to server console for troubleshooting.
+        """
+        try:
+            data = request.get_json()
+            if data is None:
+                return jsonify({"error": "Missing JSON payload."}), 400
+                
+            token = data.get('token', 'unknown')
+            log_message = data.get('logMessage', '')
+            user_agent = data.get('userAgent', '')
+            is_mobile = data.get('isMobile', False)
+            timestamp = data.get('timestamp', '')
+            
+            # Log to server console with special prefix for easy identification
+            logging.info(f"MOBILE_DEBUG | Token: {token[:8]}... | {log_message}")
+            logging.info(f"MOBILE_DEBUG | UA: {user_agent}")
+            
+            return jsonify({"success": True, "message": "Debug log received"}), 200
+            
+        except Exception as e:
+            logging.error(f"Error processing debug log: {e}")
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route('/api/debug-log-bulk', methods=['POST'])
+    def debug_log_bulk():
+        """
+        Receive bulk debug logs from mobile upload debugging.
+        Logs all information to server console for comprehensive troubleshooting.
+        """
+        try:
+            data = request.get_json()
+            if data is None:
+                return jsonify({"error": "Missing JSON payload."}), 400
+                
+            token = data.get('token', 'unknown')
+            session_start = data.get('sessionStart', '')
+            logs = data.get('logs', [])
+            user_agent = data.get('userAgent', '')
+            is_mobile = data.get('isMobile', False)
+            url = data.get('url', '')
+            
+            # Log session header
+            logging.info(f"MOBILE_DEBUG_BULK | ===== DEBUG SESSION START =====")
+            logging.info(f"MOBILE_DEBUG_BULK | Token: {token[:8]}...")
+            logging.info(f"MOBILE_DEBUG_BULK | Session: {session_start}")
+            logging.info(f"MOBILE_DEBUG_BULK | URL: {url}")
+            logging.info(f"MOBILE_DEBUG_BULK | User Agent: {user_agent}")
+            logging.info(f"MOBILE_DEBUG_BULK | Is Mobile: {is_mobile}")
+            logging.info(f"MOBILE_DEBUG_BULK | Total Logs: {len(logs)}")
+            
+            # Log each debug message
+            for i, log_entry in enumerate(logs):
+                timestamp = log_entry.get('timestamp', '')
+                message = log_entry.get('message', '')
+                logging.info(f"MOBILE_DEBUG_BULK | {i+1:03d} | {timestamp} | {message}")
+            
+            logging.info(f"MOBILE_DEBUG_BULK | ===== DEBUG SESSION END =====")
+            
+            return jsonify({
+                "success": True, 
+                "message": f"Received {len(logs)} debug log entries",
+                "logged": True
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error processing bulk debug logs: {e}")
+            return jsonify({"error": "Internal server error"}), 500
+    
     return app
 
 
