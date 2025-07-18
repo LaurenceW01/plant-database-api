@@ -966,37 +966,84 @@
             // Stop any polling
             stopFileSelectionPolling();
             
-            // Check file input state
-            const inputState = checkFileInputState();
+            // Comprehensive file input investigation
+            addDebugLog('=== COMPREHENSIVE FILE INPUT INVESTIGATION ===');
             
-            if (inputState.hasFiles) {
-                addDebugLog(`Found ${inputState.fileCount} file(s) in input!`);
-                showStatus(`📁 Found ${inputState.fileCount} file(s)! Processing...`, 'success');
+            try {
+                // Basic checks
+                addDebugLog(`File input exists: ${!!fileInput}`);
+                addDebugLog(`File input type: ${fileInput.type}`);
+                addDebugLog(`File input value: "${fileInput.value}"`);
+                addDebugLog(`File input accept: "${fileInput.accept}"`);
+                addDebugLog(`File input disabled: ${fileInput.disabled}`);
+                addDebugLog(`File input readonly: ${fileInput.readOnly}`);
+                addDebugLog(`File input required: ${fileInput.required}`);
+                addDebugLog(`File input multiple: ${fileInput.multiple}`);
                 
-                // Process the first file
-                const file = fileInput.files[0];
-                const syntheticEvent = {
-                    type: 'manual',
-                    target: fileInput
-                };
+                // Files object investigation
+                addDebugLog(`Files object exists: ${!!fileInput.files}`);
+                addDebugLog(`Files object type: ${typeof fileInput.files}`);
+                addDebugLog(`Files length: ${fileInput.files ? fileInput.files.length : 'N/A'}`);
                 
-                try {
-                    handleFileSelectImproved(syntheticEvent);
-                } catch (error) {
-                    console.error('Error in manual file processing:', error);
-                    addDebugLog(`Manual processing error: ${error.message}`);
-                    showStatus(`❌ Error processing file: ${error.message}`, 'error');
+                // Check if files object is accessible
+                if (fileInput.files) {
+                    addDebugLog(`Files object constructor: ${fileInput.files.constructor.name}`);
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        const file = fileInput.files[i];
+                        addDebugLog(`File ${i}: ${file.name} (${file.size} bytes, ${file.type})`);
+                    }
+                } else {
+                    addDebugLog('Files object is null/undefined');
                 }
-            } else {
-                addDebugLog('No files found in input');
-                showStatus('❌ No files found. Please try selecting a file first, then click this button again.', 'error');
                 
-                // Provide helpful instructions for mobile users
-                if (isMobile) {
-                    setTimeout(() => {
-                        showStatus('💡 Try: 1) Tap upload area 2) Select photo 3) Click "Check for Selected File" button', 'info');
-                    }, 3000);
+                // Alternative file detection methods
+                addDebugLog('=== ALTERNATIVE DETECTION METHODS ===');
+                
+                // Method 1: Check if value indicates file selection
+                if (fileInput.value && fileInput.value.length > 0) {
+                    addDebugLog(`Input value indicates file: ${fileInput.value}`);
+                    if (fileInput.value.includes('fakepath')) {
+                        addDebugLog('Detected C:\\fakepath\\ - this means a file WAS selected!');
+                        showStatus('📁 File detected via input value! But files object is blocked.', 'error');
+                        addDebugLog('DIAGNOSIS: File selection successful but files object access blocked by browser security');
+                    }
                 }
+                
+                // Method 2: Try to trigger events manually
+                addDebugLog('Attempting to manually trigger file input events...');
+                
+                const changeEvent = new Event('change', { bubbles: true });
+                const inputEvent = new Event('input', { bubbles: true });
+                
+                fileInput.dispatchEvent(changeEvent);
+                fileInput.dispatchEvent(inputEvent);
+                
+                addDebugLog('Manual events dispatched');
+                
+                // Method 3: Check after small delay
+                setTimeout(() => {
+                    addDebugLog('Delayed check after manual events...');
+                    if (fileInput.files && fileInput.files.length > 0) {
+                        addDebugLog('SUCCESS: Files detected after manual event trigger!');
+                        const syntheticEvent = { type: 'manual-trigger', target: fileInput };
+                        handleFileSelectImproved(syntheticEvent);
+                    } else {
+                        addDebugLog('Still no files detected after manual trigger');
+                        addDebugLog('=== DIAGNOSIS ===');
+                        if (fileInput.value && fileInput.value.length > 0) {
+                            addDebugLog('ISSUE: File was selected but browser is blocking access to files object');
+                            addDebugLog('This is likely a security restriction in the mobile browser/ChatGPT app');
+                            showStatus('🚫 Browser security is blocking file access. This may be a ChatGPT mobile app limitation.', 'error');
+                        } else {
+                            addDebugLog('ISSUE: No file was actually selected, or file picker failed to open');
+                            showStatus('❌ No file detected. File picker may not be working in this environment.', 'error');
+                        }
+                    }
+                }, 500);
+                
+            } catch (error) {
+                addDebugLog(`ERROR during manual check: ${error.message}`);
+                showStatus(`❌ Error during file check: ${error.message}`, 'error');
             }
             
             addDebugLog('=== MANUAL FILE CHECK END ===');
@@ -1104,11 +1151,45 @@
                 console.log(`Polling attempt ${pollingAttempts}: checking file input...`);
                 addDebugLog(`Polling attempt ${pollingAttempts}: checking file input...`);
                 
-                // Check file input state
+                // Comprehensive file input state checking
                 const hasFiles = !!(fileInput.files && fileInput.files.length > 0);
                 const fileCount = fileInput.files ? fileInput.files.length : 0;
+                const inputValue = fileInput.value;
+                const inputType = fileInput.type;
+                const inputAccept = fileInput.accept;
+                const inputDisabled = fileInput.disabled;
+                const inputReadonly = fileInput.readOnly;
                 
                 addDebugLog(`Files found: ${hasFiles}, count: ${fileCount}`);
+                addDebugLog(`Input value: "${inputValue}"`);
+                addDebugLog(`Input type: ${inputType}`);
+                addDebugLog(`Input disabled: ${inputDisabled}`);
+                addDebugLog(`Input readonly: ${inputReadonly}`);
+                
+                // Check if input value changed (even without files object)
+                if (inputValue && inputValue.length > 0) {
+                    addDebugLog(`ALERT: Input value detected: ${inputValue}`);
+                    addDebugLog('Input has value but no files object - investigating...');
+                    
+                    // Try to force file detection
+                    setTimeout(() => {
+                        addDebugLog('Retrying file detection after value change...');
+                        if (fileInput.files && fileInput.files.length > 0) {
+                            addDebugLog('SUCCESS: Files now detected after retry!');
+                            clearInterval(pollingInterval);
+                            const syntheticEvent = { type: 'polling-retry', target: fileInput };
+                            handleFileSelectImproved(syntheticEvent);
+                        }
+                    }, 200);
+                }
+                
+                // Check for security/permission issues
+                try {
+                    const testValue = fileInput.value;
+                    addDebugLog(`File input accessible: true`);
+                } catch (securityError) {
+                    addDebugLog(`SECURITY ERROR: ${securityError.message}`);
+                }
                 
                 if (fileInput.files && fileInput.files.length > 0) {
                     console.log('Files detected via polling');
@@ -1125,8 +1206,14 @@
                 } else if (pollingAttempts >= maxPollingAttempts) {
                     console.log('Polling timeout - no files detected');
                     addDebugLog('TIMEOUT: Polling finished - no files found');
+                    addDebugLog('=== FINAL FILE INPUT STATE ===');
+                    addDebugLog(`Final files: ${fileInput.files ? fileInput.files.length : 'null'}`);
+                    addDebugLog(`Final value: "${fileInput.value}"`);
+                    addDebugLog(`Final accept: "${fileInput.accept}"`);
                     clearInterval(pollingInterval);
-                    // Don't show timeout message to user - they might not have selected anything
+                    
+                    // Show helpful message to user
+                    showStatus('❌ File selection not detected. Try the manual check button below.', 'error');
                 }
             }, 500); // Check every 500ms
         }
