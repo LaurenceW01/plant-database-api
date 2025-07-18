@@ -346,28 +346,48 @@
         }
         
         // File input change handler (always needed)
-        fileInput.addEventListener('change', handleFileSelectImproved);
+        fileInput.addEventListener('change', (e) => {
+            console.log('CHANGE event fired');
+            addDebugLog('CHANGE event fired');
+            handleFileSelectImproved(e);
+        });
         
         // Mobile-only additional event handlers for compatibility
         if (isMobile) {
             // Add input event for mobile compatibility
             fileInput.addEventListener('input', (e) => {
+                console.log('INPUT event fired');
+                addDebugLog('INPUT event fired');
                 handleFileSelectImproved(e);
             });
             
             // Monitor file input when it loses focus (mobile only)
             fileInput.addEventListener('blur', (e) => {
+                console.log('BLUR event fired');
+                addDebugLog('BLUR event fired');
                 // Small delay to allow file selection to complete
                 setTimeout(() => {
                     if (e.target.files && e.target.files.length > 0) {
+                        console.log('Files detected on BLUR');
+                        addDebugLog(`Files detected on BLUR: ${e.target.files.length}`);
                         handleFileSelectImproved(e);
+                    } else {
+                        addDebugLog('No files detected on BLUR');
                     }
                 }, 100);
             });
             
             // Add focus handler for mobile feedback
             fileInput.addEventListener('focus', () => {
+                console.log('FOCUS event fired');
+                addDebugLog('FOCUS event fired - file picker should be opening');
                 showStatus('📱 Select your plant photo...', 'info');
+            });
+            
+            // Add click handler directly to file input
+            fileInput.addEventListener('click', (e) => {
+                console.log('FILE INPUT CLICK event fired');
+                addDebugLog('FILE INPUT CLICK event fired');
             });
         }
         
@@ -405,10 +425,12 @@
         
         function handleUploadZoneClick(e) {
             console.log('Upload zone clicked, device:', isMobile ? 'Mobile' : 'Desktop');
+            addDebugLog(`Upload zone clicked (${isMobile ? 'Mobile' : 'Desktop'})`);
             
             // Prevent multiple triggers and ensure single file selection
             if (isProcessing || selectedFileObj) {
                 console.log('Click ignored - already processing or file selected');
+                addDebugLog('Click ignored - already processing or file selected');
                 return;
             }
             
@@ -416,11 +438,13 @@
             e.stopPropagation();
             
             console.log('Setting isProcessing to true');
+            addDebugLog('Setting isProcessing to true');
             isProcessing = true;
             
             // Show appropriate status message
             if (isMobile) {
                 showStatus('📱 Opening file picker...', 'info');
+                addDebugLog('Attempting to open mobile file picker...');
             } else {
                 showStatus('📁 Opening file picker...', 'info');
             }
@@ -428,31 +452,68 @@
             try {
                 // Clear any existing file selection first
                 console.log('Clearing existing file input value');
+                addDebugLog('Clearing existing file input value');
                 fileInput.value = '';
                 
                 // Configure file input for mobile if needed
                 if (isMobile) {
                     console.log('Configuring mobile file input...');
+                    addDebugLog('Configuring mobile file input...');
                     fileInput.setAttribute('accept', 'image/*,.heic,.heif');
                     fileInput.setAttribute('capture', 'environment'); // Use camera if available
+                    addDebugLog(`File input accept: ${fileInput.accept}`);
+                    addDebugLog(`File input capture: ${fileInput.capture}`);
                 }
                 
                 console.log('Triggering file input click');
-                fileInput.click();
+                addDebugLog('About to trigger fileInput.click()');
+                
+                // Try multiple methods to trigger file selection on mobile
+                if (isMobile) {
+                    // Method 1: Direct click
+                    addDebugLog('Method 1: Direct fileInput.click()');
+                    fileInput.click();
+                    
+                    // Method 2: Programmatic focus and click
+                    setTimeout(() => {
+                        addDebugLog('Method 2: Focus then click');
+                        fileInput.focus();
+                        fileInput.click();
+                    }, 100);
+                    
+                    // Method 3: Create and dispatch click event
+                    setTimeout(() => {
+                        addDebugLog('Method 3: Dispatching click event');
+                        const clickEvent = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        fileInput.dispatchEvent(clickEvent);
+                    }, 200);
+                    
+                } else {
+                    fileInput.click();
+                }
+                
+                addDebugLog('File input click triggered successfully');
                 
                 // Reset processing flag with appropriate timing
-                const resetTimeout = isMobile ? 500 : 200; // Shorter timeout for PC
+                const resetTimeout = isMobile ? 1000 : 200; // Longer timeout for mobile
                 setTimeout(() => {
                     if (isMobile) {
+                        addDebugLog('Starting file selection polling...');
                         // Start polling for file selection on mobile (silent)
                         startFileSelectionPolling();
                     }
                     isProcessing = false;
+                    addDebugLog('Processing flag reset');
                     console.log('Processing flag reset');
                 }, resetTimeout);
                 
             } catch (error) {
                 console.error('Error triggering file selection:', error);
+                addDebugLog(`ERROR triggering file selection: ${error.message}`);
                 isProcessing = false;
                 const errorMsg = 'Error opening file selector. Please try again.';
                 showStatus(errorMsg, 'error');
@@ -494,14 +555,20 @@
         
         function handleFileSelectImproved(e) {
             console.log('File selection event:', e.type, 'Device:', isMobile ? 'Mobile' : 'Desktop');
+            addDebugLog(`=== FILE SELECTION EVENT: ${e.type} ===`);
+            addDebugLog(`Event target: ${e.target.tagName}`);
+            addDebugLog(`Files object: ${e.target.files ? 'present' : 'missing'}`);
+            addDebugLog(`Files count: ${e.target.files ? e.target.files.length : 0}`);
             
             // Prevent race conditions, especially on desktop
             if (isProcessing && e.type === 'change') {
                 // If we're already processing and this is the primary change event, 
                 // let it continue. This prevents mobile fallback events from interfering.
                 console.log('Already processing, but allowing primary change event');
+                addDebugLog('Already processing, but allowing primary change event');
             } else if (isProcessing) {
                 console.log('Already processing, ignoring event:', e.type);
+                addDebugLog(`Already processing, ignoring event: ${e.type}`);
                 return;
             }
             
@@ -512,6 +579,7 @@
             
             const files = e.target.files;
             if (!files || files.length === 0) {
+                addDebugLog('ERROR: No files in event target');
                 showStatus('No file selected. Please try again.', 'error');
                 isProcessing = false;
                 return;
@@ -519,11 +587,15 @@
             
             // Stop any ongoing mobile polling when file is found
             if (isMobile) {
+                addDebugLog('Stopping polling - files detected');
                 stopFileSelectionPolling();
             }
             
             const file = files[0];
             console.log('File selected:', file.name, file.size, file.type);
+            addDebugLog(`File selected: ${file.name}`);
+            addDebugLog(`File size: ${file.size} bytes`);
+            addDebugLog(`File type: ${file.type}`);
             
             // Process the file
             handleFileImproved(file);
@@ -1024,13 +1096,23 @@
         function startFileSelectionPolling() {
             if (!isMobile) return; // Only for mobile
             
+            addDebugLog('=== STARTING POLLING ===');
             pollingAttempts = 0;
             
             pollingInterval = setInterval(() => {
                 pollingAttempts++;
+                console.log(`Polling attempt ${pollingAttempts}: checking file input...`);
+                addDebugLog(`Polling attempt ${pollingAttempts}: checking file input...`);
+                
+                // Check file input state
+                const hasFiles = !!(fileInput.files && fileInput.files.length > 0);
+                const fileCount = fileInput.files ? fileInput.files.length : 0;
+                
+                addDebugLog(`Files found: ${hasFiles}, count: ${fileCount}`);
                 
                 if (fileInput.files && fileInput.files.length > 0) {
                     console.log('Files detected via polling');
+                    addDebugLog(`SUCCESS: Files detected via polling: ${fileInput.files.length}`);
                     clearInterval(pollingInterval);
                     
                     // Create synthetic event for handleFileSelectImproved
@@ -1042,6 +1124,7 @@
                     
                 } else if (pollingAttempts >= maxPollingAttempts) {
                     console.log('Polling timeout - no files detected');
+                    addDebugLog('TIMEOUT: Polling finished - no files found');
                     clearInterval(pollingInterval);
                     // Don't show timeout message to user - they might not have selected anything
                 }
