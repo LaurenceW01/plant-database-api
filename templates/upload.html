@@ -330,7 +330,7 @@
         // Load token information
         loadTokenInfo();
         
-        // Event listeners with improved mobile support
+        // Event listeners with proper mobile/desktop separation
         if (isMobile) {
             // Mobile-specific event handling
             console.log('Setting up mobile-specific event handlers');
@@ -345,30 +345,33 @@
             uploadZone.addEventListener('drop', handleDrop);
         }
         
-        // File input change handler with improved validation
+        // File input change handler (always needed)
         fileInput.addEventListener('change', handleFileSelectImproved);
         
-        // Add additional event handlers for mobile compatibility
-        fileInput.addEventListener('input', (e) => {
-            handleFileSelectImproved(e);
-        });
-        
-        // Monitor file input when it loses focus (user might have selected file)
-        fileInput.addEventListener('blur', (e) => {
-            // Small delay to allow file selection to complete
-            setTimeout(() => {
-                if (e.target.files && e.target.files.length > 0) {
-                    handleFileSelectImproved(e);
-                }
-            }, 100);
-        });
+        // Mobile-only additional event handlers for compatibility
+        if (isMobile) {
+            // Add input event for mobile compatibility
+            fileInput.addEventListener('input', (e) => {
+                handleFileSelectImproved(e);
+            });
+            
+            // Monitor file input when it loses focus (mobile only)
+            fileInput.addEventListener('blur', (e) => {
+                // Small delay to allow file selection to complete
+                setTimeout(() => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        handleFileSelectImproved(e);
+                    }
+                }, 100);
+            });
+            
+            // Add focus handler for mobile feedback
+            fileInput.addEventListener('focus', () => {
+                showStatus('📱 Select your plant photo...', 'info');
+            });
+        }
         
         uploadBtn.addEventListener('click', uploadFile);
-        
-        // Add focus handler for user feedback
-        fileInput.addEventListener('focus', () => {
-            showStatus('📱 Select your plant photo...', 'info');
-        });
         
         function handleMobileTouch(e) {
             console.log('Mobile touch event triggered');
@@ -387,27 +390,25 @@
         }
         
         function handleUploadZoneClickDebounced(e) {
-            // Prevent rapid double-clicks
+            // Prevent rapid double-clicks with improved logic
             if (uploadZoneClickTimeout) {
                 clearTimeout(uploadZoneClickTimeout);
             }
             
+            // Use shorter debounce time for PC, longer for mobile
+            const debounceTime = isMobile ? 300 : 150;
+            
             uploadZoneClickTimeout = setTimeout(() => {
                 handleUploadZoneClick(e);
-            }, 200); // 200ms debounce
+            }, debounceTime);
         }
         
         function handleUploadZoneClick(e) {
-            console.log('=== UPLOAD ZONE CLICK START ===');
-            console.log('Event:', e);
-            console.log('Target:', e.target);
-            console.log('isProcessing:', isProcessing);
-            console.log('selectedFileObj:', !!selectedFileObj);
+            console.log('Upload zone clicked, device:', isMobile ? 'Mobile' : 'Desktop');
             
             // Prevent multiple triggers and ensure single file selection
             if (isProcessing || selectedFileObj) {
                 console.log('Click ignored - already processing or file selected');
-                showStatus('⏳ Already have a file or processing...', 'info');
                 return;
             }
             
@@ -417,10 +418,11 @@
             console.log('Setting isProcessing to true');
             isProcessing = true;
             
-            // Add debug log for mobile users
+            // Show appropriate status message
             if (isMobile) {
-                addDebugLog('Upload zone clicked');
                 showStatus('📱 Opening file picker...', 'info');
+            } else {
+                showStatus('📁 Opening file picker...', 'info');
             }
             
             try {
@@ -428,48 +430,33 @@
                 console.log('Clearing existing file input value');
                 fileInput.value = '';
                 
-                // Trigger file selection with mobile compatibility
+                // Configure file input for mobile if needed
                 if (isMobile) {
                     console.log('Configuring mobile file input...');
-                    // Mobile devices need different handling
                     fileInput.setAttribute('accept', 'image/*,.heic,.heif');
                     fileInput.setAttribute('capture', 'environment'); // Use camera if available
-                    addDebugLog('File input configured for mobile/camera');
                 }
                 
-                console.log('About to trigger fileInput.click()');
-                console.log('File input element:', fileInput);
-                console.log('File input accept:', fileInput.accept);
-                console.log('File input capture:', fileInput.capture);
-                
-                // Add debug log for mobile
-                if (isMobile) {
-                    addDebugLog('Triggering file input click...');
-                }
-                
+                console.log('Triggering file input click');
                 fileInput.click();
-                console.log('fileInput.click() called successfully');
                 
-                // Reset processing flag after click
+                // Reset processing flag with appropriate timing
+                const resetTimeout = isMobile ? 500 : 200; // Shorter timeout for PC
                 setTimeout(() => {
                     if (isMobile) {
                         // Start polling for file selection on mobile (silent)
                         startFileSelectionPolling();
                     }
                     isProcessing = false;
-                }, 500);
+                    console.log('Processing flag reset');
+                }, resetTimeout);
                 
             } catch (error) {
                 console.error('Error triggering file selection:', error);
                 isProcessing = false;
                 const errorMsg = 'Error opening file selector. Please try again.';
                 showStatus(errorMsg, 'error');
-                if (isMobile) {
-                    addDebugLog(`File picker error: ${error.message}`);
-                }
             }
-            
-            console.log('=== UPLOAD ZONE CLICK END ===');
         }
         
         function loadTokenInfo() {
@@ -506,12 +493,20 @@
         }
         
         function handleFileSelectImproved(e) {
-            // Show immediate feedback
-            showStatus('📂 Processing selected file...', 'info');
+            console.log('File selection event:', e.type, 'Device:', isMobile ? 'Mobile' : 'Desktop');
             
-            if (isProcessing) {
+            // Prevent race conditions, especially on desktop
+            if (isProcessing && e.type === 'change') {
+                // If we're already processing and this is the primary change event, 
+                // let it continue. This prevents mobile fallback events from interfering.
+                console.log('Already processing, but allowing primary change event');
+            } else if (isProcessing) {
+                console.log('Already processing, ignoring event:', e.type);
                 return;
             }
+            
+            // Show immediate feedback
+            showStatus('📂 Processing selected file...', 'info');
             
             isProcessing = true;
             
@@ -522,8 +517,10 @@
                 return;
             }
             
-            // Stop any ongoing polling when file is found
-            stopFileSelectionPolling();
+            // Stop any ongoing mobile polling when file is found
+            if (isMobile) {
+                stopFileSelectionPolling();
+            }
             
             const file = files[0];
             console.log('File selected:', file.name, file.size, file.type);
@@ -842,38 +839,57 @@
         console.log('Fetch support:', typeof window.fetch !== 'undefined');
         console.log('FormData support:', typeof FormData !== 'undefined');
         
-        // Show debug button and debug panel on mobile for troubleshooting
+        // Mobile-specific initialization and debugging tools
         if (isMobile) {
-            // Basic initialization for mobile
-            if (isMobile) {
-                // Show helpful hint for mobile users
-                const hint = uploadZone.querySelector('.upload-hint');
-                if (hint) {
-                    hint.textContent = 'Tap to take photo or select from gallery';
-                }
+            // Show helpful hint for mobile users
+            const hint = uploadZone.querySelector('.upload-hint');
+            if (hint) {
+                hint.textContent = 'Tap to take photo or select from gallery';
             }
             
-            // Function to enable debug mode (call this if there are issues)
-            function enableDebugMode() {
-                const debugBtn = document.getElementById('debugBtn');
-                const manualCheckBtn = document.getElementById('manualCheckBtn');
-                const debugInfo = document.getElementById('debugInfo');
-                
-                if (debugBtn) debugBtn.style.display = 'inline-block';
-                if (manualCheckBtn) manualCheckBtn.style.display = 'inline-block';
-                if (debugInfo) {
-                    debugInfo.style.display = 'block';
-                    addDebugLog('Debug mode enabled');
-                }
-                
-                showStatus('🔧 Debug mode enabled. Additional tools are now visible.', 'info');
+            // Enable debug tools for mobile (visible by default on mobile)
+            const debugBtn = document.getElementById('debugBtn');
+            const manualCheckBtn = document.getElementById('manualCheckBtn');
+            const debugInfo = document.getElementById('debugInfo');
+            
+            if (debugBtn) debugBtn.style.display = 'inline-block';
+            if (manualCheckBtn) manualCheckBtn.style.display = 'inline-block';
+            if (debugInfo) {
+                debugInfo.style.display = 'block';
+                addDebugLog('Mobile mode initialized');
+                addDebugLog(`Device: ${navigator.userAgent}`);
+                addDebugLog('File selection methods: change, input, blur, polling');
             }
+            
+            // Show an initial helpful message for mobile users
+            setTimeout(() => {
+                if (!selectedFileObj) {
+                    showStatus('📱 Mobile mode active - debugging tools available below', 'info');
+                }
+            }, 1000);
+        }
+        
+        // Function to enable debug mode (call this if there are issues)
+        function enableDebugMode() {
+            const debugBtn = document.getElementById('debugBtn');
+            const manualCheckBtn = document.getElementById('manualCheckBtn');
+            const debugInfo = document.getElementById('debugInfo');
+            
+            if (debugBtn) debugBtn.style.display = 'inline-block';
+            if (manualCheckBtn) manualCheckBtn.style.display = 'inline-block';
+            if (debugInfo) {
+                debugInfo.style.display = 'block';
+                addDebugLog('Debug mode enabled manually');
+            }
+            
+            showStatus('🔧 Debug mode enabled. Additional tools are now visible.', 'info');
         }
         
         // Manual file check function for mobile users
         function manualFileCheck() {
             addDebugLog('=== MANUAL FILE CHECK START ===');
             console.log('Manual file check triggered');
+            showStatus('🔍 Checking for selected files...', 'info');
             
             // Stop any polling
             stopFileSelectionPolling();
@@ -901,7 +917,14 @@
                 }
             } else {
                 addDebugLog('No files found in input');
-                showStatus('❌ No files found. Please select a file first.', 'error');
+                showStatus('❌ No files found. Please try selecting a file first, then click this button again.', 'error');
+                
+                // Provide helpful instructions for mobile users
+                if (isMobile) {
+                    setTimeout(() => {
+                        showStatus('💡 Try: 1) Tap upload area 2) Select photo 3) Click "Check for Selected File" button', 'info');
+                    }, 3000);
+                }
             }
             
             addDebugLog('=== MANUAL FILE CHECK END ===');
@@ -1056,6 +1079,36 @@
             }
             
             return state;
+        }
+
+        function updateSelectedFileUI(file) {
+            try {
+                // Update upload zone appearance
+                uploadZone.style.backgroundColor = '#e8f5e8';
+                uploadZone.style.borderColor = '#28a745';
+                uploadZone.querySelector('.upload-icon').textContent = '✅';
+                uploadZone.querySelector('.upload-text').textContent = 'File selected: ' + file.name;
+                uploadZone.querySelector('.upload-hint').textContent = 'Click "Upload Photo" below to continue';
+                
+                // Update file info display
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                selectedFile.style.display = 'block';
+                
+                // Show upload button
+                uploadBtn.style.display = 'inline-block';
+                
+                // Scroll to upload button on mobile for better UX
+                if (isMobile) {
+                    uploadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                console.log('UI updated successfully for file:', file.name);
+                
+            } catch (error) {
+                console.error('Error updating UI:', error);
+                showStatus(`⚠️ File selected but UI update failed: ${error.message}`, 'error');
+            }
         }
     </script>
 </body>
