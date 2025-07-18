@@ -269,12 +269,12 @@
             <span class="loading" id="loadingSpinner" style="display: none;"></span>
         </button>
         
-        <!-- Debug Button for Mobile Testing (only shown if issues occur) -->
+        <!-- Debug Button for Mobile Testing (hidden by default) -->
         <button class="change-file-btn" id="debugBtn" style="display: none; margin-top: 10px;" onclick="debugFileUpload()">
             🔍 Test File Info (Debug)
         </button>
         
-        <!-- Manual File Check Button (Mobile) -->
+        <!-- Manual File Check Button (hidden by default) -->
         <button class="change-file-btn" id="manualCheckBtn" style="display: none; margin-top: 10px; background: #ff9800;" onclick="manualFileCheck()">
             📁 Check for Selected File
         </button>
@@ -287,7 +287,7 @@
         <!-- Status Message -->
         <div class="status-message" id="statusMessage"></div>
         
-        <!-- Debug Information Display (Mobile) -->
+        <!-- Debug Information Display (Hidden by default) -->
         <div class="status-message status-info" id="debugInfo" style="display: none; font-family: monospace; font-size: 12px; text-align: left; max-height: 200px; overflow-y: auto;">
             <strong>🔍 Debug Log:</strong><br>
             <div id="debugLog"></div>
@@ -346,45 +346,28 @@
         }
         
         // File input change handler with improved validation
-        console.log('Setting up file input change handler');
         fileInput.addEventListener('change', handleFileSelectImproved);
         
         // Add additional event handlers for mobile compatibility
         fileInput.addEventListener('input', (e) => {
-            console.log('File input "input" event triggered');
-            addDebugLog('File input "input" event detected');
             handleFileSelectImproved(e);
         });
         
         // Monitor file input when it loses focus (user might have selected file)
         fileInput.addEventListener('blur', (e) => {
-            console.log('File input blurred, checking for files...');
-            addDebugLog('File picker closed, checking for selected files...');
-            
             // Small delay to allow file selection to complete
             setTimeout(() => {
                 if (e.target.files && e.target.files.length > 0) {
-                    console.log('Files detected on blur event');
-                    addDebugLog(`Files found on blur: ${e.target.files.length}`);
                     handleFileSelectImproved(e);
-                } else {
-                    console.log('No files detected on blur');
-                    addDebugLog('No files selected (blur check)');
                 }
             }, 100);
         });
         
         uploadBtn.addEventListener('click', uploadFile);
         
-        // Add focus and blur handlers for debugging
+        // Add focus handler for user feedback
         fileInput.addEventListener('focus', () => {
-            console.log('File input focused');
-            addDebugLog('File picker opening...');
-            showStatus('📱 File picker opening...', 'info');
-        });
-        
-        fileInput.addEventListener('blur', () => {
-            console.log('File input blurred');
+            showStatus('📱 Select your plant photo...', 'info');
         });
         
         function handleMobileTouch(e) {
@@ -469,10 +452,8 @@
                 
                 // Reset processing flag after click
                 setTimeout(() => {
-                    console.log('Resetting isProcessing flag after click');
                     if (isMobile) {
-                        addDebugLog('File picker should be open now');
-                        // Start polling for file selection on mobile
+                        // Start polling for file selection on mobile (silent)
                         startFileSelectionPolling();
                     }
                     isProcessing = false;
@@ -525,138 +506,54 @@
         }
         
         function handleFileSelectImproved(e) {
-            console.log('=== FILE SELECTION EVENT START ===');
-            console.log('Event type:', e.type);
-            console.log('Event target:', e.target);
-            console.log('Files length:', e.target.files.length);
-            console.log('Files object:', e.target.files);
-            console.log('isProcessing flag:', isProcessing);
-            
             // Show immediate feedback
-            showStatus('📱 Processing selected file...', 'info');
+            showStatus('📂 Processing selected file...', 'info');
             
             if (isProcessing) {
-                console.log('Already processing file selection, ignoring');
-                showStatus('⏳ Already processing a file selection...', 'info');
                 return;
             }
             
-            if (e.target.files.length > 0) {
-                isProcessing = true;
-                const file = e.target.files[0];
-                
-                console.log('=== SELECTED FILE DETAILS ===');
-                console.log('File name:', file.name);
-                console.log('File size:', file.size);
-                console.log('File type:', file.type);
-                console.log('File lastModified:', file.lastModified);
-                console.log('File webkitRelativePath:', file.webkitRelativePath);
-                console.log('File constructor:', file.constructor.name);
-                
-                // Show file details to user
-                showStatus(`📁 File selected: ${file.name} (${formatFileSize(file.size)})`, 'info');
-                
-                try {
-                    console.log('Calling handleFileImproved...');
-                    handleFileImproved(file);
-                } catch (error) {
-                    console.error('Error in handleFileImproved:', error);
-                    showStatus(`❌ Error processing file: ${error.message}`, 'error');
-                }
-                
-                // Reset processing flag
-                setTimeout(() => {
-                    console.log('Resetting isProcessing flag');
-                    isProcessing = false;
-                }, 1000);
-            } else {
-                console.log('No files selected - files.length is 0');
-                showStatus('❌ No file selected. Please try again.', 'error');
+            isProcessing = true;
+            
+            const files = e.target.files;
+            if (!files || files.length === 0) {
+                showStatus('No file selected. Please try again.', 'error');
+                isProcessing = false;
+                return;
             }
             
-            console.log('=== FILE SELECTION EVENT END ===');
+            // Stop any ongoing polling when file is found
+            stopFileSelectionPolling();
+            
+            const file = files[0];
+            console.log('File selected:', file.name, file.size, file.type);
+            
+            // Process the file
+            handleFileImproved(file);
         }
         
         function handleFileImproved(file) {
-            console.log('=== HANDLE FILE IMPROVED START ===');
             console.log('Processing file:', file.name);
-            console.log('File object valid:', !!file);
-            console.log('File name exists:', !!file.name);
-            console.log('File size:', file.size);
-            console.log('File type:', file.type);
             
             // Step 1: Validate file
-            console.log('Step 1: Starting file validation...');
             showStatus('🔍 Validating file...', 'info');
             
             if (!validateFileForUpload(file)) {
-                console.log('File validation failed, stopping process');
-                showStatus('❌ File validation failed', 'error');
-                return;
+                isProcessing = false;
+                return; // Error message already shown by validator
             }
-            
-            console.log('Step 1: File validation passed ✅');
-            showStatus('✅ File validation passed', 'success');
             
             // Step 2: Store file reference
-            console.log('Step 2: Storing file reference...');
             selectedFileObj = file;
-            console.log('File stored successfully, selectedFileObj:', !!selectedFileObj);
+            console.log('File stored successfully');
             
-            // Step 3: Update upload zone UI
-            console.log('Step 3: Updating upload zone UI...');
-            try {
-                uploadZone.style.backgroundColor = '#e8f5e8';
-                uploadZone.style.borderColor = '#28a745';
-                uploadZone.querySelector('.upload-icon').textContent = '✅';
-                uploadZone.querySelector('.upload-text').textContent = 'File selected: ' + file.name;
-                uploadZone.querySelector('.upload-hint').textContent = 'Click "Upload Photo" below to continue';
-                console.log('Upload zone UI updated successfully ✅');
-            } catch (error) {
-                console.error('Error updating upload zone UI:', error);
-                showStatus(`❌ UI update error: ${error.message}`, 'error');
-            }
+            // Step 3: Update UI
+            showStatus('✅ File ready for upload!', 'success');
+            updateSelectedFileUI(file);
             
-            // Step 4: Update file info display
-            console.log('Step 4: Updating file info display...');
-            try {
-                fileName.textContent = file.name;
-                fileSize.textContent = formatFileSize(file.size);
-                selectedFile.style.display = 'block';
-                console.log('File info display updated successfully ✅');
-            } catch (error) {
-                console.error('Error updating file info display:', error);
-                showStatus(`❌ File info display error: ${error.message}`, 'error');
-            }
+            isProcessing = false;
             
-            // Step 5: Show upload button
-            console.log('Step 5: Showing upload button...');
-            try {
-                uploadBtn.style.display = 'inline-block';
-                console.log('Upload button shown successfully ✅');
-            } catch (error) {
-                console.error('Error showing upload button:', error);
-                showStatus(`❌ Upload button error: ${error.message}`, 'error');
-            }
-            
-            // Step 6: Hide status messages and scroll on mobile
-            console.log('Step 6: Final UI updates...');
-            try {
-                statusMessage.style.display = 'none';
-                
-                // Scroll to upload button on mobile for better UX
-                if (isMobile) {
-                    console.log('Scrolling to upload button on mobile');
-                    uploadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                console.log('Final UI updates completed ✅');
-            } catch (error) {
-                console.error('Error in final UI updates:', error);
-            }
-            
-            // Success status
-            showStatus(`✅ Ready to upload: ${file.name}`, 'success');
-            console.log('=== HANDLE FILE IMPROVED SUCCESS ===');
+            console.log('File processing completed successfully');
         }
         
         // Maintain backward compatibility with original function name
@@ -722,109 +619,44 @@
         }
         
         function validateFileForUpload(file) {
-            console.log('=== FILE VALIDATION START ===');
-            console.log('Validating file for upload:', file ? file.name : 'null', file ? file.size : 'null', file ? file.type : 'null');
+            console.log('Validating file:', file ? file.name : 'null');
             
             // Check if file object is valid
-            console.log('Validation Step 1: Checking file object validity...');
             if (!file || !file.name) {
-                console.log('❌ Validation failed: Invalid file object');
                 showStatus('Invalid file selected. Please try again.', 'error');
                 return false;
             }
-            console.log('✅ File object is valid');
             
             // Enhanced file type checking for iPhone compatibility
-            console.log('Validation Step 2: Checking file extension...');
             const fileName = file.name.toLowerCase();
-            console.log('File name (lowercase):', fileName);
-            
             const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'];
             const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-            console.log('Allowed extensions:', allowedExtensions);
-            console.log('Has valid extension:', hasValidExtension);
             
             if (!hasValidExtension) {
-                console.log('❌ Validation failed: Invalid file extension');
-                if (fileName.endsWith('.dng') || fileName.endsWith('.raw')) {
-                    showStatus('📱 iPhone users: Please use regular Photo mode instead of ProRAW for plant photos.', 'error');
+                if (fileName.includes('.')) {
+                    const ext = fileName.substring(fileName.lastIndexOf('.'));
+                    showStatus(`❌ File type ${ext} not supported. Please use JPG, PNG, HEIC, or other image formats.`, 'error');
                 } else {
-                    showStatus(`Please select an image file. Supported: ${allowedExtensions.join(', ')}`, 'error');
-                }
-                return false;
-            }
-            console.log('✅ File extension is valid');
-            
-            // Check MIME type (with iPhone HEIC support)
-            console.log('Validation Step 3: Checking MIME type...');
-            console.log('File MIME type:', file.type);
-            
-            if (file.type) {
-                const allowedMimeTypes = [
-                    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-                    'image/heic', 'image/heif', 'image/x-heic', 'image/x-heif'
-                ];
-                console.log('Allowed MIME types:', allowedMimeTypes);
-                console.log('MIME type valid:', allowedMimeTypes.includes(file.type));
-                
-                if (!allowedMimeTypes.includes(file.type)) {
-                    console.log('❌ Validation failed: Invalid MIME type:', file.type);
-                    
-                    // Special message for iPhone users with common issues
-                    if (isMobile && (file.type.includes('video') || fileName.includes('live'))) {
-                        showStatus('📱 iPhone Live Photos detected. Please select a regular photo instead.', 'error');
-                    } else {
-                        showStatus(`Unsupported file format: ${file.type}. Please try a regular photo.`, 'error');
-                    }
-                    return false;
-                }
-                console.log('✅ MIME type is valid');
-            } else if (isMobile) {
-                // On mobile, MIME type might not be detected for HEIC files
-                console.log('⚠️ No MIME type detected (normal for some mobile files)');
-            }
-            
-            // Check file size
-            console.log('Validation Step 4: Checking file size...');
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            console.log('File size:', file.size, 'Max allowed:', maxSize);
-            
-            if (file.size > maxSize) {
-                console.log('❌ Validation failed: File too large');
-                showStatus('File too large. Please select an image smaller than 10MB.', 'error');
-                return false;
-            }
-            console.log('✅ File size is valid');
-            
-            // Mobile-specific: Check if file is actually readable
-            console.log('Validation Step 5: Checking file readability...');
-            if (file.size === 0) {
-                console.log('❌ Validation failed: File size is 0');
-                showStatus('Invalid file selected. Please try again.', 'error');
-                return false;
-            }
-            console.log('✅ File size > 0');
-            
-            // Additional mobile validation: Try to create object URL
-            console.log('Validation Step 6: Testing object URL creation...');
-            try {
-                const testUrl = URL.createObjectURL(file);
-                console.log('✅ Object URL created successfully:', testUrl.substring(0, 50) + '...');
-                URL.revokeObjectURL(testUrl); // Clean up immediately
-                console.log('✅ Object URL revoked');
-            } catch (error) {
-                console.error('❌ Object URL creation failed:', error);
-                
-                // iPhone-specific error message
-                if (isMobile) {
-                    showStatus('📱 Unable to process this image. Try taking a new photo in regular Photo mode (not Portrait or Live Photo).', 'error');
-                } else {
-                    showStatus('File cannot be processed. Please try a different image.', 'error');
+                    showStatus('❌ Invalid file type. Please select an image file.', 'error');
                 }
                 return false;
             }
             
-            console.log('=== FILE VALIDATION SUCCESS ===');
+            // Check file size (limit to 10MB for plant photos)
+            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+            if (file.size > MAX_FILE_SIZE) {
+                showStatus(`❌ File too large (${formatFileSize(file.size)}). Maximum size is 10MB.`, 'error');
+                return false;
+            }
+            
+            // iPhone-specific checks with helpful messages
+            const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || 
+                         file.type === 'image/heic' || file.type === 'image/heif';
+            
+            if (isHeic && isMobile) {
+                console.log('iPhone HEIC file detected');
+            }
+            
             return true;
         }
         
@@ -1012,24 +844,29 @@
         
         // Show debug button and debug panel on mobile for troubleshooting
         if (isMobile) {
-            const debugBtn = document.getElementById('debugBtn');
-            if (debugBtn) {
-                debugBtn.style.display = 'inline-block';
+            // Basic initialization for mobile
+            if (isMobile) {
+                // Show helpful hint for mobile users
+                const hint = uploadZone.querySelector('.upload-hint');
+                if (hint) {
+                    hint.textContent = 'Tap to take photo or select from gallery';
+                }
             }
             
-            const manualCheckBtn = document.getElementById('manualCheckBtn');
-            if (manualCheckBtn) {
-                manualCheckBtn.style.display = 'inline-block';
-            }
-            
-            // Show debug log panel on mobile
-            const debugInfo = document.getElementById('debugInfo');
-            if (debugInfo) {
-                debugInfo.style.display = 'block';
-                addDebugLog('Mobile debug mode enabled');
-                addDebugLog(`User agent: ${navigator.userAgent}`);
-                addDebugLog(`File API support: ${typeof FileReader !== 'undefined'}`);
-                addDebugLog(`Blob support: ${typeof Blob !== 'undefined'}`);
+            // Function to enable debug mode (call this if there are issues)
+            function enableDebugMode() {
+                const debugBtn = document.getElementById('debugBtn');
+                const manualCheckBtn = document.getElementById('manualCheckBtn');
+                const debugInfo = document.getElementById('debugInfo');
+                
+                if (debugBtn) debugBtn.style.display = 'inline-block';
+                if (manualCheckBtn) manualCheckBtn.style.display = 'inline-block';
+                if (debugInfo) {
+                    debugInfo.style.display = 'block';
+                    addDebugLog('Debug mode enabled');
+                }
+                
+                showStatus('🔧 Debug mode enabled. Additional tools are now visible.', 'info');
             }
         }
         
@@ -1164,18 +1001,13 @@
         function startFileSelectionPolling() {
             if (!isMobile) return; // Only for mobile
             
-            console.log('Starting file selection polling...');
-            addDebugLog('Starting file selection monitoring...');
-            
             pollingAttempts = 0;
             
             pollingInterval = setInterval(() => {
                 pollingAttempts++;
-                console.log(`Polling attempt ${pollingAttempts}: checking file input...`);
                 
                 if (fileInput.files && fileInput.files.length > 0) {
-                    console.log('Files detected via polling!');
-                    addDebugLog(`Files detected via polling: ${fileInput.files.length}`);
+                    console.log('Files detected via polling');
                     clearInterval(pollingInterval);
                     
                     // Create synthetic event for handleFileSelectImproved
@@ -1187,9 +1019,8 @@
                     
                 } else if (pollingAttempts >= maxPollingAttempts) {
                     console.log('Polling timeout - no files detected');
-                    addDebugLog('File selection timeout - no files found');
                     clearInterval(pollingInterval);
-                    showStatus('⏰ File selection timed out. Please try again.', 'error');
+                    // Don't show timeout message to user - they might not have selected anything
                 }
             }, 500); // Check every 500ms
         }
