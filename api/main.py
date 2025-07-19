@@ -1,5 +1,5 @@
 # Import the Flask class from the flask package
-from flask import Flask, jsonify, request  # Import request to access query parameters
+from flask import Flask, jsonify, request, url_for, render_template  # Import request to access query parameters, url_for for links
 import sys
 sys.path.append('..')  # Add parent directory to sys.path to allow imports from utils and models
 from utils.plant_operations import get_plant_data, search_plants  # Import plant data functions
@@ -12,6 +12,7 @@ from flask_limiter import Limiter  # Import Limiter for rate limiting
 from flask_limiter.util import get_remote_address  # Utility to get client IP for rate limiting
 import logging  # Import logging module for audit logging
 import sys  # Import sys to access stdout for logging
+from utils.upload_token_manager import get_token_info  # Import token manager functions
 
 # Load environment variables from .env file
 load_dotenv()
@@ -1212,118 +1213,69 @@ def get_upload_token_info(token):
             'error': 'Internal server error'
         }), 500
 
-def serve_plant_upload_page(token):
+def serve_log_upload_page(token):
     """
-    Serve the HTML upload page for a plant photo upload token.
-    Validates the token before serving the page.
+    Serve the upload page for log entries.
     """
     try:
-        from utils.upload_token_manager import validate_upload_token
-        from flask import render_template
+        # Verify token is valid and not expired
+        token_info = get_token_info(token)
+        if not token_info or not isinstance(token_info, dict):
+            return jsonify({'error': 'Invalid or expired upload token'}), 401
         
-        # Validate the token before serving the page
-        is_valid, token_data, error_message = validate_upload_token(token)
-        if not is_valid or not token_data:
-            return f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Invalid Upload Token</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                    .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
-                </style>
-            </head>
-            <body>
-                <div class="error">
-                    <h2>❌ Invalid Upload Token</h2>
-                    <p>{error_message or 'This upload link has expired or is invalid.'}</p>
-                    <p>Please request a new upload link.</p>
-                </div>
-            </body>
-            </html>
-            """, 401
-            
+        # Verify this is a log upload token
+        if token_info.get('token_type') != 'log_upload':
+            return jsonify({'error': 'This token is not for log photo uploads'}), 400
+        
+        # Get plant name and log ID for display
+        plant_name = token_info.get('plant_name', 'Unknown Plant')
+        log_id = token_info.get('log_id', 'Unknown Log')
+        
+        # Render the upload page template
+        return render_template(
+            'upload.html',
+            token=token,
+            plant_name=plant_name,
+            log_id=log_id,
+            upload_type='log',
+            token_info_url=url_for('get_upload_token_info', token=token),
+            upload_url=url_for('upload_photo_to_log', token=token)
+        )
+    except Exception as e:
+        logging.error(f"Error serving log upload page: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+def serve_plant_upload_page(token):
+    """
+    Serve the upload page for plant photos.
+    """
+    try:
+        # Verify token is valid and not expired
+        token_info = get_token_info(token)
+        if not token_info or not isinstance(token_info, dict):
+            return jsonify({'error': 'Invalid or expired upload token'}), 401
+        
         # Verify this is a plant upload token
-        if token_data.get('token_type') != 'plant_upload':
-            return f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Invalid Token Type</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                    .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
-                </style>
-            </head>
-            <body>
-                <div class="error">
-                    <h2>❌ Invalid Token Type</h2>
-                    <p>This token is not for plant photo uploads.</p>
-                    <p>Please request a new upload link.</p>
-                </div>
-            </body>
-            </html>
-            """, 400
+        if token_info.get('token_type') != 'plant_upload':
+            return jsonify({'error': 'This token is not for plant photo uploads'}), 400
         
-        # Token is valid, serve the upload page
-        try:
-            return render_template('plant_upload.html')
-        except Exception as template_error:
-            # Fallback to inline HTML if template file not found
-            logging.warning(f"Template not found, serving inline HTML: {template_error}")
-            
-            # Read the template file directly as fallback
-            try:
-                with open('templates/plant_upload.html', 'r', encoding='utf-8') as f:
-                    html_content = f.read()
-                return html_content
-            except Exception as file_error:
-                logging.error(f"Could not read upload template: {file_error}")
-                return f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Upload Error</title>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>
-                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                        .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
-                    </style>
-                </head>
-                <body>
-                    <div class="error">
-                        <h2>❌ Upload Page Error</h2>
-                        <p>Could not load the upload page. Please try again later.</p>
-                    </div>
-                </body>
-                </html>
-                """, 500
-                
+        # Get plant name and operation type for display
+        plant_name = token_info.get('plant_name', 'Unknown Plant')
+        operation = token_info.get('operation', 'update')
+        
+        # Render the upload page template
+        return render_template(
+            'upload.html',
+            token=token,
+            plant_name=plant_name,
+            operation=operation,
+            upload_type='plant',
+            token_info_url=url_for('get_upload_token_info', token=token),
+            upload_url=url_for('upload_photo_to_plant', token=token)
+        )
     except Exception as e:
         logging.error(f"Error serving plant upload page: {e}")
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Server Error</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
-            </style>
-        </head>
-        <body>
-            <div class="error">
-                <h2>❌ Server Error</h2>
-                <p>An error occurred while loading the upload page.</p>
-                <p>Please try again later.</p>
-            </div>
-        </body>
-        </html>
-        """, 500
+        return jsonify({'error': 'Internal server error'}), 500
 
 def upload_photo_to_plant(token):
     """
@@ -1485,7 +1437,7 @@ def register_plant_log_routes(app, limiter, require_api_key):
         # GET /upload/{token} - Serve upload page for specific token (no API key needed, token is auth)
         app.add_url_rule(
             '/upload/<token>',
-            view_func=limiter.limit('60 per minute')(serve_plant_upload_page),
+            view_func=limiter.limit('60 per minute')(serve_log_upload_page),
             methods=['GET']
         )
         
@@ -1512,7 +1464,7 @@ def register_plant_log_routes(app, limiter, require_api_key):
         app.add_url_rule('/api/plants/log', view_func=require_api_key(create_plant_log), methods=['POST'])
         app.add_url_rule('/api/plants/log/simple', view_func=require_api_key(create_plant_log_simple), methods=['POST'])
         app.add_url_rule('/upload/<token>', view_func=upload_photo_to_log, methods=['POST'])
-        app.add_url_rule('/upload/<token>', view_func=serve_plant_upload_page, methods=['GET'])
+        app.add_url_rule('/upload/<token>', view_func=serve_log_upload_page, methods=['GET'])
         app.add_url_rule('/api/plants/<plant_name>/log', view_func=get_plant_log_history, methods=['GET'])
         app.add_url_rule('/api/plants/log/<log_id>', view_func=get_log_entry_details, methods=['GET'])
         app.add_url_rule('/api/plants/log/search', view_func=search_plant_logs, methods=['GET'])
