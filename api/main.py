@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request, url_for, render_template  # Import re
 import sys
 sys.path.append('..')  # Add parent directory to sys.path to allow imports from utils and models
 from utils.plant_operations import get_plant_data, search_plants  # Import plant data functions
-from models.field_config import get_canonical_field_name  # Import field name utility
+from models.field_config import get_canonical_field_name, get_all_field_names  # Import field name utility
 from flask_cors import CORS  # Import CORS for cross-origin support
 import os  # For environment variable access
 from functools import wraps  # For creating decorators
@@ -1068,6 +1068,7 @@ def upload_photo_to_log(token):
     Upload a photo to an existing log entry using a secure upload token.
     This endpoint supports the two-step photo upload workflow where users 
     first create a log entry, then upload photos using the provided token.
+    Also updates the plant's photo in the main database if it doesn't have one.
     """
     try:
         # Add debugging to identify where the 500 error occurs
@@ -1080,7 +1081,8 @@ def upload_photo_to_log(token):
         logging.info(f"UPLOAD_DEBUG: Imported storage_client")
         
         from utils.plant_log_operations import update_log_entry_photo
-        logging.info(f"UPLOAD_DEBUG: Imported plant_log_operations")
+        from utils.plant_operations import find_plant_by_id_or_name, update_plant
+        logging.info(f"UPLOAD_DEBUG: Imported plant_log_operations and plant_operations")
         
         # Token is passed as function parameter from Flask route
         logging.info(f"UPLOAD_DEBUG: Received token parameter: {token[:20] if token else 'None'}...")
@@ -1151,6 +1153,32 @@ def upload_photo_to_log(token):
             # Photo uploaded but log update failed - log warning but continue
             logging.warning(f"Photo uploaded but log update failed for {log_id}: {update_result.get('error')}")
         
+        # Check if plant exists and needs photo update
+        plant_row, plant_data = find_plant_by_id_or_name(plant_name)
+        plant_update_result = {'success': False, 'message': 'Plant photo update not needed'}
+        
+        if plant_data:
+            # Get the Photo URL field index
+            headers = get_all_field_names()
+            photo_url_field = get_canonical_field_name('Photo URL')
+            photo_url_idx = headers.index(photo_url_field) if photo_url_field in headers else None
+            
+            # Check if plant has no photo
+            if photo_url_idx is not None and (
+                len(plant_data) <= photo_url_idx or 
+                not plant_data[photo_url_idx] or 
+                plant_data[photo_url_idx].strip() == ''
+            ):
+                # Update plant's photo
+                plant_update_result = update_plant(plant_data[0], {
+                    'Photo URL': upload_result['photo_url'],
+                    'Raw Photo URL': upload_result['raw_photo_url']
+                })
+                if plant_update_result.get('success'):
+                    logging.info(f"Updated plant {plant_name} with new photo from log entry")
+                else:
+                    logging.warning(f"Failed to update plant photo: {plant_update_result.get('error')}")
+        
         # Mark token as used to prevent reuse
         user_ip = request.remote_addr or "unknown"
         mark_token_used(token, user_ip)
@@ -1170,6 +1198,10 @@ def upload_photo_to_log(token):
             'log_update': {
                 'updated': update_result.get('success', False),
                 'message': update_result.get('message', 'Log entry updated with photo')
+            },
+            'plant_update': {
+                'updated': plant_update_result.get('success', False),
+                'message': plant_update_result.get('message', 'Plant photo not updated')
             }
         }), 200
         
