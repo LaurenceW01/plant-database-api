@@ -175,7 +175,15 @@ def generate_upload_url(token: str, base_url: str = "https://plant-database-api.
     Returns:
         str: Complete upload URL
     """
-    return f"{base_url}/upload/{token}"
+    # Get token info to determine URL path
+    token_info = _token_storage.get(token, {})
+    token_type = token_info.get('token_type')
+    
+    # Use different paths for different token types
+    if token_type == 'plant_upload':
+        return f"{base_url}/upload/plant/{token}"
+    else:  # log_upload or unknown
+        return f"{base_url}/upload/{token}"
 
 def cleanup_expired_tokens() -> int:
     """
