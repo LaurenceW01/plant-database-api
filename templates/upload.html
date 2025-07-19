@@ -250,7 +250,7 @@
         
         <!-- Upload Zone -->
         <div class="upload-zone" id="uploadZone">
-            <input type="file" class="file-input" id="fileInput" accept="image/*,.heic,.heif" capture>
+            <input type="file" class="file-input" id="fileInput" accept="image/*,.heic,.heif">
             <div class="upload-icon">📸</div>
             <div class="upload-text">Drop your plant photo here</div>
             <div class="upload-hint">or click to select a file</div>
@@ -459,8 +459,8 @@
             
             // Show appropriate status message
             if (isMobile) {
-                showStatus('📱 Opening file picker...', 'info');
-                addDebugLog('Attempting to open mobile file picker...');
+                showStatus('📱 Choose from gallery or take photo...', 'info');
+                addDebugLog('Opening mobile file picker (gallery/camera)...');
             } else {
                 showStatus('📁 Opening file picker...', 'info');
             }
@@ -476,9 +476,10 @@
                     console.log('Configuring mobile file input...');
                     addDebugLog('Configuring mobile file input...');
                     fileInput.setAttribute('accept', 'image/*,.heic,.heif');
-                    fileInput.setAttribute('capture', 'environment'); // Use camera if available
+                    // Remove capture attribute to allow both gallery and camera
+                    fileInput.removeAttribute('capture');
                     addDebugLog(`File input accept: ${fileInput.accept}`);
-                    addDebugLog(`File input capture: ${fileInput.capture}`);
+                    addDebugLog('Capture attribute removed to allow gallery access');
                 }
                 
                 // Create and dispatch a click event
@@ -545,7 +546,7 @@
             // Add mobile-specific hints
             if (isMobile) {
                 const hint = uploadZone.querySelector('.upload-hint');
-                hint.textContent = 'Tap to take photo or select from gallery (HEIC photos from iPhone supported)';
+                hint.textContent = 'Tap to choose from gallery or take a new photo';
             }
         }
         
@@ -914,7 +915,7 @@
             uploadZone.querySelector('.upload-text').textContent = 'Drop your plant photo here';
             
             if (isMobile) {
-                uploadZone.querySelector('.upload-hint').textContent = 'Tap to take photo or select from gallery';
+                uploadZone.querySelector('.upload-hint').textContent = 'Tap to choose from gallery or take a new photo';
             } else {
                 uploadZone.querySelector('.upload-hint').textContent = 'or click to select a file';
             }
