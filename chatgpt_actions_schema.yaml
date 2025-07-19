@@ -494,6 +494,7 @@ paths:
       description: |
         Upload a photo to an existing log entry using the secure upload token.
         This completes the two-step process: 1) Create log entry, 2) Upload photo.
+        If the associated plant doesn't have a photo, it will also be updated with this photo.
       parameters:
         - name: token
           in: path
@@ -559,6 +560,18 @@ paths:
                       message:
                         type: string
                         example: "Photo URLs updated for log entry LOG-20240117-605"
+                  plant_update:
+                    type: object
+                    description: Information about plant photo update (if applicable)
+                    properties:
+                      updated:
+                        type: boolean
+                        example: true
+                        description: Whether the plant's photo was updated
+                      message:
+                        type: string
+                        example: "Plant photo updated with new image"
+                        description: Status message about plant photo update
         '400':
           description: Invalid token, file, or upload error
           content:
