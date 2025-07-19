@@ -238,6 +238,31 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .upload-hint a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white !important;
+            text-decoration: none !important;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .upload-hint a:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -340,8 +365,28 @@
         // Detect mobile device for better compatibility
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
+        // Add ChatGPT detection
+        const isChatGPT = /ChatGPT-User|openai\.com\/bot/.test(navigator.userAgent);
+        
         // Load token information
-        loadTokenInfo();
+        function loadTokenInfo() {
+            plantName.textContent = 'Plant Photo Upload';
+            logId.textContent = 'Token: ' + token.substring(0, 8) + '...';
+            
+            // Add mobile-specific hints with ChatGPT warning if needed
+            if (isMobile) {
+                const hint = uploadZone.querySelector('.upload-hint');
+                if (isChatGPT) {
+                    hint.innerHTML = 'Due to ChatGPT limitations, please use this direct link to upload:<br>' +
+                        `<a href="https://plant-database-api.onrender.com/upload/${token}" target="_blank" ` +
+                        'style="color: #007bff; text-decoration: underline;">Open Upload Page</a>';
+                    // Add warning message
+                    showStatus('⚠️ File uploads are limited in ChatGPT. Please use the direct link above.', 'warning');
+                } else {
+                    hint.textContent = 'Tap to choose from gallery or take a new photo';
+                }
+            }
+        }
         
         // Event listeners with proper mobile/desktop separation
         if (isMobile) {
@@ -389,6 +434,11 @@
         // New function to check for file after blur event
         function checkForFileAfterBlur(e) {
             setTimeout(() => {
+                if (isChatGPT && isMobile) {
+                    addDebugLog('File check skipped - ChatGPT environment');
+                    return;
+                }
+                
                 if (e.target.files && e.target.files.length > 0) {
                     console.log('Files detected on BLUR');
                     addDebugLog(`Files detected on BLUR: ${e.target.files.length}`);
@@ -404,7 +454,7 @@
                         e.target.dispatchEvent(changeEvent);
                     }
                 }
-            }, 300); // Increased delay for better mobile compatibility
+            }, 300);
         }
         
         uploadBtn.addEventListener('click', uploadFile);
@@ -442,6 +492,13 @@
         function handleUploadZoneClick(e) {
             console.log('Upload zone clicked, device:', isMobile ? 'Mobile' : 'Desktop');
             addDebugLog(`Upload zone clicked (${isMobile ? 'Mobile' : 'Desktop'})`);
+            
+            // Check for ChatGPT environment
+            if (isChatGPT && isMobile) {
+                showStatus('⚠️ Please use the direct link above to upload photos in ChatGPT', 'warning');
+                addDebugLog('Upload blocked - ChatGPT environment detected');
+                return;
+            }
             
             // Prevent multiple triggers and ensure single file selection
             if (isProcessing || selectedFileObj) {
@@ -929,6 +986,11 @@
         function showStatus(message, type) {
             statusMessage.textContent = message;
             statusMessage.className = `status-message status-${type}`;
+            if (type === 'warning') {
+                statusMessage.style.background = '#fff3cd';
+                statusMessage.style.color = '#856404';
+                statusMessage.style.borderColor = '#ffeeba';
+            }
             statusMessage.style.display = 'block';
             
             // Auto-scroll to status on mobile
