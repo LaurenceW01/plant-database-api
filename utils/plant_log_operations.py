@@ -253,25 +253,28 @@ def create_log_entry(
             body={'values': [row_data]}
         ).execute()
         
-        logger.info(f"Created log entry {log_id} for plant {canonical_plant_name}")
-        
-        # Generate upload token for two-step photo upload
-        upload_token = generate_upload_token(log_id, canonical_plant_name)
+        # Generate upload token for photo upload
+        upload_token = generate_upload_token(
+            plant_name=canonical_plant_name,
+            token_type='log_upload',  # Specify token type for log uploads
+            log_id=log_id
+        )
         upload_url = generate_upload_url(upload_token)
         
+        # Return success with log data and upload URL
         return {
             "success": True,
-            "log_entry": log_data,
+            "message": "Log entry created successfully",
             "log_id": log_id,
             "plant_name": canonical_plant_name,
-            "upload_token": upload_token,
+            "plant_id": plant_id,
+            "log_data": log_data,
             "upload_url": upload_url,
-            "upload_instructions": f"To add a photo to this log entry, visit: {upload_url}",
-            "sheets_result": result
+            "upload_token": upload_token
         }
         
     except Exception as e:
-        logger.error(f"Failed to create log entry: {e}")
+        logger.error(f"Error creating log entry: {e}")
         return {"success": False, "error": str(e)}
 
 def update_log_entry_photo(log_id: str, photo_url: str, raw_photo_url: str) -> Dict[str, Any]:
