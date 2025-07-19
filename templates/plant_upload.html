@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Plant Photo - Plant Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .upload-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .plant-info {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .plant-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .operation-type {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+        
+        .plant-id {
+            font-size: 14px;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .button-group {
+            display: grid;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .action-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            color: white;
+            text-align: center;
+            gap: 10px;
+        }
+        
+        .camera-button {
+            background: #28a745;
+        }
+        
+        .camera-button:hover {
+            background: #218838;
+        }
+        
+        .gallery-button {
+            background: #007bff;
+        }
+        
+        .gallery-button:hover {
+            background: #0056b3;
+        }
+        
+        .preview-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .secure-icon {
+            color: #28a745;
+            margin-right: 5px;
+        }
+        
+        @media (max-width: 480px) {
+            .upload-container {
+                padding: 20px;
+            }
+            
+            .plant-name {
+                font-size: 20px;
+            }
+            
+            .button-group {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <!-- Plant Information -->
+        <div class="plant-info">
+            <div class="plant-name" id="plantName">Loading...</div>
+            <div class="operation-type" id="operationType">Loading...</div>
+            <div class="plant-id" id="plantId">Plant ID: Loading...</div>
+        </div>
+        
+        <!-- Upload Options -->
+        <div class="button-group">
+            <button class="action-button camera-button" id="cameraButton">
+                📸 Take Photo
+            </button>
+            <button class="action-button gallery-button" id="galleryButton">
+                🖼️ Choose from Gallery
+            </button>
+        </div>
+        
+        <!-- Preview Container -->
+        <div class="preview-container" id="previewContainer">
+            <img class="preview-image" id="previewImage" alt="Selected photo">
+            <div class="button-group">
+                <button class="action-button camera-button" id="uploadButton" style="display: none;">
+                    📤 Upload Photo
+                </button>
+                <button class="action-button gallery-button" id="retakeButton" style="display: none;">
+                    🔄 Take Another
+                </button>
+            </div>
+        </div>
+        
+        <!-- Status Message -->
+        <div class="status-message" id="statusMessage"></div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <span class="secure-icon">🔒</span>
+            Secure upload • Photo will be linked to your plant record
+        </div>
+    </div>
+
+    <script>
+        // Extract token from URL
+        const urlParts = window.location.pathname.split('/');
+        const token = urlParts[urlParts.length - 1];
+        
+        // DOM elements
+        const plantName = document.getElementById('plantName');
+        const operationType = document.getElementById('operationType');
+        const plantId = document.getElementById('plantId');
+        const cameraButton = document.getElementById('cameraButton');
+        const galleryButton = document.getElementById('galleryButton');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const uploadButton = document.getElementById('uploadButton');
+        const retakeButton = document.getElementById('retakeButton');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Initialize
+        loadTokenInfo();
+        setupCameraCapture();
+        setupGalleryPicker();
+        setupUploadHandler();
+        setupRetakeHandler();
+        
+        function loadTokenInfo() {
+            // Send token to server to get plant info
+            fetch(`/api/upload/info/${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        plantName.textContent = data.plant_name;
+                        operationType.textContent = data.operation === 'add' ? 'Adding New Plant' : 'Updating Plant';
+                        plantId.textContent = `Plant ID: ${data.plant_id}`;
+                    } else {
+                        showStatus('Invalid or expired upload token', 'error');
+                        disableUploadButtons();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading token info:', error);
+                    showStatus('Error loading plant information', 'error');
+                    disableUploadButtons();
+                });
+        }
+        
+        function setupCameraCapture() {
+            cameraButton.addEventListener('click', async () => {
+                try {
+                    // Create a temporary input element for camera capture
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*,.heic,.heif';
+                    input.capture = 'environment'; // Use back camera
+                    
+                    // Handle file selection
+                    input.onchange = (e) => handleImageSelect(e.target.files[0]);
+                    
+                    // Trigger camera
+                    input.click();
+                } catch (error) {
+                    showStatus('Camera access failed. Please try again.', 'error');
+                    console.error('Camera error:', error);
+                }
+            });
+        }
+        
+        function setupGalleryPicker() {
+            galleryButton.addEventListener('click', () => {
+                // Create a temporary input element for gallery selection
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*,.heic,.heif';
+                
+                // Handle file selection
+                input.onchange = (e) => handleImageSelect(e.target.files[0]);
+                
+                // Trigger gallery
+                input.click();
+            });
+        }
+        
+        function handleImageSelect(file) {
+            if (!file) return;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                uploadButton.style.display = 'flex';
+                retakeButton.style.display = 'flex';
+                cameraButton.style.display = 'none';
+                galleryButton.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // Store file for upload
+            window._selectedFile = file;
+        }
+        
+        function setupUploadHandler() {
+            uploadButton.addEventListener('click', async () => {
+                if (!window._selectedFile) {
+                    showStatus('Please select a photo first', 'error');
+                    return;
+                }
+                
+                showStatus('Uploading photo...', 'info');
+                uploadButton.disabled = true;
+                
+                const formData = new FormData();
+                formData.append('file', window._selectedFile);
+                
+                try {
+                    const response = await fetch(`/upload/plant/${token}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showStatus('Photo uploaded successfully! You can close this page.', 'success');
+                        disableUploadButtons();
+                    } else {
+                        showStatus(result.error || 'Upload failed. Please try again.', 'error');
+                        uploadButton.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showStatus('Upload failed. Please try again.', 'error');
+                    uploadButton.disabled = false;
+                }
+            });
+        }
+        
+        function setupRetakeHandler() {
+            retakeButton.addEventListener('click', () => {
+                // Reset UI
+                previewContainer.style.display = 'none';
+                uploadButton.style.display = 'none';
+                retakeButton.style.display = 'none';
+                cameraButton.style.display = 'flex';
+                galleryButton.style.display = 'flex';
+                window._selectedFile = null;
+                statusMessage.style.display = 'none';
+            });
+        }
+        
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+        }
+        
+        function disableUploadButtons() {
+            cameraButton.disabled = true;
+            galleryButton.disabled = true;
+            uploadButton.disabled = true;
+            retakeButton.disabled = true;
+        }
+    </script>
+</body>
+</html> 

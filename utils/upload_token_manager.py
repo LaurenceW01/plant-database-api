@@ -2,20 +2,20 @@
 Upload Token Manager for Two-Step Photo Upload System
 
 This module handles the generation, validation, and management of secure upload tokens
-that allow users to upload photos to existing log entries through a simple web interface.
+that allow users to upload photos to existing log entries and plants through a simple web interface.
 
 Key Features:
 - Secure token generation using secrets module
 - Token expiration (24 hours default)
 - One-time use tokens to prevent replay attacks
 - In-memory storage (can be extended to Redis later)
-- Log ID association for linking photos to correct entries
+- Support for both log entries and plant photos
 """
 
 import secrets
 import json
 import logging
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, Literal
 from datetime import datetime, timedelta
 
 # Configure logging
@@ -25,30 +25,52 @@ logger = logging.getLogger(__name__)
 TOKEN_LENGTH = 32  # Length of random token string
 DEFAULT_EXPIRATION_HOURS = 24  # Token expires after 24 hours
 
+# Token types
+TokenType = Literal['log_upload', 'plant_upload']
+
 # In-memory storage for upload tokens
 _token_storage: Dict[str, Dict[str, Any]] = {}
 
-def generate_upload_token(log_id: str, plant_name: str, expiration_hours: int = DEFAULT_EXPIRATION_HOURS) -> str:
+def generate_upload_token(
+    plant_name: str,
+    token_type: TokenType,
+    log_id: Optional[str] = None,
+    plant_id: Optional[str] = None,
+    operation: Optional[Literal['add', 'update']] = None,
+    expiration_hours: int = DEFAULT_EXPIRATION_HOURS
+) -> str:
     """
-    Generate a secure upload token for a specific log entry.
+    Generate a secure upload token for a log entry or plant photo.
     
     Args:
-        log_id (str): The log entry ID this token is for
         plant_name (str): Name of the plant for display purposes
+        token_type (TokenType): Type of upload token ('log_upload' or 'plant_upload')
+        log_id (Optional[str]): The log entry ID this token is for (required for log_upload)
+        plant_id (Optional[str]): The plant ID this token is for (required for plant_upload)
+        operation (Optional[str]): For plant_upload, whether this is for 'add' or 'update'
         expiration_hours (int): Hours until token expires
         
     Returns:
         str: Secure upload token
+        
+    Raises:
+        ValueError: If required parameters are missing for the token type
     """
+    # Validate parameters based on token type
+    if token_type == 'log_upload' and not log_id:
+        raise ValueError("log_id is required for log upload tokens")
+    if token_type == 'plant_upload' and not operation:
+        raise ValueError("operation is required for plant upload tokens")
+    
     # Generate cryptographically secure random token
     token = secrets.token_urlsafe(TOKEN_LENGTH)
     
     # Calculate expiration timestamp
     expiration_time = datetime.now() + timedelta(hours=expiration_hours)
     
-    # Create token data
+    # Create base token data
     token_data = {
-        'log_id': log_id,
+        'token_type': token_type,
         'plant_name': plant_name,
         'created_at': datetime.now().isoformat(),
         'expires_at': expiration_time.isoformat(),
@@ -57,15 +79,27 @@ def generate_upload_token(log_id: str, plant_name: str, expiration_hours: int = 
         'uploaded_at': ""
     }
     
+    # Add type-specific data
+    if token_type == 'log_upload':
+        token_data['log_id'] = log_id
+    else:  # plant_upload
+        token_data['plant_id'] = plant_id
+        token_data['operation'] = operation
+    
     # Store in memory
     _token_storage[token] = token_data
-    logger.info(f"Upload token generated for log {log_id}, expires in {expiration_hours} hours")
+    logger.info(
+        f"Upload token generated for {token_type}: "
+        f"plant={plant_name}, "
+        f"{'log_id=' + str(log_id) if log_id else 'plant_id=' + str(plant_id)}, "
+        f"expires in {expiration_hours} hours"
+    )
     
     return token
 
 def validate_upload_token(token: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
     """
-    Validate an upload token and return associated log information.
+    Validate an upload token and return associated information.
     
     Args:
         token (str): Upload token to validate

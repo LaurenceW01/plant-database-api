@@ -848,7 +848,7 @@ def create_plant_log():
         result = create_log_entry(
             plant_name=plant_name,
             photo_url="",  # No photo in JSON mode
-            raw_photo_url="", 
+            raw_photo_url="",
             diagnosis=diagnosis,
             treatment=treatment,
             symptoms=symptoms,
@@ -868,6 +868,7 @@ def create_plant_log():
             upload_token = generate_upload_token(
                 log_id=result['log_id'],
                 plant_name=plant_name,
+                token_type='log_upload',
                 expiration_hours=24
             )
             
@@ -1178,9 +1179,42 @@ def upload_photo_to_log(token):
             'error': 'Internal server error during photo upload'
         }), 500
 
-def serve_upload_page(token):
+def get_upload_token_info(token):
     """
-    Serve the HTML upload page for a specific token.
+    Get information about an upload token.
+    Used by the upload page to display plant information.
+    """
+    try:
+        from utils.upload_token_manager import validate_upload_token
+        
+        # Validate the token
+        is_valid, token_data, error_message = validate_upload_token(token)
+        
+        if not is_valid or not token_data:
+            return jsonify({
+                'success': False,
+                'error': error_message or 'Invalid upload token'
+            }), 401
+        
+        # Return token information
+        return jsonify({
+            'success': True,
+            'plant_name': token_data.get('plant_name', ''),
+            'plant_id': token_data.get('plant_id', ''),
+            'operation': token_data.get('operation', ''),
+            'token_type': token_data.get('token_type', '')
+        })
+        
+    except Exception as e:
+        logging.error(f"Error getting token info: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+def serve_plant_upload_page(token):
+    """
+    Serve the HTML upload page for a plant photo upload token.
     Validates the token before serving the page.
     """
     try:
@@ -1205,22 +1239,45 @@ def serve_upload_page(token):
                 <div class="error">
                     <h2>❌ Invalid Upload Token</h2>
                     <p>{error_message or 'This upload link has expired or is invalid.'}</p>
-                    <p>Please request a new upload link from your plant logging session.</p>
+                    <p>Please request a new upload link.</p>
                 </div>
             </body>
             </html>
             """, 401
+            
+        # Verify this is a plant upload token
+        if token_data.get('token_type') != 'plant_upload':
+            return f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Invalid Token Type</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                    .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
+                </style>
+            </head>
+            <body>
+                <div class="error">
+                    <h2>❌ Invalid Token Type</h2>
+                    <p>This token is not for plant photo uploads.</p>
+                    <p>Please request a new upload link.</p>
+                </div>
+            </body>
+            </html>
+            """, 400
         
         # Token is valid, serve the upload page
         try:
-            return render_template('upload.html')
+            return render_template('plant_upload.html')
         except Exception as template_error:
             # Fallback to inline HTML if template file not found
             logging.warning(f"Template not found, serving inline HTML: {template_error}")
             
             # Read the template file directly as fallback
             try:
-                with open('templates/upload.html', 'r', encoding='utf-8') as f:
+                with open('templates/plant_upload.html', 'r', encoding='utf-8') as f:
                     html_content = f.read()
                 return html_content
             except Exception as file_error:
@@ -1244,28 +1301,162 @@ def serve_upload_page(token):
                 </body>
                 </html>
                 """, 500
-        
+                
     except Exception as e:
-        logging.error(f"Error serving upload page: {e}")
-        return """
+        logging.error(f"Error serving plant upload page: {e}")
+        return f"""
         <!DOCTYPE html>
         <html>
         <head>
             <title>Server Error</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .error { color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                .error {{ color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; display: inline-block; }}
             </style>
         </head>
         <body>
             <div class="error">
                 <h2>❌ Server Error</h2>
-                <p>There was an error loading the upload page. Please try again later.</p>
+                <p>An error occurred while loading the upload page.</p>
+                <p>Please try again later.</p>
             </div>
         </body>
         </html>
         """, 500
+
+def upload_photo_to_plant(token):
+    """
+    Upload a photo to a plant using a secure upload token.
+    This endpoint supports the two-step photo upload workflow where users 
+    first create/update a plant, then upload photos using the provided token.
+    """
+    try:
+        # Add debugging to identify where errors occur
+        logging.info(f"UPLOAD_DEBUG: Starting upload_photo_to_plant function")
+        
+        from utils.upload_token_manager import validate_upload_token, mark_token_used
+        logging.info(f"UPLOAD_DEBUG: Imported upload_token_manager")
+        
+        from utils.storage_client import upload_plant_photo, is_storage_available
+        logging.info(f"UPLOAD_DEBUG: Imported storage_client")
+        
+        from utils.plant_operations import add_plant_with_fields, update_plant
+        logging.info(f"UPLOAD_DEBUG: Imported plant_operations")
+        
+        # Token is passed as function parameter from Flask route
+        logging.info(f"UPLOAD_DEBUG: Received token parameter: {token[:20] if token else 'None'}...")
+        
+        if not token:
+            logging.error(f"UPLOAD_DEBUG: No token provided")
+            return jsonify({
+                'success': False, 
+                'error': 'Upload token is required'
+            }), 400
+        
+        # Validate upload token
+        logging.info(f"UPLOAD_DEBUG: Validating token...")
+        is_valid, token_data, error_message = validate_upload_token(token)
+        logging.info(f"UPLOAD_DEBUG: Token validation result: valid={is_valid}, data={token_data}")
+        
+        if not is_valid or not token_data:
+            logging.error(f"UPLOAD_DEBUG: Token validation failed: {error_message}")
+            return jsonify({
+                'success': False,
+                'error': f'Invalid upload token: {error_message}'
+            }), 401
+            
+        # Verify this is a plant upload token
+        if token_data.get('token_type') != 'plant_upload':
+            return jsonify({
+                'success': False,
+                'error': 'Invalid token type. This token is not for plant photo uploads.'
+            }), 400
+        
+        # Check if photo file is provided
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No photo file provided. Please select a photo to upload.'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No photo file selected. Please choose a file.'
+            }), 400
+        
+        # Validate storage availability
+        if not is_storage_available():
+            return jsonify({
+                'success': False,
+                'error': 'Photo storage is currently unavailable. Please try again later.'
+            }), 500
+        
+        # Extract plant information from token
+        plant_id = token_data.get('plant_id', '')
+        plant_name = token_data.get('plant_name', '')
+        operation = token_data.get('operation', '')
+        
+        # Upload photo to storage
+        try:
+            upload_result = upload_plant_photo(file, plant_name)
+        except ValueError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+        except Exception as e:
+            return jsonify({
+                'success': False, 
+                'error': f'Failed to upload photo: {str(e)}'
+            }), 500
+        
+        # Update plant record with photo URLs
+        update_data = {
+            'Photo URL': upload_result['photo_url'],
+            'Raw Photo URL': upload_result['raw_photo_url']
+        }
+        
+        if operation == 'update':
+            update_result = update_plant(plant_id, update_data)
+        else:  # operation == 'add'
+            update_result = add_plant_with_fields({
+                'Plant ID': plant_id,
+                'Plant Name': plant_name,
+                **update_data
+            })
+        
+        if not update_result.get('success'):
+            # Photo uploaded but plant update failed - log warning but continue
+            logging.warning(f"Photo uploaded but plant update failed for {plant_id}: {update_result.get('error')}")
+        
+        # Mark token as used to prevent reuse
+        user_ip = request.remote_addr or "unknown"
+        mark_token_used(token, user_ip)
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'message': f'Photo uploaded successfully to plant: {plant_name}',
+            'plant_id': plant_id,
+            'plant_name': plant_name,
+            'photo_upload': {
+                'photo_url': upload_result['raw_photo_url'],
+                'filename': upload_result['filename'],
+                'upload_time': upload_result['upload_time'],
+                'file_size': upload_result.get('file_size', 'unknown')
+            },
+            'plant_update': {
+                'updated': update_result.get('success', False),
+                'message': update_result.get('message', 'Plant record updated with photo')
+            }
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error in upload_photo_to_plant endpoint: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error during photo upload'
+        }), 500
 
 def register_plant_log_routes(app, limiter, require_api_key):
     """Register plant log API routes"""
@@ -1294,7 +1485,7 @@ def register_plant_log_routes(app, limiter, require_api_key):
         # GET /upload/{token} - Serve upload page for specific token (no API key needed, token is auth)
         app.add_url_rule(
             '/upload/<token>',
-            view_func=limiter.limit('60 per minute')(serve_upload_page),
+            view_func=limiter.limit('60 per minute')(serve_plant_upload_page),
             methods=['GET']
         )
         
@@ -1321,12 +1512,40 @@ def register_plant_log_routes(app, limiter, require_api_key):
         app.add_url_rule('/api/plants/log', view_func=require_api_key(create_plant_log), methods=['POST'])
         app.add_url_rule('/api/plants/log/simple', view_func=require_api_key(create_plant_log_simple), methods=['POST'])
         app.add_url_rule('/upload/<token>', view_func=upload_photo_to_log, methods=['POST'])
-        app.add_url_rule('/upload/<token>', view_func=serve_upload_page, methods=['GET'])
+        app.add_url_rule('/upload/<token>', view_func=serve_plant_upload_page, methods=['GET'])
         app.add_url_rule('/api/plants/<plant_name>/log', view_func=get_plant_log_history, methods=['GET'])
         app.add_url_rule('/api/plants/log/<log_id>', view_func=get_log_entry_details, methods=['GET'])
         app.add_url_rule('/api/plants/log/search', view_func=search_plant_logs, methods=['GET'])
 
-# App factory function
+def register_plant_routes(app, limiter, require_api_key):
+    """Register plant API routes"""
+    if not app.config.get('TESTING', False):
+        # POST /upload/plant/{token} - Upload photo to plant (no API key needed, token is auth)
+        app.add_url_rule(
+            '/upload/plant/<token>',
+            view_func=limiter.limit('20 per minute')(upload_photo_to_plant),
+            methods=['POST']
+        )
+        
+        # GET /upload/plant/{token} - Serve upload page for plant photo (no API key needed, token is auth)
+        app.add_url_rule(
+            '/upload/plant/<token>',
+            view_func=limiter.limit('60 per minute')(serve_plant_upload_page),
+            methods=['GET']
+        )
+        
+        # GET /api/upload/info/{token} - Get token info for upload page
+        app.add_url_rule(
+            '/api/upload/info/<token>',
+            view_func=limiter.limit('60 per minute')(get_upload_token_info),
+            methods=['GET']
+        )
+    else:
+        # Testing mode - no rate limits
+        app.add_url_rule('/upload/plant/<token>', view_func=upload_photo_to_plant, methods=['POST'])
+        app.add_url_rule('/upload/plant/<token>', view_func=serve_plant_upload_page, methods=['GET'])
+        app.add_url_rule('/api/upload/info/<token>', view_func=get_upload_token_info, methods=['GET'])
+
 def create_app(testing=False):
     """
     Create and configure the Flask app. If testing=True, disables rate limiting.
@@ -1388,231 +1607,8 @@ def create_app(testing=False):
     register_image_analysis_route(app, limiter, require_api_key)
     # Register plant log routes
     register_plant_log_routes(app, limiter, require_api_key)
-    
-    # Debug endpoint to check route registration and import status
-    @app.route('/api/debug/info', methods=['GET'])
-    def debug_info():
-        """Debug endpoint to check what routes are registered and import status"""
-        import sys
-        
-        debug_data = {
-            "registered_routes": [],
-            "import_status": {},
-            "python_path": sys.path[:3],  # First few paths
-            "available_modules": {}
-        }
-        
-        # Get all registered routes
-        for rule in app.url_map.iter_rules():
-            debug_data["registered_routes"].append({
-                "endpoint": rule.endpoint,
-                "methods": list(rule.methods) if rule.methods else [],
-                "rule": str(rule)
-            })
-        
-        # Check import status for critical modules
-        try:
-            from utils.storage_client import upload_plant_photo, is_storage_available
-            debug_data["import_status"]["storage_client"] = "SUCCESS"
-            debug_data["available_modules"]["storage_available"] = is_storage_available()
-        except Exception as e:
-            debug_data["import_status"]["storage_client"] = f"FAILED: {str(e)}"
-        
-        try:
-            from utils.plant_log_operations import create_log_entry
-            debug_data["import_status"]["plant_log_operations"] = "SUCCESS"
-        except Exception as e:
-            debug_data["import_status"]["plant_log_operations"] = f"FAILED: {str(e)}"
-        
-        try:
-            from config.config import openai_client
-            debug_data["import_status"]["openai_client"] = "SUCCESS"
-        except Exception as e:
-            debug_data["import_status"]["openai_client"] = f"FAILED: {str(e)}"
-        
-        try:
-            from PIL import Image
-            debug_data["import_status"]["PIL"] = "SUCCESS"
-        except Exception as e:
-            debug_data["import_status"]["PIL"] = f"FAILED: {str(e)}"
-        
-        try:
-            import httpx
-            debug_data["import_status"]["httpx"] = "SUCCESS"
-        except Exception as e:
-            debug_data["import_status"]["httpx"] = f"FAILED: {str(e)}"
-        
-        try:
-            from werkzeug.datastructures import FileStorage
-            debug_data["import_status"]["werkzeug"] = "SUCCESS"
-        except Exception as e:
-            debug_data["import_status"]["werkzeug"] = f"FAILED: {str(e)}"
-        
-        return jsonify(debug_data)
-    
-    # ChatGPT Debug endpoint - logs exactly what ChatGPT sends
-    @app.route('/api/debug/chatgpt', methods=['GET', 'POST', 'PUT'])
-    def debug_chatgpt():
-        """
-        Debug endpoint to capture exactly what ChatGPT is sending.
-        Logs all headers, method, content type, and body for debugging 403 errors.
-        NO AUTHENTICATION REQUIRED - purely for debugging.
-        """
-        import json
-        from datetime import datetime
-        
-        # Capture all request details
-        debug_data = {
-            "timestamp": datetime.now().isoformat(),
-            "method": request.method,
-            "url": request.url,
-            "remote_addr": request.remote_addr,
-            "user_agent": request.headers.get('User-Agent', 'Not provided'),
-            "content_type": request.content_type,
-            "content_length": request.content_length,
-            "headers": {},
-            "form_data": {},
-            "json_data": None,
-            "files": {},
-            "args": dict(request.args),
-            "endpoint": "debug_chatgpt",
-            "auth_analysis": {}
-        }
-        
-        # Capture all headers (safely)
-        for header_name, header_value in request.headers:
-            debug_data["headers"][header_name] = header_value
-        
-        # Check for API key specifically
-        api_key_header = request.headers.get('x-api-key')
-        debug_data["auth_analysis"] = {
-            "x_api_key_present": api_key_header is not None,
-            "x_api_key_value": api_key_header[:10] + "..." if api_key_header else None,
-            "authorization_header": request.headers.get('Authorization'),
-            "auth_header_count": len([h[0] for h in request.headers if 'auth' in h[0].lower() or 'key' in h[0].lower()])
-        }
-        
-        # Capture form data if present
-        try:
-            if request.form:
-                debug_data["form_data"] = dict(request.form)
-        except Exception as e:
-            debug_data["form_data"] = f"Error reading form data: {str(e)}"
-        
-        # Capture JSON data if present
-        try:
-            if request.is_json:
-                debug_data["json_data"] = request.get_json()
-        except Exception as e:
-            debug_data["json_data"] = f"Error reading JSON data: {str(e)}"
-        
-        # Capture file uploads if present
-        try:
-            if request.files:
-                for file_key, file_obj in request.files.items():
-                    debug_data["files"][file_key] = {
-                        "filename": file_obj.filename,
-                        "content_type": file_obj.content_type,
-                        "size": len(file_obj.read()) if file_obj else 0
-                    }
-                    # Reset file pointer
-                    if file_obj:
-                        file_obj.seek(0)
-        except Exception as e:
-            debug_data["files"] = f"Error reading files: {str(e)}"
-        
-        # Log to server console for debugging
-        logging.info(f"CHATGPT_DEBUG | {request.method} {request.url} | Headers: {dict(request.headers)} | API Key: {'Present' if api_key_header else 'Missing'}")
-        
-        # Return comprehensive debug info
-        return jsonify({
-            "success": True,
-            "message": "Debug endpoint reached successfully - no authentication required",
-            "request_details": debug_data,
-            "server_response": {
-                "your_ip": request.remote_addr,
-                "server_time": datetime.now().isoformat(),
-                "endpoint_working": True,
-                "auth_required": False
-            },
-            "next_steps": {
-                "if_you_see_this": "The request successfully reached our server",
-                "check_for_api_key": "Look at auth_analysis section to see if x-api-key header is present",
-                "test_real_endpoint": "Try calling /api/plants/log with the x-api-key header"
-            }
-        }), 200
-    
-    @app.route('/api/debug-log', methods=['POST'])
-    def debug_log():
-        """
-        Receive debug log messages from mobile upload debugging.
-        Logs the information to server console for troubleshooting.
-        """
-        try:
-            data = request.get_json()
-            if data is None:
-                return jsonify({"error": "Missing JSON payload."}), 400
-                
-            token = data.get('token', 'unknown')
-            log_message = data.get('logMessage', '')
-            user_agent = data.get('userAgent', '')
-            is_mobile = data.get('isMobile', False)
-            timestamp = data.get('timestamp', '')
-            
-            # Log to server console with special prefix for easy identification
-            logging.info(f"MOBILE_DEBUG | Token: {token[:8]}... | {log_message}")
-            logging.info(f"MOBILE_DEBUG | UA: {user_agent}")
-            
-            return jsonify({"success": True, "message": "Debug log received"}), 200
-            
-        except Exception as e:
-            logging.error(f"Error processing debug log: {e}")
-            return jsonify({"error": "Internal server error"}), 500
-
-    @app.route('/api/debug-log-bulk', methods=['POST'])
-    def debug_log_bulk():
-        """
-        Receive bulk debug logs from mobile upload debugging.
-        Logs all information to server console for comprehensive troubleshooting.
-        """
-        try:
-            data = request.get_json()
-            if data is None:
-                return jsonify({"error": "Missing JSON payload."}), 400
-                
-            token = data.get('token', 'unknown')
-            session_start = data.get('sessionStart', '')
-            logs = data.get('logs', [])
-            user_agent = data.get('userAgent', '')
-            is_mobile = data.get('isMobile', False)
-            url = data.get('url', '')
-            
-            # Log session header
-            logging.info(f"MOBILE_DEBUG_BULK | ===== DEBUG SESSION START =====")
-            logging.info(f"MOBILE_DEBUG_BULK | Token: {token[:8]}...")
-            logging.info(f"MOBILE_DEBUG_BULK | Session: {session_start}")
-            logging.info(f"MOBILE_DEBUG_BULK | URL: {url}")
-            logging.info(f"MOBILE_DEBUG_BULK | User Agent: {user_agent}")
-            logging.info(f"MOBILE_DEBUG_BULK | Is Mobile: {is_mobile}")
-            logging.info(f"MOBILE_DEBUG_BULK | Total Logs: {len(logs)}")
-            
-            # Log each debug message
-            for i, log_entry in enumerate(logs):
-                timestamp = log_entry.get('timestamp', '')
-                message = log_entry.get('message', '')
-                logging.info(f"MOBILE_DEBUG_BULK | {i+1:03d} | {timestamp} | {message}")
-            
-            logging.info(f"MOBILE_DEBUG_BULK | ===== DEBUG SESSION END =====")
-            
-            return jsonify({
-                "success": True, 
-                "message": f"Received {len(logs)} debug log entries",
-                "logged": True
-            }), 200
-            
-        except Exception as e:
-            logging.error(f"Error processing bulk debug logs: {e}")
-            return jsonify({"error": "Internal server error"}), 500
+    # Register plant routes
+    register_plant_routes(app, limiter, require_api_key)
     
     return app
 
