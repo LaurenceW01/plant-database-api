@@ -428,8 +428,15 @@ def update_plant_field(plant_row: int, field_name: str, new_value: str) -> bool:
             return False
             
         if canonical_field_name == get_canonical_field_name('Photo URL'):
-            # Update both Photo URL and Raw Photo URL columns
-            formatted_value = f'=IMAGE("{new_value}")' if new_value else ''
+            # Check if the value is already an IMAGE formula
+            if new_value.startswith('=IMAGE("'):
+                formatted_value = new_value  # Already formatted, use as is
+                raw_url_match = re.search(r'=IMAGE\("([^"]+)"\)', new_value)
+                raw_url = raw_url_match.group(1) if raw_url_match else new_value
+            else:
+                # Not a formula, wrap it
+                formatted_value = f'=IMAGE("{new_value}")' if new_value else ''
+                raw_url = new_value
             
             # Update Photo URL column with IMAGE formula
             range_name = f'Plants!{chr(65 + col_idx)}{plant_row + 1}'
@@ -451,7 +458,7 @@ def update_plant_field(plant_row: int, field_name: str, new_value: str) -> bool:
                     spreadsheetId=SPREADSHEET_ID,
                     range=raw_range_name,
                     valueInputOption='RAW',
-                    body={'values': [[new_value]]}
+                    body={'values': [[raw_url]]}
                 ).execute()
             except ValueError:
                 logger.error("Raw Photo URL column not found")
