@@ -365,8 +365,17 @@
         // Detect mobile device for better compatibility
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // Add ChatGPT detection
-        const isChatGPT = /ChatGPT-User|openai\.com\/bot/.test(navigator.userAgent);
+        // Enhanced ChatGPT detection
+        const isChatGPT = /ChatGPT-User|openai\.com\/bot/.test(navigator.userAgent) || 
+                         document.referrer.includes('chat.openai.com') ||
+                         /openai|chatgpt/i.test(navigator.userAgent);
+        
+        // Immediately disable file input if in ChatGPT
+        if (isChatGPT && isMobile) {
+            fileInput.disabled = true;
+            uploadZone.style.cursor = 'default';
+            uploadZone.style.pointerEvents = 'none';
+        }
         
         // Load token information
         function loadTokenInfo() {
@@ -377,44 +386,141 @@
             if (isMobile) {
                 const hint = uploadZone.querySelector('.upload-hint');
                 if (isChatGPT) {
-                    hint.innerHTML = 'Due to ChatGPT limitations, please use this direct link to upload:<br>' +
-                        `<a href="https://plant-database-api.onrender.com/upload/${token}" target="_blank" ` +
-                        'style="color: #007bff; text-decoration: underline;">Open Upload Page</a>';
+                    // Create a container for the message and button
+                    const container = document.createElement('div');
+                    container.className = 'chatgpt-upload-container';
+                    container.innerHTML = `
+                        <div class="chatgpt-warning">
+                            ⚠️ File uploads are not supported in ChatGPT
+                        </div>
+                        <div class="chatgpt-instruction">
+                            Please use this link to upload your photo:
+                        </div>
+                        <a href="https://plant-database-api.onrender.com/upload/${token}" 
+                           target="_blank" 
+                           class="upload-direct-link">
+                            Open Upload Page
+                            <span class="link-arrow">→</span>
+                        </a>
+                    `;
+                    
+                    // Replace the hint with our new container
+                    hint.parentNode.replaceChild(container, hint);
+                    
+                    // Hide the upload zone since it won't work
+                    uploadZone.style.backgroundColor = '#f8f9fa';
+                    uploadZone.style.borderStyle = 'solid';
+                    uploadZone.style.borderWidth = '1px';
+                    uploadZone.style.borderColor = '#dee2e6';
+                    uploadZone.querySelector('.upload-icon').textContent = '⚠️';
+                    uploadZone.querySelector('.upload-text').textContent = 'File uploads not available in ChatGPT';
+                    
                     // Add warning message
-                    showStatus('⚠️ File uploads are limited in ChatGPT. Please use the direct link above.', 'warning');
+                    showStatus('⚠️ File uploads are not supported in ChatGPT. Please use the direct link above.', 'warning');
                 } else {
                     hint.textContent = 'Tap to choose from gallery or take a new photo';
                 }
             }
         }
+
+        // Add ChatGPT-specific styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .chatgpt-upload-container {
+                text-align: center;
+                padding: 15px;
+                margin-top: 20px;
+            }
+            
+            .chatgpt-warning {
+                font-weight: bold;
+                color: #856404;
+                margin-bottom: 10px;
+            }
+            
+            .chatgpt-instruction {
+                color: #495057;
+                margin-bottom: 15px;
+            }
+            
+            .upload-direct-link {
+                display: inline-block;
+                padding: 12px 24px;
+                background: #007bff;
+                color: white !important;
+                text-decoration: none !important;
+                border-radius: 8px;
+                font-weight: bold;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .upload-direct-link:hover {
+                background: #0056b3;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+            
+            .link-arrow {
+                margin-left: 8px;
+                font-size: 20px;
+            }
+            
+            .status-warning {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeeba;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 8px;
+                text-align: center;
+                font-weight: 500;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize the page
+        loadTokenInfo();
         
         // Event listeners with proper mobile/desktop separation
         if (isMobile) {
             // Mobile-specific event handling
             console.log('Setting up mobile-specific event handlers');
-            uploadZone.addEventListener('touchstart', handleMobileTouch, { passive: true });
-            uploadZone.addEventListener('click', handleUploadZoneClickDebounced);
             
-            // Add input event for mobile compatibility
-            fileInput.addEventListener('input', (e) => {
-                console.log('INPUT event fired');
-                addDebugLog('INPUT event fired');
-                handleFileSelectImproved(e);
-            });
-            
-            // Monitor file input when it loses focus (mobile only)
-            fileInput.addEventListener('blur', (e) => {
-                console.log('BLUR event fired');
-                addDebugLog('BLUR event fired');
-                checkForFileAfterBlur(e);
-            });
-            
-            // Add focus handler for mobile feedback
-            fileInput.addEventListener('focus', () => {
-                console.log('FOCUS event fired');
-                addDebugLog('FOCUS event fired - file picker should be opening');
-                showStatus('📱 Select your plant photo...', 'info');
-            });
+            if (!isChatGPT) {
+                // Only add these handlers if not in ChatGPT
+                uploadZone.addEventListener('touchstart', handleMobileTouch, { passive: true });
+                uploadZone.addEventListener('click', handleUploadZoneClickDebounced);
+                
+                // Add input event for mobile compatibility
+                fileInput.addEventListener('input', (e) => {
+                    console.log('INPUT event fired');
+                    addDebugLog('INPUT event fired');
+                    handleFileSelectImproved(e);
+                });
+                
+                // Monitor file input when it loses focus (mobile only)
+                fileInput.addEventListener('blur', (e) => {
+                    console.log('BLUR event fired');
+                    addDebugLog('BLUR event fired');
+                    checkForFileAfterBlur(e);
+                });
+                
+                // Add focus handler for mobile feedback
+                fileInput.addEventListener('focus', () => {
+                    console.log('FOCUS event fired');
+                    addDebugLog('FOCUS event fired - file picker should be opening');
+                    showStatus('📱 Select your plant photo...', 'info');
+                });
+            } else {
+                // In ChatGPT, add click handler to show warning
+                uploadZone.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showStatus('⚠️ Please use the direct link above to upload photos', 'warning');
+                    addDebugLog('Upload attempt blocked - ChatGPT environment');
+                });
+            }
         } else {
             // Desktop event handling
             console.log('Setting up desktop event handlers');
@@ -424,11 +530,16 @@
             uploadZone.addEventListener('drop', handleDrop);
         }
         
-        // File input change handler (always needed)
+        // File input change handler (always needed, but with ChatGPT check)
         fileInput.addEventListener('change', (e) => {
             console.log('CHANGE event fired');
             addDebugLog('CHANGE event fired');
-            handleFileSelectImproved(e);
+            if (!isChatGPT) {
+                handleFileSelectImproved(e);
+            } else {
+                addDebugLog('File selection blocked - ChatGPT environment');
+                showStatus('⚠️ Please use the direct link above to upload photos', 'warning');
+            }
         });
 
         // New function to check for file after blur event
@@ -493,10 +604,12 @@
             console.log('Upload zone clicked, device:', isMobile ? 'Mobile' : 'Desktop');
             addDebugLog(`Upload zone clicked (${isMobile ? 'Mobile' : 'Desktop'})`);
             
-            // Check for ChatGPT environment
-            if (isChatGPT && isMobile) {
-                showStatus('⚠️ Please use the direct link above to upload photos in ChatGPT', 'warning');
-                addDebugLog('Upload blocked - ChatGPT environment detected');
+            // Block all upload attempts in ChatGPT
+            if (isChatGPT) {
+                e.preventDefault();
+                e.stopPropagation();
+                showStatus('⚠️ Please use the direct link above to upload photos', 'warning');
+                addDebugLog('Upload blocked - ChatGPT environment');
                 return;
             }
             
