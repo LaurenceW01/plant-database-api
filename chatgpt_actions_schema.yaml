@@ -1,8 +1,10 @@
 openapi: 3.1.0
 info:
   title: Plant Database API with Photo Logging
-  description: Comprehensive plant database API with full CRUD operations for plant management PLUS new plant health logging with photo storage
-  version: 2.0.0
+  description: |
+    Comprehensive plant database API with full CRUD operations for plant management PLUS plant health logging with photo storage.
+    Now includes two-step photo upload process for both adding new plants and updating existing plants.
+  version: 2.1.0
 servers:
   - url: https://plant-database-api.onrender.com
     description: Production server
@@ -68,7 +70,14 @@ paths:
     post:
       operationId: addPlant
       summary: Add a new plant to the database
-      description: Add a new plant with comprehensive field support. Only Plant Name is required, all other fields are optional.
+      description: |
+        Add a new plant with comprehensive field support. Only Plant Name is required, all other fields are optional.
+        
+        **Photo Upload Process:**
+        1. Create plant record using this endpoint
+        2. Response will include an upload URL if successful
+        3. Use the upload URL to add a photo to the plant record
+        4. Upload URL expires after 24 hours
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -99,7 +108,6 @@ paths:
                   Winterizing Instructions: "Protect young trees from harsh winds"
                   Spacing Requirements: "Plant 6-8 feet apart"
                   Care Notes: "Avoid wet feet, provide wind protection"
-                  Photo URL: "https://example.com/japanese-maple.jpg"
       responses:
         '201':
           description: Plant added successfully
@@ -111,6 +119,14 @@ paths:
                   message:
                     type: string
                     example: "Added Basil to garden"
+                  upload_url:
+                    type: string
+                    description: URL for uploading a photo of the plant
+                    example: "https://plant-database-api.onrender.com/upload/plant/abc123xyz"
+                  upload_instructions:
+                    type: string
+                    description: Instructions for using the upload URL
+                    example: "To add a photo of your plant, visit: https://plant-database-api.onrender.com/upload/plant/abc123xyz"
         '400':
           description: Validation error
           content:
@@ -158,7 +174,14 @@ paths:
     put:
       operationId: updatePlant
       summary: Update an existing plant
-      description: Update specific fields of an existing plant. All fields are optional - only provided fields will be updated.
+      description: |
+        Update specific fields of an existing plant. All fields are optional - only provided fields will be updated.
+        
+        **Photo Upload Process:**
+        1. Update plant record using this endpoint
+        2. Response will include an upload URL if successful
+        3. Use the upload URL to update the plant's photo
+        4. Upload URL expires after 24 hours
       security:
         - ApiKeyAuth: []
       parameters:
@@ -197,6 +220,14 @@ paths:
                   message:
                     type: string
                     example: "Updated Tomato"
+                  upload_url:
+                    type: string
+                    description: URL for uploading a new photo of the plant
+                    example: "https://plant-database-api.onrender.com/upload/plant/abc123xyz"
+                  upload_instructions:
+                    type: string
+                    description: Instructions for using the upload URL
+                    example: "To update the plant's photo, visit: https://plant-database-api.onrender.com/upload/plant/abc123xyz"
         '400':
           description: Validation error or plant not found
           content:
@@ -209,6 +240,206 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  # =============================================
+  # PLANT PHOTO UPLOAD OPERATIONS
+  # =============================================
+
+  /upload/plant/{token}:
+    get:
+      operationId: getPlantUploadPage
+      summary: Get photo upload page for a plant
+      description: |
+        Display a user-friendly upload page for adding or updating a plant's photo.
+        This endpoint uses the upload token provided when creating or updating plants.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token provided when creating or updating the plant
+          example: "abc123xyz"
+      responses:
+        '200':
+          description: Upload page displayed successfully
+          content:
+            text/html:
+              schema:
+                type: string
+                description: HTML upload page with mobile camera and gallery support
+        '400':
+          description: Invalid token type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "This token is not for plant photo uploads"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid or expired upload token"
+
+    post:
+      operationId: uploadPlantPhoto
+      summary: Upload a photo for a plant
+      description: |
+        Upload a photo for a plant using a secure upload token.
+        This endpoint is used as part of the two-step photo upload process when adding or updating plants.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token provided when creating or updating the plant
+          example: "abc123xyz"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Photo file to upload (JPG, PNG, WebP, GIF, HEIC, HEIF)
+      responses:
+        '200':
+          description: Photo uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Photo uploaded successfully to plant: Japanese Maple"
+                  plant_id:
+                    type: string
+                    example: "PLANT-123"
+                  plant_name:
+                    type: string
+                    example: "Japanese Maple"
+                  photo_upload:
+                    type: object
+                    properties:
+                      photo_url:
+                        type: string
+                        description: Public URL of the uploaded photo
+                      filename:
+                        type: string
+                        description: Name of the uploaded file
+                      upload_time:
+                        type: string
+                        description: When the photo was uploaded
+                      file_size:
+                        type: string
+                        description: Size of the uploaded file
+                  plant_update:
+                    type: object
+                    properties:
+                      updated:
+                        type: boolean
+                        description: Whether the plant record was updated
+                      message:
+                        type: string
+                        description: Update status message
+        '400':
+          description: Invalid request or file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "No photo file provided. Please select a photo to upload."
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Invalid or expired upload token"
+
+  /api/upload/info/{token}:
+    get:
+      operationId: getUploadTokenInfo
+      summary: Get information about an upload token
+      description: |
+        Get information about an upload token, including the associated plant name and operation type.
+        Used by the upload page to display relevant information to the user.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token to get information about
+          example: "abc123xyz"
+      responses:
+        '200':
+          description: Token information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  plant_name:
+                    type: string
+                    example: "Japanese Maple"
+                  plant_id:
+                    type: string
+                    example: "PLANT-123"
+                  operation:
+                    type: string
+                    enum: [add, update]
+                    example: "add"
+                  token_type:
+                    type: string
+                    enum: [plant_upload, log_upload]
+                    example: "plant_upload"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Invalid or expired upload token"
 
   # =============================================
   # NEW PLANT LOGGING OPERATIONS
