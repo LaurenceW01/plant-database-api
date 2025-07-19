@@ -71,13 +71,12 @@ paths:
       operationId: addPlant
       summary: Add a new plant to the database
       description: |
-        Add a new plant with comprehensive field support. Only Plant Name is required, all other fields are optional.
+        Add a new plant with comprehensive field support. Only Plant Name is required.
         
-        **Photo Upload Process:**
-        1. Create plant record using this endpoint
-        2. Response will include an upload URL if successful
-        3. Use the upload URL to add a photo to the plant record
-        4. Upload URL expires after 24 hours
+        Photo Upload:
+        1. Create plant record
+        2. Use upload URL from response
+        3. Add photo within 24 hours
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -175,13 +174,12 @@ paths:
       operationId: updatePlant
       summary: Update an existing plant
       description: |
-        Update specific fields of an existing plant. All fields are optional - only provided fields will be updated.
+        Update specific fields of an existing plant. Only provided fields will be updated.
         
-        **Photo Upload Process:**
-        1. Update plant record using this endpoint
-        2. Response will include an upload URL if successful
-        3. Use the upload URL to update the plant's photo
-        4. Upload URL expires after 24 hours
+        Photo Upload:
+        1. Update plant record
+        2. Use upload URL from response
+        3. Add photo within 24 hours
       security:
         - ApiKeyAuth: []
       parameters:
