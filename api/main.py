@@ -92,6 +92,7 @@ def add_plant():
     """
     from utils.plant_operations import add_plant_with_fields
     from models.field_config import get_canonical_field_name, is_valid_field
+    from utils.upload_token_manager import generate_upload_token, generate_upload_url
     
     # Log comprehensive debug information about what ChatGPT is sending
     debug_info = {
@@ -135,7 +136,27 @@ def add_plant():
     result = add_plant_with_fields(canonical_data)
     if not result.get('success'):
         return jsonify({"error": result.get('error', 'Unknown error')}), 400
-    return jsonify({"message": result.get('message', 'Plant added successfully')}), 201
+    
+    # Generate upload token for photo upload
+    plant_id = result.get('plant_id')
+    if not plant_id:
+        logging.warning(f"No plant ID returned for {plant_name}, upload token may not work correctly")
+    
+    upload_token = generate_upload_token(
+        plant_name=plant_name,
+        token_type='plant_upload',
+        plant_id=str(plant_id) if plant_id else None,
+        operation='add'
+    )
+    upload_url = generate_upload_url(upload_token)
+    
+    # Return success response with upload URL
+    return jsonify({
+        "message": result.get('message', 'Plant added successfully'),
+        "plant_id": plant_id,
+        "upload_url": upload_url,
+        "upload_instructions": f"To add a photo of your plant, visit: {upload_url}"
+    }), 201
 
 def update_plant(id_or_name):
     """

@@ -665,7 +665,7 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
         plant_data_dict (Dict[str, str]): Dictionary containing plant field data
         
     Returns:
-        Dict[str, Union[bool, str]]: Result with success status and message
+        Dict[str, Union[bool, str]]: Result with success status, message, and plant ID
     """
     try:
         # Validate that Plant Name is provided
@@ -720,7 +720,11 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
         invalidate_plant_list_cache()
         
         logger.info(f"Successfully added plant with comprehensive fields: {plant_name}")
-        return {"success": True, "message": f"Added {plant_name} to garden"}
+        return {
+            "success": True,
+            "message": f"Added {plant_name} to garden",
+            "plant_id": next_id
+        }
         
     except Exception as e:
         logger.error(f"Error adding plant with fields: {e}")
