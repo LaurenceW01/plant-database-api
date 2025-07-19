@@ -1415,9 +1415,9 @@ def upload_photo_to_plant(token):
                 'error': f'Failed to upload photo: {str(e)}'
             }), 500
         
-        # Update plant record with photo URLs
+        # Update plant record with photo URLs - use raw URL since add_plant_with_fields will wrap it
         update_data = {
-            'Photo URL': upload_result['photo_url'],
+            'Photo URL': upload_result['raw_photo_url'],  # Use raw URL, not wrapped one
             'Raw Photo URL': upload_result['raw_photo_url']
         }
         
