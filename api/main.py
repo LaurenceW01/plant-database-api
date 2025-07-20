@@ -1480,16 +1480,16 @@ def register_plant_log_routes(app, limiter, require_api_key):
             methods=['POST']
         )
         
-        # POST /upload/{token} - Upload photo to existing log entry (no API key needed, token is auth)
+        # POST /upload/log/{token} - Upload photo to existing log entry (no API key needed, token is auth)
         app.add_url_rule(
-            '/upload/<token>',
+            '/upload/log/<token>',
             view_func=limiter.limit('20 per minute')(upload_photo_to_log),
             methods=['POST']
         )
         
-        # GET /upload/{token} - Serve upload page for specific token (no API key needed, token is auth)
+        # GET /upload/log/{token} - Serve upload page for specific token (no API key needed, token is auth)
         app.add_url_rule(
-            '/upload/<token>',
+            '/upload/log/<token>',
             view_func=limiter.limit('60 per minute')(serve_log_upload_page),
             methods=['GET']
         )
@@ -1516,8 +1516,8 @@ def register_plant_log_routes(app, limiter, require_api_key):
         # Testing mode - no rate limits
         app.add_url_rule('/api/plants/log', view_func=require_api_key(create_plant_log), methods=['POST'])
         app.add_url_rule('/api/plants/log/simple', view_func=require_api_key(create_plant_log_simple), methods=['POST'])
-        app.add_url_rule('/upload/<token>', view_func=upload_photo_to_log, methods=['POST'])
-        app.add_url_rule('/upload/<token>', view_func=serve_log_upload_page, methods=['GET'])
+        app.add_url_rule('/upload/log/<token>', view_func=upload_photo_to_log, methods=['POST'])
+        app.add_url_rule('/upload/log/<token>', view_func=serve_log_upload_page, methods=['GET'])
         app.add_url_rule('/api/plants/<plant_name>/log', view_func=get_plant_log_history, methods=['GET'])
         app.add_url_rule('/api/plants/log/<log_id>', view_func=get_log_entry_details, methods=['GET'])
         app.add_url_rule('/api/plants/log/search', view_func=search_plant_logs, methods=['GET'])
