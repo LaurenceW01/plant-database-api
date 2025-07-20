@@ -144,6 +144,7 @@ def get_plant_data(plant_names=None) -> List[Dict]:
     """Get data for specified plants or all plants"""
     try:
         check_rate_limit()
+        # Get regular values first
         result = sheets_client.values().get(
             spreadsheetId=SPREADSHEET_ID,
             range=RANGE_NAME
@@ -171,7 +172,7 @@ def get_plant_data(plant_names=None) -> List[Dict]:
                 formula_result = sheets_client.values().get(
                     spreadsheetId=SPREADSHEET_ID,
                     range=formula_range,
-                    valueRenderOption='FORMULA'
+                    valueRenderOption='FORMULA'  # Always get formulas for Photo URL column
                 ).execute()
                 
                 formula_values = formula_result.get('values', [])
@@ -180,17 +181,13 @@ def get_plant_data(plant_names=None) -> List[Dict]:
                         row_num = i + 2  # Add 2 because we started from row 2
                         photo_formulas[row_num] = formula_row[0]
             except Exception as e:
-                print(f"Warning: Could not fetch Photo URL formulas: {e}")
+                logger.error(f"Could not fetch Photo URL formulas: {e}")
         
         # Update the plant list cache timestamp when we successfully fetch data
-        # This ensures get_plant_list_cache_info() shows the cache as valid
         global _plant_list_cache
         if not plant_names:  # Only update for full data requests
             current_time = time.time()
             _plant_list_cache['last_updated'] = current_time
-        
-        print("\n=== DEBUG: Sheet Headers ===")
-        print(f"Headers: {headers}")
         
         for i, row in enumerate(values[1:], start=2):  # Start from row 2
             row_data = row + [''] * (len(headers) - len(row))
@@ -200,33 +197,18 @@ def get_plant_data(plant_names=None) -> List[Dict]:
             if photo_url_field and photo_url_col_idx is not None and i in photo_formulas:
                 plant_dict[photo_url_field] = photo_formulas[i]
             
-            # Debug log the photo URLs using field_config
-            raw_photo_url_field = get_canonical_field_name('Raw Photo URL')
-            
-            print(f"\n=== DEBUG: Photo URLs for {plant_dict.get(get_canonical_field_name('Plant Name'), 'Unknown Plant')} ===")
-            print(f"Photo URL (formula): {plant_dict.get(photo_url_field, '')}")
-            print(f"Raw Photo URL: {plant_dict.get(raw_photo_url_field, '')}")
-            
+            # Filter by plant names if specified
             if plant_names:
-                # Use improved matching that handles plurals
-                plant_name = plant_dict.get(get_canonical_field_name('Plant Name'), '')
-                if plant_name and any(_plant_names_match(name, plant_name) for name in plant_names):
-                    plants_data.append(plant_dict)
-                    print(f"\n=== DEBUG: Matching Plant Data ===")
-                    print(f"Plant Name: {plant_dict[get_canonical_field_name('Plant Name')]}")
-                    for key, value in plant_dict.items():
-                        print(f"{key}: {value}")
-            else:
-                plants_data.append(plant_dict)
-                print(f"\n=== DEBUG: Plant Data ===")
-                print(f"Plant Name: {plant_dict[get_canonical_field_name('Plant Name')]}")
-                for key, value in plant_dict.items():
-                    print(f"{key}: {value}")
+                plant_name = plant_dict.get(get_canonical_field_name('Plant Name'))
+                if not plant_name or plant_name not in plant_names:
+                    continue
+            
+            plants_data.append(plant_dict)
         
         return plants_data
         
     except Exception as e:
-        print(f"Error getting plant data: {e}")
+        logger.error(f"Error getting plant data: {e}")
         return []
 
 def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[List]]:

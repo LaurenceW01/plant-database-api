@@ -226,8 +226,13 @@ def test_photo_url_integration(client, api_key):
     assert 'Photo URL' in plant_data
     assert 'Raw Photo URL' in plant_data
     
+    # Photo URL should contain the IMAGE formula
+    assert plant_data.get('Photo URL', '').startswith('=IMAGE("')
+    assert plant_data.get('Photo URL', '').endswith('")')
+    assert test_photo_url in plant_data.get('Photo URL', '')
+    
     # Raw Photo URL should contain the original URL
-    assert test_photo_url in plant_data.get('Raw Photo URL', '')
+    assert plant_data.get('Raw Photo URL') == test_photo_url
     
     # Update photo URL
     new_photo_url = "https://example.com/updated-plant-photo.jpg"
@@ -243,8 +248,13 @@ def test_photo_url_integration(client, api_key):
     assert updated_read_response.status_code == 200
     updated_plant_data = updated_read_response.get_json()['plant']
     
-    # Raw Photo URL should contain the new URL
-    assert new_photo_url in updated_plant_data.get('Raw Photo URL', '')
+    # Verify updated Photo URL has IMAGE formula
+    assert updated_plant_data.get('Photo URL', '').startswith('=IMAGE("')
+    assert updated_plant_data.get('Photo URL', '').endswith('")')
+    assert new_photo_url in updated_plant_data.get('Photo URL', '')
+    
+    # Raw Photo URL should contain the new URL without formula
+    assert updated_plant_data.get('Raw Photo URL') == new_photo_url
 
 def test_search_integration_comprehensive(client, api_key):
     """Test comprehensive search functionality with various query types"""

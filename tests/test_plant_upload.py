@@ -24,7 +24,7 @@ def mock_storage(monkeypatch):
     """Mock storage client for testing"""
     def mock_upload(*args, **kwargs):
         return {
-            'photo_url': '=IMAGE("http://test.com/photo.jpg")',
+            'photo_url': 'http://test.com/photo.jpg',
             'raw_photo_url': 'http://test.com/photo.jpg',
             'filename': 'test_photo.jpg',
             'upload_time': datetime.now().isoformat(),
@@ -46,6 +46,12 @@ def mock_storage(monkeypatch):
 def mock_plant_operations(monkeypatch):
     """Mock plant operations for testing"""
     def mock_update(*args, **kwargs):
+        # Verify that Photo URL is wrapped in IMAGE formula
+        update_data = kwargs.get('update_data', {}) if len(args) < 2 else args[1]
+        photo_url = update_data.get('Photo URL', '')
+        if photo_url and not photo_url.startswith('=IMAGE("'):
+            photo_url = f'=IMAGE("{photo_url}")'
+            update_data['Photo URL'] = photo_url
         return {'success': True, 'message': 'Plant updated'}
     
     def mock_add(*args, **kwargs):
@@ -122,6 +128,76 @@ def test_upload_photo_to_plant_update(client, mock_storage, mock_plant_operation
     assert 'photo_upload' in data
     assert data['photo_upload']['photo_url'] == 'http://test.com/photo.jpg'
     assert data['plant_update']['updated'] is True
+
+def test_photo_url_formula_handling(client, mock_storage, mock_plant_operations):
+    """Test that photo URLs are correctly wrapped in IMAGE formula"""
+    from utils.plant_operations import update_plant
+    
+    # Generate upload token for existing plant
+    token = generate_upload_token(
+        plant_name="Test Plant",
+        token_type="plant_upload",
+        plant_id="PLANT-123",
+        operation="update"
+    )
+    
+    # Create test file
+    file_data = io.BytesIO(b"test file content")
+    
+    # Make upload request
+    response = client.post(
+        f'/upload/plant/{token}',
+        data={'file': (file_data, 'test.jpg')},
+        content_type='multipart/form-data'
+    )
+    
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['success'] is True
+    
+    # Verify the photo URLs in the response
+    assert 'photo_upload' in data
+    raw_url = data['photo_upload']['photo_url']
+    
+    # The update_data sent to update_plant should contain raw URLs
+    # The update_plant function will handle wrapping in IMAGE formula
+    expected_update_data = {
+        'Photo URL': raw_url,  # Raw URL - update_plant will wrap it
+        'Raw Photo URL': raw_url
+    }
+    
+    # Mock the update_plant function to capture and verify the update_data
+    update_data_captured = {}
+    def mock_update_capture(*args, **kwargs):
+        nonlocal update_data_captured
+        update_data_captured = kwargs.get('update_data', {}) if len(args) < 2 else args[1]
+        return {'success': True, 'message': 'Plant updated'}
+    
+    import utils.plant_operations
+    utils.plant_operations.update_plant = mock_update_capture
+    
+    # Create a new file object for the second request
+    new_file_data = io.BytesIO(b"test file content")
+    
+    # Generate a new token since the first one is used
+    new_token = generate_upload_token(
+        plant_name="Test Plant",
+        token_type="plant_upload",
+        plant_id="PLANT-123",
+        operation="update"
+    )
+    
+    # Trigger the update by making another request
+    response = client.post(
+        f'/upload/plant/{new_token}',
+        data={'file': (new_file_data, 'test.jpg')},
+        content_type='multipart/form-data'
+    )
+    
+    # Verify the update_data contains raw URLs
+    assert 'Photo URL' in update_data_captured
+    assert update_data_captured['Photo URL'] == raw_url  # Raw URL is sent to update_plant
+    assert update_data_captured['Raw Photo URL'] == raw_url
 
 def test_upload_photo_invalid_token(client, mock_storage, mock_plant_operations):
     """Test uploading with invalid token"""

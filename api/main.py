@@ -167,6 +167,7 @@ def update_plant(id_or_name):
     """
     from utils.plant_operations import update_plant as update_plant_func
     from models.field_config import is_valid_field
+    from utils.upload_token_manager import generate_upload_token, generate_upload_url
     
     # Log comprehensive debug information about what ChatGPT is sending
     debug_info = {
@@ -207,7 +208,22 @@ def update_plant(id_or_name):
     result = update_plant_func(id_or_name, update_fields)
     if not result.get('success'):
         return jsonify({"error": result.get('error', 'Unknown error')}), 400
-    return jsonify({"message": result.get('message', 'Plant updated successfully')}), 200
+        
+    # Generate upload token for photo upload
+    upload_token = generate_upload_token(
+        plant_name=result.get('plant_name', id_or_name),
+        token_type='plant_upload',
+        plant_id=str(id_or_name),
+        operation='update'
+    )
+    upload_url = generate_upload_url(upload_token)
+    
+    # Return success response with upload URL
+    return jsonify({
+        "message": result.get('message', 'Plant updated successfully'),
+        "upload_url": upload_url,
+        "upload_instructions": f"To update your plant's photo, visit: {upload_url}"
+    }), 200
 
 # Function to register all routes (GET, POST, PUT) after config is set
 def register_routes(app, limiter, require_api_key):
@@ -1346,7 +1362,7 @@ def upload_photo_to_plant(token):
         from utils.storage_client import upload_plant_photo, is_storage_available
         logging.info(f"UPLOAD_DEBUG: Imported storage_client")
         
-        from utils.plant_operations import add_plant_with_fields, update_plant
+        from utils.plant_operations import update_plant
         logging.info(f"UPLOAD_DEBUG: Imported plant_operations")
         
         # Token is passed as function parameter from Flask route
@@ -1402,7 +1418,6 @@ def upload_photo_to_plant(token):
         # Extract plant information from token
         plant_id = token_data.get('plant_id', '')
         plant_name = token_data.get('plant_name', '')
-        operation = token_data.get('operation', '')
         
         # Upload photo to storage
         try:
@@ -1421,14 +1436,8 @@ def upload_photo_to_plant(token):
             'Raw Photo URL': upload_result['raw_photo_url']
         }
         
-        if operation == 'update':
-            update_result = update_plant(plant_id, update_data)
-        else:  # operation == 'add'
-            update_result = add_plant_with_fields({
-                'Plant ID': plant_id,
-                'Plant Name': plant_name,
-                **update_data
-            })
+        # Always use update_plant since the plant already exists
+        update_result = update_plant(plant_id, update_data)
         
         if not update_result.get('success'):
             # Photo uploaded but plant update failed - log warning but continue
