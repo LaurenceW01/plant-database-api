@@ -18,6 +18,7 @@ from utils.sheets_client import check_rate_limit
 from config.config import sheets_client, SPREADSHEET_ID, LOG_SHEET_NAME, LOG_RANGE_NAME
 from utils.plant_operations import find_plant_by_id_or_name, search_plants
 from utils.upload_token_manager import generate_upload_token, generate_upload_url
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +284,7 @@ def update_log_entry_photo(log_id: str, photo_url: str, raw_photo_url: str) -> D
     
     Args:
         log_id (str): The log entry ID to update
-        photo_url (str): Photo URL (IMAGE formula for sheets)
+        photo_url (str): Photo URL (will be wrapped in IMAGE formula)
         raw_photo_url (str): Direct photo URL
         
     Returns:
@@ -326,19 +327,29 @@ def update_log_entry_photo(log_id: str, photo_url: str, raw_photo_url: str) -> D
         # Prepare updates
         updates = []
         
-        # Update Photo URL if column exists
+        # Update Photo URL if column exists - handle IMAGE formula
         if photo_url_col >= 0:
+            # Check if the value is already an IMAGE formula
+            if photo_url.startswith('=IMAGE("'):
+                formatted_value = photo_url  # Already formatted, use as is
+                raw_url_match = re.search(r'=IMAGE\("([^"]+)"\)', photo_url)
+                raw_url = raw_url_match.group(1) if raw_url_match else photo_url
+            else:
+                # Not a formula, wrap it
+                formatted_value = f'=IMAGE("{photo_url}")' if photo_url else ''
+                raw_url = photo_url
+            
             updates.append({
                 'range': f'{LOG_SHEET_NAME}!{chr(65 + photo_url_col)}{target_row}',
-                'values': [[photo_url]]
+                'values': [[formatted_value]]
             })
-        
-        # Update Raw Photo URL if column exists
-        if raw_photo_url_col >= 0:
-            updates.append({
-                'range': f'{LOG_SHEET_NAME}!{chr(65 + raw_photo_url_col)}{target_row}',
-                'values': [[raw_photo_url]]
-            })
+            
+            # Update Raw Photo URL if column exists
+            if raw_photo_url_col >= 0:
+                updates.append({
+                    'range': f'{LOG_SHEET_NAME}!{chr(65 + raw_photo_url_col)}{target_row}',
+                    'values': [[raw_url]]
+                })
         
         # Update Last Updated timestamp
         if last_updated_col >= 0:
