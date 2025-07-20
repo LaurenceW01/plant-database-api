@@ -197,9 +197,10 @@
     </div>
 
     <script>
-        // Extract token from URL
+        // Extract token and upload type from URL
         const urlParts = window.location.pathname.split('/');
         const token = urlParts[urlParts.length - 1];
+        const uploadType = urlParts[urlParts.length - 2];  // 'log' or 'plant'
         
         // DOM elements
         const plantName = document.getElementById('plantName');
@@ -329,7 +330,10 @@
             const formData = new FormData();
             formData.append('file', file);
             
-            fetch(`/upload/${token}`, {
+            // Use the correct upload URL based on the upload type
+            const uploadUrl = uploadType === 'plant' ? `/upload/plant/${token}` : `/upload/log/${token}`;
+            
+            fetch(uploadUrl, {
                 method: 'POST',
                 body: formData
             })
