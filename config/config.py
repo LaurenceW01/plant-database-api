@@ -157,10 +157,15 @@ if sheets_client is None:
 try:
     openai_client = init_openai_client()
     sheets_client = init_sheets_client()
+    storage_client = init_storage_client()
+    logger.info("All clients initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize clients: {e}")
     logger.error(traceback.format_exc())
-    raise 
+    raise
+
+# Export the storage client
+__all__ = ['openai_client', 'sheets_client', 'storage_client', 'SPREADSHEET_ID', 'RANGE_NAME', 'LOG_SHEET_NAME', 'LOG_RANGE_NAME', 'STORAGE_BUCKET_NAME', 'STORAGE_PROJECT_ID']
 
 # Baron Weather API Configuration
 BARON_API_KEY = "tcATLX0GE43S"

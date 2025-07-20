@@ -6,42 +6,23 @@ Handles image uploads, URL generation, and storage management for the Plant Data
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union, Any
 from werkzeug.datastructures import FileStorage
 from google.cloud.exceptions import NotFound
 import os
 
 logger = logging.getLogger(__name__)
 
-# Import storage client and configuration from config
+# Import storage client from config
 try:
-    from config.config import init_storage_client, STORAGE_BUCKET_NAME, STORAGE_PROJECT_ID
-    # Initialize storage client with retry logic
-    max_retries = 3
-    retry_count = 0
-    storage_client = None
-    
-    while retry_count < max_retries and storage_client is None:
-        try:
-            storage_client = init_storage_client()
-            if storage_client:
-                logger.info("Successfully initialized Google Cloud Storage client")
-                break
-        except Exception as e:
-            retry_count += 1
-            logger.error(f"Attempt {retry_count} failed to initialize storage client: {e}")
-            if retry_count < max_retries:
-                import time
-                time.sleep(1)
-    
+    from config.config import storage_client, STORAGE_BUCKET_NAME, STORAGE_PROJECT_ID
     if storage_client is None:
-        logger.warning("Could not initialize Google Cloud Storage client - photo uploads will be disabled")
-        
+        logger.warning("Storage client not initialized - photo uploads will be disabled")
 except Exception as e:
     logger.error(f"Failed to import storage configuration: {e}")
     storage_client = None
 
-def generate_unique_filename(original_filename: str, plant_name: str = None) -> str:
+def generate_unique_filename(original_filename: str, plant_name: Optional[str] = None) -> str:
     """
     Generate a unique filename for uploaded plant photos.
     
@@ -118,7 +99,7 @@ def validate_image_file(file: FileStorage) -> Tuple[bool, str]:
     
     return True, ""
 
-def upload_plant_photo(file: FileStorage, plant_name: str = None) -> Dict[str, str]:
+def upload_plant_photo(file: FileStorage, plant_name: Optional[str] = None) -> Dict[str, Union[str, int, Any]]:
     """
     Upload a plant photo to Google Cloud Storage and return URLs.
     
@@ -127,7 +108,7 @@ def upload_plant_photo(file: FileStorage, plant_name: str = None) -> Dict[str, s
         plant_name (str, optional): Name of the plant for organization
         
     Returns:
-        Dict[str, str]: Dictionary containing photo_url, raw_photo_url, and metadata
+        Dict[str, Union[str, int, Any]]: Dictionary containing photo_url, raw_photo_url, and metadata
         
     Raises:
         ValueError: If file validation fails or storage client unavailable
@@ -144,7 +125,7 @@ def upload_plant_photo(file: FileStorage, plant_name: str = None) -> Dict[str, s
     
     try:
         # Generate unique filename
-        filename = generate_unique_filename(file.filename, plant_name)
+        filename = generate_unique_filename(file.filename or "upload.jpg", plant_name)
         
         # Get the bucket
         bucket = storage_client.bucket(STORAGE_BUCKET_NAME)
@@ -178,22 +159,18 @@ def upload_plant_photo(file: FileStorage, plant_name: str = None) -> Dict[str, s
         # Make the blob publicly readable
         blob.make_public()
         
-        # Generate URLs
+        # Get the public URL
         public_url = blob.public_url
-        raw_photo_url = public_url
-        
-        # For photo_url, we can use the same public URL or format it for sheets
-        photo_url = f'=IMAGE("{public_url}")'
         
         logger.info(f"Successfully uploaded plant photo: {filename}")
         
         return {
-            'photo_url': photo_url,
-            'raw_photo_url': raw_photo_url,
+            'photo_url': public_url,  # Return raw URL, let plant_operations handle IMAGE formula
+            'raw_photo_url': public_url,
             'filename': filename,
             'upload_time': datetime.now().isoformat(),
             'file_size': blob.size if hasattr(blob, 'size') else 'unknown',
-            'content_type': blob.content_type
+            'content_type': blob.content_type or 'image/jpeg'
         }
         
     except NotFound:
