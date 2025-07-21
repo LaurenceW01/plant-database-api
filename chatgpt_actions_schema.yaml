@@ -1208,6 +1208,53 @@ paths:
                           description: Wind speed in mph
                           example: 10
 
+  /api/weather/forecast/daily:
+    get:
+      operationId: getDailyWeatherForecast
+      summary: Get daily weather forecast
+      description: Returns daily weather forecast for specified number of days (max 7 days)
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to forecast (1-7)
+          required: false
+          schema:
+            type: integer
+            default: 7
+            minimum: 1
+            maximum: 7
+      responses:
+        '200':
+          description: Daily forecast data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forecast:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          description: Date in YYYY-MM-DD format
+                        high_temp:
+                          type: integer
+                          description: High temperature in Fahrenheit
+                        low_temp:
+                          type: integer
+                          description: Low temperature in Fahrenheit
+                        precipitation_chance:
+                          type: integer
+                          description: Chance of precipitation as percentage
+                        description:
+                          type: string
+                          description: Weather description
+                        wind_speed:
+                          type: integer
+                          description: Wind speed in MPH
+
 components:
   securitySchemes:
     ApiKeyAuth:

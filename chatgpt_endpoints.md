@@ -16,6 +16,61 @@
   * General characteristics
   * Historical info
 
+### Weather Endpoints
+
+#### Current Weather
+```javascript
+GET /api/weather/current
+
+// Example response:
+{
+  "temperature": 75.5,      // Fahrenheit
+  "humidity": 65,          // Percentage
+  "wind_speed": 8,        // MPH
+  "description": "Partly cloudy",
+  "precipitation_chance": 30  // Percentage
+}
+```
+
+#### Hourly Forecast
+```javascript
+GET /api/weather/forecast?hours=24
+
+// Example response:
+{
+  "forecast": [
+    {
+      "time": "2 PM",
+      "temperature": 78.5,
+      "description": "Clear",
+      "precipitation_chance": 20,
+      "wind_speed": 10
+    }
+    // ... more hourly entries
+  ]
+}
+```
+
+#### Daily Forecast
+```javascript
+GET /api/weather/forecast/daily?days=7
+
+// Example response:
+{
+  "forecast": [
+    {
+      "date": "2024-01-21",
+      "high_temp": 85,       // Fahrenheit
+      "low_temp": 65,        // Fahrenheit
+      "precipitation_chance": 30,  // Percentage
+      "description": "Partly Cloudy",
+      "wind_speed": 10       // MPH
+    }
+    // ... up to 7 daily entries (NDFD limit)
+  ]
+}
+```
+
 ### Photo Upload Process
 1. Create entry first (ChatGPT can't handle files)
 2. Provide upload link to user
