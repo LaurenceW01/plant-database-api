@@ -1623,6 +1623,9 @@ def create_app(testing=False):
     register_plant_log_routes(app, limiter, require_api_key)
     # Register plant routes
     register_plant_routes(app, limiter, require_api_key)
+    # Register weather routes
+    from api.weather_service import register_weather_routes
+    register_weather_routes(app, limiter)
     
     return app
 
