@@ -168,5 +168,45 @@ except Exception as e:
 __all__ = ['openai_client', 'sheets_client', 'storage_client', 'SPREADSHEET_ID', 'RANGE_NAME', 'LOG_SHEET_NAME', 'LOG_RANGE_NAME', 'STORAGE_BUCKET_NAME', 'STORAGE_PROJECT_ID']
 
 # Baron Weather API Configuration
-BARON_API_KEY = "tcATLX0GE43S"
-BARON_API_SECRET = "1fWKEKScFNHPGxxUA851w7rDXfbMSPFTkEfgBvByNm" 
+BARON_API_KEY = os.getenv('BARON_API_KEY', 'tcATLX0GE43S')
+BARON_API_SECRET = os.getenv('BARON_API_SECRET', '1fWKEKScFNHPGxxUA851w7rDXfbMSPFTkEfgBvByNm')
+
+# Weather service configuration
+WEATHER_CACHE_TIMEOUT = 900  # 15 minutes
+WEATHER_REQUEST_DELAY = 1  # 1 second between requests
+
+# Initialize weather client
+def init_weather_client():
+    """Initialize and return Baron Weather API client"""
+    try:
+        from utils.baron_weather_velocity_api import BaronWeatherVelocityAPI
+        client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
+        
+        # Test connection
+        if client.is_available():
+            logger.info("Successfully connected to Baron Weather API")
+            return client
+        else:
+            logger.error("Baron Weather API connection test failed")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error initializing weather client: {e}")
+        return None
+
+# Initialize weather client with retry logic
+max_retries = 3
+retry_count = 0
+weather_client = None
+
+while retry_count < max_retries and weather_client is None:
+    try:
+        weather_client = init_weather_client()
+        if weather_client:
+            logger.info("Successfully initialized Baron Weather client")
+            break
+    except Exception as e:
+        retry_count += 1
+        logger.error(f"Attempt {retry_count} failed to initialize Baron Weather client: {e}")
+        if retry_count < max_retries:
+            time.sleep(1) 
