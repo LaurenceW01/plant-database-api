@@ -246,6 +246,63 @@ class BaronWeatherVelocityAPI:
         logger.warning("Baron Weather API is not available - no hourly forecast data provided")
         return None
     
+    def get_daily_forecast(self, days: int = 10) -> Optional[List[Dict[str, Any]]]:
+        """
+        Get daily forecast from Baron Weather API
+        
+        Args:
+            days (int): Number of days to forecast (default 10, max 10)
+            
+        Returns:
+            Optional[List[Dict[str, Any]]]: Daily forecast data or None if error
+        """
+        cache_key = f"daily_forecast_{days}"
+        cached_data = self._get_cached_data(cache_key)
+        if cached_data:
+            return cached_data
+        
+        try:
+            # Use the NDFD daily forecast endpoint
+            uri = f"/reports/ndfd/daily.json?lat={self.houston_lat}&lon={self.houston_lon}&days={days}"
+            url = f"{self.host}/{self.access_key}{uri}"
+            signed_url = self._sign_request(url)
+            
+            response = self._respectful_request(signed_url)
+            if not response:
+                return None
+            
+            data = response.json()
+            logger.info("Successfully retrieved daily forecast from Baron Weather API")
+            logger.debug(f"Raw API response: {json.dumps(data, indent=2)}")
+            
+            # Check response structure
+            if 'ndfd_daily' not in data:
+                logger.warning(f"Missing 'ndfd_daily' in response: {data.keys()}")
+                return None
+                
+            if 'data' not in data['ndfd_daily']:
+                logger.warning(f"Missing 'data' in ndfd_daily: {data['ndfd_daily'].keys()}")
+                return None
+            
+            # Parse the NDFD response
+            daily_data = self._parse_ndfd_daily(data, days)
+            if daily_data:
+                self._set_cached_data(cache_key, daily_data)
+                return daily_data
+            
+        except Exception as e:
+            logger.error(f"Error getting daily forecast: {e}")
+            if 'response' in locals():
+                try:
+                    logger.error(f"Response status: {response.status_code}")
+                    logger.error(f"Response text: {response.text}")
+                except:
+                    pass
+        
+        # No fallback data - return None if API is not available
+        logger.warning("Baron Weather API is not available - no daily forecast data provided")
+        return None
+
     def _parse_metar_current(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Parse current weather data from METAR response
@@ -485,6 +542,89 @@ class BaronWeatherVelocityAPI:
             
         except Exception as e:
             logger.error(f"Error parsing NDFD hourly data: {e}")
+            return None
+
+    def _parse_ndfd_daily(self, data: Dict[str, Any], days: int) -> Optional[List[Dict[str, Any]]]:
+        """
+        Parse daily forecast data from NDFD response
+        
+        Args:
+            data (Dict[str, Any]): Raw NDFD API response
+            days (int): Number of days requested
+            
+        Returns:
+            Optional[List[Dict[str, Any]]]: Parsed daily forecast data
+        """
+        try:
+            # Log the raw response for debugging
+            logger.debug(f"Raw NDFD daily response: {data}")
+            
+            # The API response structure is: {"ndfd_daily": {"data": [...]}}
+            if 'ndfd_daily' in data and 'data' in data['ndfd_daily']:
+                forecast_data = data['ndfd_daily']['data']
+            else:
+                logger.warning(f"Unexpected NDFD daily response structure. Keys: {data.keys()}")
+                return None
+            
+            # Multiple days returned by API
+            daily_data = []
+            for i, day_forecast in enumerate(forecast_data):
+                if i >= days:  # Limit to requested days
+                    break
+                
+                # Extract temperatures (convert from Celsius to Fahrenheit)
+                temp_data = day_forecast.get('temperature', {})
+                high_c = temp_data.get('max', {}).get('value')
+                low_c = temp_data.get('min', {}).get('value')
+                
+                high_f = (high_c * 9/5) + 32 if high_c is not None else 75.0
+                low_f = (low_c * 9/5) + 32 if low_c is not None else 55.0
+                
+                # Extract precipitation probability
+                precip_data = day_forecast.get('precipitation', {})
+                precip_prob = precip_data.get('probability', {}).get('value', 0)
+                
+                # Extract wind speed (convert from m/s to mph)
+                wind_data = day_forecast.get('wind', {})
+                wind_mps = wind_data.get('speed', {}).get('value')
+                wind_mph = wind_mps * 2.23694 if wind_mps is not None else 5.0
+                
+                # Extract weather description
+                weather_code_data = day_forecast.get('weather_code', {})
+                weather_text = weather_code_data.get('text', 'Partly cloudy')
+                
+                # Extract cloud cover
+                cloud_data = day_forecast.get('cloud_cover', {})
+                cloud_text = cloud_data.get('text', 'Partly cloudy')
+                
+                # Use weather text if available, otherwise cloud cover
+                description = weather_text if weather_text else cloud_text
+                
+                # Extract sunrise/sunset times
+                sun_data = day_forecast.get('sun', {})
+                sunrise = sun_data.get('rise')
+                sunset = sun_data.get('set')
+                
+                # Calculate date for this day
+                current_time = datetime.now(self.houston_tz)
+                forecast_date = current_time.date() + timedelta(days=i)
+                
+                daily_data.append({
+                    'date': forecast_date.strftime('%Y-%m-%d'),
+                    'high_temp': round(high_f),
+                    'low_temp': round(low_f),
+                    'precipitation_chance': round(precip_prob),
+                    'description': description,
+                    'wind_speed': round(wind_mph),
+                    'sunrise': sunrise,
+                    'sunset': sunset
+                })
+            
+            logger.info(f"Successfully parsed {len(daily_data)} daily entries from NDFD API")
+            return daily_data
+            
+        except Exception as e:
+            logger.error(f"Error parsing NDFD daily data: {e}")
             return None
     
     def is_available(self) -> bool:

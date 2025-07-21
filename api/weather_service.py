@@ -53,6 +53,31 @@ def get_weather_forecast():
             'error': 'Internal server error while fetching forecast data'
         }), 500
 
+def get_daily_forecast():
+    """Get 10-day weather forecast for Houston"""
+    try:
+        days = request.args.get('days', default=10, type=int)
+        if days < 1 or days > 10:
+            return jsonify({
+                'error': 'Days parameter must be between 1 and 10'
+            }), 400
+            
+        forecast_data = baron_client.get_daily_forecast(days)
+        if forecast_data is None:
+            return jsonify({
+                'error': 'Weather service temporarily unavailable'
+            }), 503
+            
+        return jsonify({
+            'forecast': forecast_data
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error getting daily forecast: {e}")
+        return jsonify({
+            'error': 'Internal server error while fetching forecast data'
+        }), 500
+
 def register_weather_routes(app, limiter):
     """Register weather API routes"""
     
@@ -62,8 +87,14 @@ def register_weather_routes(app, limiter):
     def current_weather():
         return get_current_weather()
     
-    # Weather forecast endpoint
+    # Hourly forecast endpoint
     @app.route('/api/weather/forecast', methods=['GET'])
     @limiter.limit('60 per minute')
     def weather_forecast():
-        return get_weather_forecast() 
+        return get_weather_forecast()
+        
+    # Daily forecast endpoint
+    @app.route('/api/weather/forecast/daily', methods=['GET'])
+    @limiter.limit('60 per minute')
+    def daily_forecast():
+        return get_daily_forecast() 

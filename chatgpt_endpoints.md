@@ -1,8 +1,44 @@
-# Plant Database API Endpoints Documentation
+# Plant Database API Documentation
 
-## Weather Endpoints
+## Core API Guidelines
 
-### Current Weather
+### Weather Integration
+- ALWAYS check weather for:
+  * Watering needs/schedules
+  * Planting timing
+  * Outdoor activities
+  * Plant stress/protection
+  * Chemical applications
+  * Transplanting
+- SKIP weather for:
+  * Plant identification
+  * Indoor plants
+  * General characteristics
+  * Historical info
+
+### Photo Upload Process
+1. Create entry first (ChatGPT can't handle files)
+2. Provide upload link to user
+3. Explain 24-hour expiration
+4. User uploads independently
+
+### Plant Health Logging
+1. Photo Analysis:
+   - Use `/api/analyze-plant` for AI diagnosis
+   - Automatic log creation
+   - Link to existing plant
+   - Set follow-up tracking
+2. Manual Logging:
+   - Use `/api/plants/log` for observations
+   - Include photos when available
+   - Use exact field names
+   - Set follow-up dates
+
+## API Endpoints
+
+### Weather Endpoints
+
+#### Current Weather
 ```javascript
 GET /api/weather/current
 
@@ -16,7 +52,7 @@ GET /api/weather/current
 }
 ```
 
-### Weather Forecast
+#### Hourly Forecast
 ```javascript
 GET /api/weather/forecast?hours=24
 
@@ -35,9 +71,31 @@ GET /api/weather/forecast?hours=24
 }
 ```
 
-## Plant Management Endpoints
+#### Daily Forecast
+```javascript
+GET /api/weather/forecast/daily?days=10
 
-### Search Plants
+// Example response:
+{
+  "forecast": [
+    {
+      "date": "2024-01-21",
+      "high_temp": 85,
+      "low_temp": 65,
+      "precipitation_chance": 30,
+      "description": "Partly Cloudy",
+      "wind_speed": 10,
+      "sunrise": "7:15 AM",
+      "sunset": "5:45 PM"
+    }
+    // ... more daily entries
+  ]
+}
+```
+
+### Plant Management
+
+#### Search Plants
 ```javascript
 GET /api/plants?q=tomato&limit=20&offset=0
 
@@ -57,7 +115,7 @@ GET /api/plants?q=tomato&limit=20&offset=0
 }
 ```
 
-### Add Plant
+#### Add Plant
 ```javascript
 POST /api/plants
 Content-Type: application/json
@@ -77,7 +135,7 @@ Content-Type: application/json
 }
 ```
 
-### Update Plant
+#### Update Plant
 ```javascript
 PUT /api/plants/{id_or_name}
 Content-Type: application/json
@@ -95,9 +153,9 @@ Content-Type: application/json
 }
 ```
 
-## Health Logging Endpoints
+### Health Logging
 
-### Create Log Entry (Simple)
+#### Create Log Entry
 ```javascript
 POST /api/plants/log/simple
 Content-Type: application/json
@@ -121,7 +179,7 @@ Content-Type: application/json
 }
 ```
 
-### Get Plant Log History
+#### Get Log History
 ```javascript
 GET /api/plants/{plant_name}/log?format=standard&limit=20
 
@@ -134,23 +192,21 @@ GET /api/plants/{plant_name}/log?format=standard&limit=20
       "log_id": "LOG-20240115-001",
       "log_date": "2024-01-15",
       "diagnosis": "Minor nitrogen deficiency",
-      "treatment": "Apply balanced fertilizer",
-      // ... other log fields
+      "treatment": "Apply balanced fertilizer"
     }
   ]
 }
 ```
 
-## Photo Upload Endpoints
+### Photo Upload
 
-### Get Upload Page
+#### Get Upload Page
 ```javascript
 GET /upload/{token}
-
 // Returns HTML upload page
 ```
 
-### Upload Photo
+#### Upload Photo
 ```javascript
 POST /upload/{token}
 Content-Type: multipart/form-data
@@ -169,14 +225,14 @@ file: [binary photo data]
 }
 ```
 
-## Response Formats
+## Response Examples
 
-### Weather Data Integration
+### Weather Integration
 ```javascript
 // Good example:
-"Given the current temperature of 92°F and high humidity (from /api/weather/current), 
-I recommend watering your tomatoes early in the morning. With a 60% chance of 
-rain tomorrow (from /api/weather/forecast), hold off on fertilizing."
+"Given the current temperature of 92°F and high humidity, I recommend watering 
+your tomatoes early in the morning. With a 60% chance of rain tomorrow, you 
+might want to hold off on fertilizing."
 
 // Bad example:
 "Current weather: 92°F, humid. Forecast: Rain 60%. Water tomatoes early."
@@ -184,11 +240,40 @@ rain tomorrow (from /api/weather/forecast), hold off on fertilizing."
 
 ### Photo Upload Instructions
 ```javascript
-// When creating new plant:
+// New plant:
 "I've added your Japanese Maple to the database. To add a photo of your plant, 
 visit this link: [upload_url]. The link will expire in 24 hours."
 
-// When updating plant:
+// Update plant:
 "I've updated your plant's information. To update its photo, visit: [upload_url]. 
 The link is valid for 24 hours."
-``` 
+```
+
+## Field Descriptions
+
+### Plant Fields
+- `Plant Name` (Required): Exact name for database
+- `Description`: Plant details and notes
+- `Location`: Where plant is located
+- `Light Requirements`: Sunlight needs
+- `Soil Preferences`: Soil type and pH
+- `Frost Tolerance`: Cold hardiness
+- `Spacing Requirements`: Plant spacing
+- `Watering Needs`: Water frequency/amount
+- `Fertilizing Schedule`: Nutrient timing
+- `Pruning Instructions`: Trimming guidance
+- `Mulching Needs`: Mulch requirements
+- `Winterizing Instructions`: Winter care
+- `Care Notes`: Additional care info
+- `Photo URL`: Image location
+
+### Log Fields
+- `Log ID`: Unique identifier (auto)
+- `Plant Name`: Must match database
+- `Log Title`: Entry description
+- `Diagnosis`: Health assessment
+- `Treatment`: Care recommendations
+- `Symptoms`: Observed issues
+- `User Notes`: Additional comments
+- `Follow-up Required`: Need monitoring
+- `Follow-up Date`: Next check date 
