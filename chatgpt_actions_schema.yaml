@@ -1299,6 +1299,15 @@ components:
           type: string
           description: Soil type and pH requirements
           example: "Well-draining, rich soil"
+        Soil pH Type:
+          type: string
+          description: Soil pH classification
+          example: "slightly acidic"
+          enum: ["alkaline", "slightly alkaline", "neutral", "slightly acidic", "acidic"]
+        Soil pH Range:
+          type: string
+          description: Specific soil pH range
+          example: "6.0 - 6.5"
         Pruning Instructions:
           type: string
           description: When and how to prune
@@ -1369,6 +1378,15 @@ components:
           type: string
           description: "Soil requirements - use exactly 'Soil Preferences'"
           example: "Well-draining, fertile soil"
+        Soil pH Type:
+          type: string
+          description: "Soil pH classification - use exactly 'Soil pH Type'"
+          example: "slightly acidic"
+          enum: ["alkaline", "slightly alkaline", "neutral", "slightly acidic", "acidic"]
+        Soil pH Range:
+          type: string
+          description: "Specific soil pH range - use exactly 'Soil pH Range'"
+          example: "6.0 - 6.5"
         Pruning Instructions:
           type: string
           description: "Pruning guidance - use exactly 'Pruning Instructions'"
@@ -1423,6 +1441,13 @@ components:
         Soil Preferences:
           type: string
           description: "Soil requirements - use exactly 'Soil Preferences'"
+        Soil pH Type:
+          type: string
+          description: "Soil pH classification - use exactly 'Soil pH Type'"
+          enum: ["alkaline", "slightly alkaline", "neutral", "slightly acidic", "acidic"]
+        Soil pH Range:
+          type: string
+          description: "Specific soil pH range - use exactly 'Soil pH Range'"
         Pruning Instructions:
           type: string
           description: "Pruning guidance - use exactly 'Pruning Instructions'"
