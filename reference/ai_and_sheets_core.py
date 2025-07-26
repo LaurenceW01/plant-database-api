@@ -309,6 +309,8 @@ def parse_care_guide(response: str) -> dict:
         'Description': get_canonical_field_name('Description'),
         'Light': get_canonical_field_name('Light Requirements'),
         'Soil': get_canonical_field_name('Soil Preferences'),
+        'Soil pH Type': get_canonical_field_name('Soil pH Type'),
+        'Soil pH Range': get_canonical_field_name('Soil pH Range'),
         'Watering': get_canonical_field_name('Watering Needs'),
         'Temperature': get_canonical_field_name('Frost Tolerance'),
         'Pruning': get_canonical_field_name('Pruning Instructions'),

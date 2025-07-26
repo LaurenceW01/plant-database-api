@@ -291,6 +291,8 @@ def api_plants():
                     "**Description:**\n" +
                     "**Light:**\n" +
                     "**Soil:**\n" +
+                    "**Soil pH Type:**\n" +
+                    "**Soil pH Range:**\n" +
                     "**Watering:**\n" +
                     "**Temperature:**\n" +
                     "**Pruning:**\n" +
@@ -305,7 +307,7 @@ def api_plants():
                 response = openai_client.chat.completions.create(
                     model="gpt-4-turbo-preview",
                     messages=[
-                        {"role": "system", "content": "You are a gardening expert assistant. Provide detailed, practical plant care guides with specific instructions. CRITICAL: Use the EXACT section format provided with double asterisks (**Section:**) - do not use markdown headers (###)."},
+                        {"role": "system", "content": "You are a gardening expert assistant. Provide detailed, practical plant care guides with specific instructions. CRITICAL: Use the EXACT section format provided with double asterisks (**Section:**) - do not use markdown headers (###). For soil pH information: Soil pH Type must be one of: alkaline, slightly alkaline, neutral, slightly acidic, acidic. Soil pH Range must be in format like '5.5 - 6.5' with numerical ranges only."},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.7,
@@ -330,6 +332,8 @@ def api_plants():
                 description_field = get_canonical_field_name('Description') or 'Description'
                 light_field = get_canonical_field_name('Light Requirements') or 'Light Requirements'
                 soil_field = get_canonical_field_name('Soil Preferences') or 'Soil Preferences'
+                soil_ph_type_field = get_canonical_field_name('Soil pH Type') or 'Soil pH Type'
+                soil_ph_range_field = get_canonical_field_name('Soil pH Range') or 'Soil pH Range'
                 watering_field = get_canonical_field_name('Watering Needs') or 'Watering Needs'
                 frost_field = get_canonical_field_name('Frost Tolerance') or 'Frost Tolerance'
                 pruning_field = get_canonical_field_name('Pruning Instructions') or 'Pruning Instructions'
@@ -346,6 +350,8 @@ def api_plants():
                     description_field: care_details.get(description_field, ''),
                     light_field: care_details.get(light_field, ''),
                     soil_field: care_details.get(soil_field, ''),
+                    soil_ph_type_field: care_details.get(soil_ph_type_field, ''),
+                    soil_ph_range_field: care_details.get(soil_ph_range_field, ''),
                     watering_field: care_details.get(watering_field, ''),
                     frost_field: care_details.get(frost_field, ''),
                     pruning_field: care_details.get(pruning_field, ''),

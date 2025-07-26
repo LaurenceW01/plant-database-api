@@ -309,6 +309,8 @@ def _build_ai_context(query_type: str, plant_data: List[Dict], original_message:
                     get_canonical_field_name('Light Requirements'),
                     get_canonical_field_name('Watering Needs'),
                     get_canonical_field_name('Soil Preferences'),
+                    get_canonical_field_name('Soil pH Type'),
+                    get_canonical_field_name('Soil pH Range'),
                     get_canonical_field_name('Fertilizing Schedule'),
                     get_canonical_field_name('Pruning Instructions'),
                     get_canonical_field_name('Care Notes')
@@ -323,6 +325,8 @@ def _build_ai_context(query_type: str, plant_data: List[Dict], original_message:
                     get_canonical_field_name('Light Requirements'),
                     get_canonical_field_name('Watering Needs'),
                     get_canonical_field_name('Soil Preferences'),
+                    get_canonical_field_name('Soil pH Type'),
+                    get_canonical_field_name('Soil pH Range'),
                     get_canonical_field_name('Care Notes')
                 ]
                 for field in care_fields:
@@ -378,6 +382,9 @@ def _generate_ai_response(query_type: str, context: str, original_message: str) 
         system_prompt = f"""You are a knowledgeable gardening assistant specializing in plant care. 
         Provide specific, actionable care advice based on the plant information provided. 
         Consider the {get_default_location()} climate and growing conditions. Be encouraging and practical.
+        
+        When discussing soil pH, use these soil pH types: alkaline, slightly alkaline, neutral, slightly acidic, acidic.
+        For pH ranges, use numerical format like '5.5 - 6.5'.
         
         Climate Context:
         {climate_context}"""
