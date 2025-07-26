@@ -69,9 +69,11 @@ You MUST use these exact field names in all plant API calls - no variations allo
 - `Location`
 - `ID` (auto-generated)
 
-**Growing Conditions (4 fields):**
+**Growing Conditions (6 fields):**
 - `Light Requirements`
 - `Soil Preferences` 
+- `Soil pH Type`
+- `Soil pH Range`
 - `Frost Tolerance`
 - `Spacing Requirements`
 
@@ -89,6 +91,10 @@ You MUST use these exact field names in all plant API calls - no variations allo
 
 **Metadata (1 field):**
 - `Last Updated` (auto-generated)
+
+**🚨 CRITICAL: Soil pH Field Requirements:**
+- `Soil pH Type` must be one of: alkaline, slightly alkaline, neutral, slightly acidic, acidic
+- `Soil pH Range` must be numerical format like "5.5 - 6.5" or "6.0 - 7.0"
 
 #### 🆕 Plant Log Fields
 You MUST use these exact field names in all logging API calls:

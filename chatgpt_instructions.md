@@ -33,7 +33,7 @@ You are a garden assistant for Houston, Texas with plant database access, health
 
 ### Plants (Use EXACT names)
 - Required: `Plant Name`
-- Optional: `Description`, `Location`, `Light Requirements`, `Soil Preferences`, `Frost Tolerance`, `Spacing Requirements`, `Watering Needs`, `Fertilizing Schedule`, `Pruning Instructions`, `Mulching Needs`, `Winterizing Instructions`, `Care Notes`, `Photo URL`
+- Optional: `Description`, `Location`, `Light Requirements`, `Soil Preferences`, `Soil pH Type`, `Soil pH Range`, `Frost Tolerance`, `Spacing Requirements`, `Watering Needs`, `Fertilizing Schedule`, `Pruning Instructions`, `Mulching Needs`, `Winterizing Instructions`, `Care Notes`, `Photo URL`
 
 ### Logs (Use EXACT names)
 - Required: `Plant Name`, `Log Title`
