@@ -24,6 +24,10 @@ FIELD_NAMES = [
     'Watering Needs',
     # Soil preferences for the plant
     'Soil Preferences',
+    # Soil pH type (alkaline, slightly alkaline, neutral, slightly acidic, acidic)
+    'Soil pH Type',
+    # Soil pH range (e.g., "5.5 - 6.5")
+    'Soil pH Range',
     # Pruning instructions for the plant
     'Pruning Instructions',
     # Mulching needs for the plant
@@ -115,6 +119,18 @@ FIELD_ALIASES = {
     # Soil Preferences field aliases
     'soil': 'Soil Preferences',
     'soil preferences': 'Soil Preferences',
+    # Soil pH Type field aliases
+    'soil ph type': 'Soil pH Type',
+    'ph type': 'Soil pH Type',
+    'soil ph': 'Soil pH Type',
+    'ph': 'Soil pH Type',
+    'acidity': 'Soil pH Type',
+    'alkalinity': 'Soil pH Type',
+    # Soil pH Range field aliases
+    'soil ph range': 'Soil pH Range',
+    'ph range': 'Soil pH Range',
+    'ph level': 'Soil pH Range',
+    'ph levels': 'Soil pH Range',
     # Pruning Instructions field aliases
     'prune': 'Pruning Instructions',
     'pruning': 'Pruning Instructions',
@@ -252,6 +268,8 @@ FIELD_CATEGORIES = {
         'Frost Tolerance',
         'Watering Needs',
         'Soil Preferences',
+        'Soil pH Type',
+        'Soil pH Range',
         'Pruning Instructions',
         'Mulching Needs',
         'Fertilizing Schedule',
