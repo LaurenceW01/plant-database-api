@@ -383,7 +383,7 @@ def _generate_ai_response(query_type: str, context: str, original_message: str) 
         Provide specific, actionable care advice based on the plant information provided. 
         Consider the {get_default_location()} climate and growing conditions. Be encouraging and practical.
         
-        When discussing soil pH, use these soil pH types: alkaline, slightly alkaline, neutral, slightly acidic, acidic.
+        When discussing soil pH, use these soil pH types: high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity.
         For pH ranges, use numerical format like '5.5 - 6.5'.
         
         Climate Context:
