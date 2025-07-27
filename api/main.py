@@ -53,6 +53,12 @@ def map_underscore_fields_to_canonical(data):
         'watering___needs': 'Watering Needs',
         'soil_preferences': 'Soil Preferences',
         'soil___preferences': 'Soil Preferences',
+        # Fix for pH field mapping - add missing Soil pH Type mappings
+        'soil_ph_type': 'Soil pH Type',
+        'soil___ph___type': 'Soil pH Type',
+        # Fix for pH field mapping - add missing Soil pH Range mappings  
+        'soil_ph_range': 'Soil pH Range',
+        'soil___ph___range': 'Soil pH Range',
         'pruning_instructions': 'Pruning Instructions',
         'pruning___instructions': 'Pruning Instructions',
         'mulching_needs': 'Mulching Needs',
