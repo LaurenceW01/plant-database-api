@@ -1303,7 +1303,7 @@ components:
           type: string
           description: Soil pH classification
           example: "slightly acidic"
-          enum: ["alkaline", "slightly alkaline", "neutral", "slightly acidic", "acidic"]
+          enum: ["high alkalinity", "medium alkalinity", "slightly alkaline", "neutral", "slightly acidic", "medium acidity", "high acidity"]
         Soil pH Range:
           type: string
           description: Specific soil pH range
@@ -1382,7 +1382,7 @@ components:
           type: string
           description: "Soil pH classification - use exactly 'Soil pH Type'"
           example: "slightly acidic"
-          enum: ["alkaline", "slightly alkaline", "neutral", "slightly acidic", "acidic"]
+          enum: ["high alkalinity", "medium alkalinity", "slightly alkaline", "neutral", "slightly acidic", "medium acidity", "high acidity"]
         Soil pH Range:
           type: string
           description: "Specific soil pH range - use exactly 'Soil pH Range'"
@@ -1444,7 +1444,8 @@ components:
         Soil pH Type:
           type: string
           description: "Soil pH classification - use exactly 'Soil pH Type'"
-          enum: ["alkaline", "slightly alkaline", "neutral", "slightly acidic", "acidic"]
+          example: "slightly acidic"
+          enum: ["high alkalinity", "medium alkalinity", "slightly alkaline", "neutral", "slightly acidic", "medium acidity", "high acidity"]
         Soil pH Range:
           type: string
           description: "Specific soil pH range - use exactly 'Soil pH Range'"
