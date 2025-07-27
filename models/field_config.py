@@ -24,7 +24,7 @@ FIELD_NAMES = [
     'Watering Needs',
     # Soil preferences for the plant
     'Soil Preferences',
-    # Soil pH type (alkaline, slightly alkaline, neutral, slightly acidic, acidic)
+    # Soil pH type (high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity)
     'Soil pH Type',
     # Soil pH range (e.g., "5.5 - 6.5")
     'Soil pH Range',
