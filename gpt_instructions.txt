@@ -93,7 +93,7 @@ You MUST use these exact field names in all plant API calls - no variations allo
 - `Last Updated` (auto-generated)
 
 **🚨 CRITICAL: Soil pH Field Requirements:**
-- `Soil pH Type` must be one of: alkaline, slightly alkaline, neutral, slightly acidic, acidic
+- `Soil pH Type` must be one of: high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity
 - `Soil pH Range` must be numerical format like "5.5 - 6.5" or "6.0 - 7.0"
 
 #### 🆕 Plant Log Fields
