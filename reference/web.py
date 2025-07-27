@@ -307,7 +307,7 @@ def api_plants():
                 response = openai_client.chat.completions.create(
                     model="gpt-4-turbo-preview",
                     messages=[
-                        {"role": "system", "content": "You are a gardening expert assistant. Provide detailed, practical plant care guides with specific instructions. CRITICAL: Use the EXACT section format provided with double asterisks (**Section:**) - do not use markdown headers (###). For soil pH information: Soil pH Type must be one of: alkaline, slightly alkaline, neutral, slightly acidic, acidic. Soil pH Range must be in format like '5.5 - 6.5' with numerical ranges only."},
+                        {"role": "system", "content": f"You are an expert gardener and plant database manager. Answer as a knowledgeable, friendly assistant. Important: Do not use markdown headers (###). For soil pH information: Soil pH Type must be one of: high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity. Soil pH Range must be in format like '5.5 - 6.5' with numerical ranges only."},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.7,
