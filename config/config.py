@@ -18,15 +18,20 @@ logger = logging.getLogger(__name__)
 # Load environment variables from .env file
 load_dotenv()
 
-# Google Sheets Setup
+# Google Sheets Setup - Now using environment variables for flexible dev/prod switching
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-SPREADSHEET_ID = '1zmKVuDTbgColGuoHJDF0ZJxXB6N2WfwLkp7LZ0vqOag'
-SHEET_GID = '828349954'
-RANGE_NAME = 'Plants!A:Q'
+# Use environment variable for spreadsheet ID, fallback to current production sheet
+SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '1zmKVuDTbgColGuoHJDF0ZJxXB6N2WfwLkp7LZ0vqOag')
+# Use environment variable for sheet GID, fallback to current production GID
+SHEET_GID = os.getenv('SHEET_GID', '828349954')
+# Use environment variable for range name, allows different sheet names for dev/prod
+RANGE_NAME = os.getenv('RANGE_NAME', 'Plants!A:Q')
 
-# Plant Log Sheet Setup (extends existing spreadsheet)
-LOG_SHEET_NAME = 'Plant_Log'
-LOG_RANGE_NAME = 'Plant_Log!A:Q'  # Adjust as needed based on log field count
+# Plant Log Sheet Setup (extends existing spreadsheet) - Now configurable
+# Use environment variable for log sheet name, allows different log sheets for dev/prod
+LOG_SHEET_NAME = os.getenv('LOG_SHEET_NAME', 'Plant_Log')
+# Use environment variable for log range, allows flexibility in log sheet structure
+LOG_RANGE_NAME = os.getenv('LOG_RANGE_NAME', 'Plant_Log!A:Q')  # Adjust as needed based on log field count
 
 # Google Cloud Storage Setup
 STORAGE_SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
