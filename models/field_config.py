@@ -121,6 +121,7 @@ FIELD_ALIASES = {
     'soil preferences': 'Soil Preferences',
     # Soil pH Type field aliases
     'soil ph type': 'Soil pH Type',
+    'soil_ph_type': 'Soil pH Type',
     'ph type': 'Soil pH Type',
     'soil ph': 'Soil pH Type',
     'ph': 'Soil pH Type',
@@ -128,6 +129,7 @@ FIELD_ALIASES = {
     'alkalinity': 'Soil pH Type',
     # Soil pH Range field aliases
     'soil ph range': 'Soil pH Range',
+    'soil_ph_range': 'Soil pH Range',
     'ph range': 'Soil pH Range',
     'ph level': 'Soil pH Range',
     'ph levels': 'Soil pH Range',
