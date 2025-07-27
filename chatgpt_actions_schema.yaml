@@ -6,8 +6,8 @@ info:
     Now includes two-step photo upload process for both adding new plants and updating existing plants.
   version: 2.1.0
 servers:
-  - url: https://plant-database-api.onrender.com
-    description: Production server
+  - url: https://dev-plant-database-api.onrender.com
+    description: Development server
 
 paths:
   # =============================================
@@ -121,11 +121,11 @@ paths:
                   upload_url:
                     type: string
                     description: URL for uploading a photo of the plant
-                    example: "https://plant-database-api.onrender.com/upload/plant/abc123xyz"
+                    example: "https://dev-plant-database-api.onrender.com/upload/plant/abc123xyz"
                   upload_instructions:
                     type: string
                     description: Instructions for using the upload URL
-                    example: "To add a photo of your plant, visit: https://plant-database-api.onrender.com/upload/plant/abc123xyz"
+                    example: "To add a photo of your plant, visit: https://dev-plant-database-api.onrender.com/upload/plant/abc123xyz"
         '400':
           description: Validation error
           content:
@@ -221,11 +221,11 @@ paths:
                   upload_url:
                     type: string
                     description: URL for uploading a new photo of the plant
-                    example: "https://plant-database-api.onrender.com/upload/plant/abc123xyz"
+                    example: "https://dev-plant-database-api.onrender.com/upload/plant/abc123xyz"
                   upload_instructions:
                     type: string
                     description: Instructions for using the upload URL
-                    example: "To update the plant's photo, visit: https://plant-database-api.onrender.com/upload/plant/abc123xyz"
+                    example: "To update the plant's photo, visit: https://dev-plant-database-api.onrender.com/upload/plant/abc123xyz"
         '400':
           description: Validation error or plant not found
           content:
@@ -748,11 +748,11 @@ paths:
                       upload_url:
                         type: string
                         description: Secure upload link for adding photos to this log entry
-                        example: "https://plant-database-api.onrender.com/upload/abc123xyz"
+                        example: "https://dev-plant-database-api.onrender.com/upload/abc123xyz"
                       upload_instructions:
                         type: string
                         description: User-friendly instructions for photo upload
-                        example: "To add a photo to this log entry, visit: https://plant-database-api.onrender.com/upload/abc123xyz"
+                        example: "To add a photo to this log entry, visit: https://dev-plant-database-api.onrender.com/upload/abc123xyz"
                   suggestions:
                     type: object
                     description: Plant suggestions when plant not found
@@ -944,11 +944,11 @@ paths:
                     example: "Log entry created successfully"
                   upload_url:
                     type: string
-                    example: "https://plant-database-api.onrender.com/upload/abc123xyz"
+                    example: "https://dev-plant-database-api.onrender.com/upload/abc123xyz"
                     description: "Secure upload link for adding photos to this log entry"
                   upload_instructions:
                     type: string
-                    example: "To add a photo to this log entry, visit: https://plant-database-api.onrender.com/upload/abc123xyz"
+                    example: "To add a photo to this log entry, visit: https://dev-plant-database-api.onrender.com/upload/abc123xyz"
                     description: "User-friendly instructions for photo upload"
                   log_entry:
                     type: object
@@ -961,8 +961,8 @@ paths:
                     log_id: "LOG-20240115-001"
                     plant_name: "Tomato Plant #1"
                     message: "Log entry created successfully"
-                    upload_url: "https://plant-database-api.onrender.com/upload/abc123xyz"
-                    upload_instructions: "To add a photo to this log entry, visit: https://plant-database-api.onrender.com/upload/abc123xyz"
+                    upload_url: "https://dev-plant-database-api.onrender.com/upload/abc123xyz"
+                    upload_instructions: "To add a photo to this log entry, visit: https://dev-plant-database-api.onrender.com/upload/abc123xyz"
         '400':
           description: Validation error or plant not found
           content:
