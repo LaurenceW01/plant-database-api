@@ -312,7 +312,7 @@ The link is valid for 24 hours."
 - `Location`: Where plant is located
 - `Light Requirements`: Sunlight needs
 - `Soil Preferences`: Soil type and pH
-- `Soil pH Type`: pH classification (alkaline, slightly alkaline, neutral, slightly acidic, acidic)
+- `Soil pH Type`: pH classification (high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity)
 - `Soil pH Range`: Numerical pH range (e.g., "6.0 - 6.5")
 - `Frost Tolerance`: Cold hardiness
 - `Spacing Requirements`: Plant spacing
