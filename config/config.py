@@ -38,6 +38,21 @@ STORAGE_SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 STORAGE_BUCKET_NAME = os.getenv('GCS_BUCKET_NAME', 'plant-database-photos')
 STORAGE_PROJECT_ID = os.getenv('GCS_PROJECT_ID', 'gardenllm')  # Your existing project ID
 
+# API URL Configuration - Environment-based URL management
+# Automatically determines API URL based on environment or explicit setting
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'production').lower()
+API_BASE_URL = os.getenv('API_BASE_URL')
+
+if API_BASE_URL is None:
+    # Auto-determine URL based on environment
+    if ENVIRONMENT in ['development', 'dev']:
+        API_BASE_URL = 'https://dev-plant-database-api.onrender.com'
+    else:
+        API_BASE_URL = 'https://plant-database-api.onrender.com'
+
+# Export API URL for use in other modules
+API_URL = API_BASE_URL
+
 # API Rate Limiting
 SHEETS_REQUESTS = {}  # Track API requests
 MAX_REQUESTS_PER_MINUTE = 30
