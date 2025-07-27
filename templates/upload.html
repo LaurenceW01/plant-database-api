@@ -253,12 +253,28 @@
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*,.heic,.heif';
+                input.style.display = 'none';
                 
-                // Handle file selection
-                input.onchange = (e) => handleImageSelect(e.target.files[0]);
+                // Temporarily attach to DOM for better mobile browser compatibility
+                document.body.appendChild(input);
                 
-                // Open gallery
-                input.click();
+                // Handle file selection using addEventListener for better reliability
+                const handleFileSelection = (e) => {
+                    const file = e.target.files[0];
+                    // Clean up the temporary input
+                    input.removeEventListener('change', handleFileSelection);
+                    document.body.removeChild(input);
+                    
+                    // Process the selected file
+                    handleImageSelect(file);
+                };
+                
+                input.addEventListener('change', handleFileSelection);
+                
+                // Small delay to ensure event listener is registered before triggering
+                setTimeout(() => {
+                    input.click();
+                }, 10);
             });
         }
         
