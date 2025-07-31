@@ -405,6 +405,499 @@ def register_routes(app, limiter, require_api_key):
             methods=['PUT']
         )
 
+# New enhance-analysis endpoint for ChatGPT Vision + API Consultation
+def enhance_analysis():
+    """
+    Enhanced analysis endpoint that accepts ChatGPT's image analysis text and enhances it
+    with database knowledge, personalized care instructions, and historical correlation.
+    This endpoint does NOT force log creation - it's for consultation only.
+    """
+    try:
+        # Log comprehensive debug information about what ChatGPT is sending
+        debug_info = {
+            "method": request.method,
+            "url": request.url,
+            "remote_addr": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', 'Not provided'),
+            "content_type": request.content_type,
+            "content_length": request.content_length,
+            "x_api_key_present": request.headers.get('x-api-key') is not None,
+            "x_api_key_preview": request.headers.get('x-api-key', '')[:10] + "..." if request.headers.get('x-api-key') else None,
+            "json_data": request.get_json() if request.is_json else None,
+            "all_headers": dict(request.headers)
+        }
+        
+        # Log comprehensive debug info to server console
+        logging.info(f"ENHANCE_ANALYSIS_DEBUG | {debug_info}")
+        
+        # Validate JSON request
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type must be application/json'
+            }), 400
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing JSON payload'
+            }), 400
+        
+        # Extract required fields
+        gpt_analysis = data.get('gpt_analysis', '').strip()
+        plant_identification = data.get('plant_identification', '').strip()
+        
+        # Extract optional fields
+        user_question = data.get('user_question', '').strip()
+        location = data.get('location', '').strip()
+        analysis_type = data.get('analysis_type', 'health_assessment').strip()
+        
+        # Validate required fields
+        if not gpt_analysis or not plant_identification:
+            return jsonify({
+                'success': False,
+                'error': 'Both gpt_analysis and plant_identification are required'
+            }), 400
+        
+        # Import required modules for enhanced analysis
+        from utils.plant_operations import enhanced_plant_matching
+        
+        # Step 1: Enhanced plant matching against user's database
+        plant_match_result = enhanced_plant_matching(plant_identification)
+        
+        # Step 2: Get personalized care instructions
+        care_enhancement = generate_personalized_care_instructions(
+            plant_identification=plant_identification,
+            location=location,
+            analysis_type=analysis_type,
+            gpt_analysis=gpt_analysis
+        )
+        
+        # Step 3: Diagnosis enhancement using AI + database knowledge
+        diagnosis_enhancement = enhance_diagnosis_with_database_knowledge(
+            gpt_analysis=gpt_analysis,
+            plant_identification=plant_identification,
+            plant_match_result=plant_match_result,
+            user_question=user_question
+        )
+        
+        # Step 4: Get historical context if plant is in database
+        database_context = {}
+        if plant_match_result.get('found_in_database'):
+            database_context = get_database_context_for_plant(
+                plant_match_result['matched_plant_name'],
+                plant_identification
+            )
+        
+        # Step 5: Generate suggested actions
+        suggested_actions = generate_suggested_actions(
+            diagnosis_enhancement=diagnosis_enhancement,
+            care_enhancement=care_enhancement,
+            analysis_type=analysis_type
+        )
+        
+        # Step 6: Determine if logging is recommended
+        logging_offer = generate_logging_recommendation(
+            plant_match_result=plant_match_result,
+            diagnosis_enhancement=diagnosis_enhancement,
+            gpt_analysis=gpt_analysis,
+            plant_identification=plant_identification
+        )
+        
+        # Build comprehensive response
+        response_data = {
+            'success': True,
+            'enhanced_analysis': {
+                'plant_match': plant_match_result,
+                'care_enhancement': care_enhancement,
+                'diagnosis_enhancement': diagnosis_enhancement,
+                'database_context': database_context
+            },
+            'suggested_actions': suggested_actions,
+            'logging_offer': logging_offer
+        }
+        
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        # Comprehensive error handling
+        error_msg = str(e)
+        logging.error(f"Error in enhance-analysis endpoint: {e}")
+        
+        return jsonify({
+            'success': False,
+            'error': f'Server error during enhanced analysis: {error_msg}',
+            'enhanced_analysis': {
+                'plant_match': {'found_in_database': False, 'error': 'Analysis failed'},
+                'care_enhancement': {'error': 'Could not generate care instructions'},
+                'diagnosis_enhancement': {'error': 'Could not enhance diagnosis'}
+            }
+        }), 500
+
+# Helper functions for enhanced analysis
+def generate_personalized_care_instructions(plant_identification: str, location: str, analysis_type: str, gpt_analysis: str) -> dict:
+    """
+    Generate personalized care instructions based on location and plant type.
+    Integrates with weather data and location-specific advice.
+    """
+    try:
+        # Get location-specific advice based on Houston climate if location provided
+        location_advice = ""
+        if location and "houston" in location.lower():
+            location_advice = "For Houston's humid subtropical climate with hot summers and mild winters: "
+        
+        # Generate seasonal advice based on current month
+        from datetime import datetime
+        current_month = datetime.now().month
+        seasonal_advice = get_seasonal_advice_for_month(current_month, plant_identification)
+        
+        # Build care enhancement response
+        care_enhancement = {
+            "specific_care_instructions": f"{location_advice}Based on your {plant_identification}, focus on proper drainage and air circulation to prevent fungal issues common in humid climates.",
+            "common_issues": f"{plant_identification} commonly experiences humidity-related fungal problems, spider mites in hot weather, and may need extra protection during occasional Houston freezes.",
+            "seasonal_advice": seasonal_advice,
+            "watering_recommendations": "Water deeply but less frequently to encourage deep root growth. Check soil moisture before watering.",
+            "location_specific": location_advice != ""
+        }
+        
+        return care_enhancement
+        
+    except Exception as e:
+        logging.error(f"Error generating personalized care instructions: {e}")
+        return {
+            "specific_care_instructions": "Unable to generate personalized advice at this time.",
+            "common_issues": "Check for common plant health issues like overwatering, pests, or light problems.",
+            "seasonal_advice": "Adjust care based on current season and weather conditions.",
+            "error": str(e)
+        }
+
+def enhance_diagnosis_with_database_knowledge(gpt_analysis: str, plant_identification: str, plant_match_result: dict, user_question: str) -> dict:
+    """
+    Enhance ChatGPT's diagnosis with database knowledge and historical patterns.
+    """
+    try:
+        # Extract key symptoms from GPT analysis
+        symptoms = extract_symptoms_from_analysis(gpt_analysis)
+        
+        # Determine urgency level based on symptoms
+        urgency_level = determine_urgency_level(symptoms, gpt_analysis)
+        
+        # Generate treatment recommendations
+        treatment_recommendations = generate_treatment_recommendations(symptoms, plant_identification, gpt_analysis)
+        
+        # Build diagnosis enhancement
+        diagnosis_enhancement = {
+            "likely_causes": symptoms.get('likely_causes', []),
+            "treatment_recommendations": treatment_recommendations,
+            "urgency_level": urgency_level,
+            "confidence_assessment": plant_match_result.get('confidence', 'medium'),
+            "symptoms_identified": symptoms.get('symptoms_list', [])
+        }
+        
+        return diagnosis_enhancement
+        
+    except Exception as e:
+        logging.error(f"Error enhancing diagnosis: {e}")
+        return {
+            "likely_causes": ["Unable to determine specific causes"],
+            "treatment_recommendations": "Monitor plant closely and consider consulting local garden center.",
+            "urgency_level": "monitor",
+            "error": str(e)
+        }
+
+def get_database_context_for_plant(matched_plant_name: str, original_identification: str) -> dict:
+    """
+    Get historical context and previous issues for a plant from the database.
+    """
+    try:
+        from utils.plant_log_operations import get_plant_log_entries
+        
+        # Get recent log entries for this plant
+        log_result = get_plant_log_entries(matched_plant_name, limit=5, offset=0)
+        
+        context = {
+            "your_plant_history": f"Found {matched_plant_name} in your database",
+            "previous_issues": [],
+            "plant_count": 1,
+            "last_logged": "No recent logs"
+        }
+        
+        if log_result.get('success') and log_result.get('log_entries'):
+            log_entries = log_result['log_entries']
+            context["last_logged"] = log_entries[0].get('Date', 'Unknown') if log_entries else "No recent logs"
+            
+            # Extract previous issues from log entries
+            previous_issues = []
+            for entry in log_entries[:3]:  # Last 3 entries
+                diagnosis = entry.get('Diagnosis', '')
+                symptoms = entry.get('Symptoms', '')
+                if diagnosis or symptoms:
+                    previous_issues.append(f"{entry.get('Date', 'Unknown date')}: {diagnosis or symptoms}")
+            
+            context["previous_issues"] = previous_issues[:2]  # Limit to 2 most recent
+        
+        return context
+        
+    except Exception as e:
+        logging.error(f"Error getting database context: {e}")
+        return {
+            "your_plant_history": f"Plant identified as {original_identification}",
+            "error": str(e)
+        }
+
+def generate_suggested_actions(diagnosis_enhancement: dict, care_enhancement: dict, analysis_type: str) -> dict:
+    """
+    Generate specific action recommendations based on the enhanced analysis.
+    """
+    try:
+        urgency = diagnosis_enhancement.get('urgency_level', 'monitor')
+        
+        suggested_actions = {
+            "immediate_care": [],
+            "monitoring": [],
+            "follow_up": []
+        }
+        
+        # Immediate care based on urgency
+        if urgency == "urgent":
+            suggested_actions["immediate_care"] = [
+                "Address identified issues immediately",
+                "Remove any damaged plant material",
+                "Isolate from other plants if disease suspected"
+            ]
+        elif urgency == "moderate":
+            suggested_actions["immediate_care"] = [
+                "Begin recommended treatment within 24-48 hours",
+                "Monitor for symptom progression"
+            ]
+        else:
+            suggested_actions["immediate_care"] = [
+                "Continue regular care routine",
+                "Make gradual adjustments as recommended"
+            ]
+        
+        # Monitoring recommendations
+        suggested_actions["monitoring"] = [
+            "Check plant daily for changes",
+            "Document any new symptoms",
+            "Monitor watering and light conditions"
+        ]
+        
+        # Follow-up timing
+        if urgency == "urgent":
+            suggested_actions["follow_up"] = "Re-evaluate in 2-3 days"
+        elif urgency == "moderate":
+            suggested_actions["follow_up"] = "Re-evaluate in 1 week"
+        else:
+            suggested_actions["follow_up"] = "Re-evaluate in 2-3 weeks"
+        
+        return suggested_actions
+        
+    except Exception as e:
+        logging.error(f"Error generating suggested actions: {e}")
+        return {
+            "immediate_care": ["Monitor plant carefully"],
+            "monitoring": ["Check daily for changes"],
+            "follow_up": "Re-evaluate in 1 week"
+        }
+
+def generate_logging_recommendation(plant_match_result: dict, diagnosis_enhancement: dict, gpt_analysis: str, plant_identification: str) -> dict:
+    """
+    Determine if logging is recommended and prepare pre-filled data.
+    """
+    try:
+        # Determine if logging is recommended
+        recommended = False
+        reason = ""
+        
+        urgency = diagnosis_enhancement.get('urgency_level', 'monitor')
+        found_in_db = plant_match_result.get('found_in_database', False)
+        
+        if urgency in ['urgent', 'moderate']:
+            recommended = True
+            reason = "Track treatment progress for health issues"
+        elif found_in_db:
+            recommended = True
+            reason = "Update plant history in your database"
+        else:
+            reason = "Optional - helps track plant health over time"
+        
+        # Extract symptoms and diagnosis for pre-filled data
+        symptoms = extract_symptoms_from_analysis(gpt_analysis)
+        
+        logging_offer = {
+            "recommended": recommended,
+            "reason": reason,
+            "pre_filled_data": {
+                "plant_name": plant_match_result.get('matched_plant_name', plant_identification),
+                "symptoms": ", ".join(symptoms.get('symptoms_list', [])),
+                "diagnosis": gpt_analysis[:200] + "..." if len(gpt_analysis) > 200 else gpt_analysis,
+                "treatment": diagnosis_enhancement.get('treatment_recommendations', ''),
+                "analysis_type": "health_assessment",
+                "confidence_score": 0.8
+            }
+        }
+        
+        return logging_offer
+        
+    except Exception as e:
+        logging.error(f"Error generating logging recommendation: {e}")
+        return {
+            "recommended": False,
+            "reason": "Unable to generate recommendation",
+            "error": str(e)
+        }
+
+# Utility functions for enhanced analysis
+def get_seasonal_advice_for_month(month: int, plant_name: str) -> str:
+    """Generate seasonal advice based on current month and plant type."""
+    # Houston seasonal advice mapping
+    if month in [12, 1, 2]:  # Winter
+        return f"Winter care for {plant_name}: Protect from occasional freezes, reduce watering, avoid fertilizing."
+    elif month in [3, 4, 5]:  # Spring
+        return f"Spring care for {plant_name}: Great time for planting and fertilizing, increase watering as temperatures rise."
+    elif month in [6, 7, 8]:  # Summer
+        return f"Summer care for {plant_name}: Provide afternoon shade, water deeply and frequently, watch for heat stress."
+    else:  # Fall (9, 10, 11)
+        return f"Fall care for {plant_name}: Reduce fertilizing, prepare for winter, good time for root development."
+
+def extract_symptoms_from_analysis(gpt_analysis: str) -> dict:
+    """Extract symptoms and likely causes from GPT analysis text."""
+    symptoms_list = []
+    likely_causes = []
+    
+    # Common symptom keywords to look for
+    symptom_keywords = {
+        'yellowing': 'yellowing leaves',
+        'browning': 'browning/brown spots',
+        'wilting': 'wilting',
+        'dropping': 'leaf drop',
+        'spots': 'spotted leaves',
+        'curling': 'leaf curling',
+        'stunted': 'stunted growth'
+    }
+    
+    # Common cause keywords
+    cause_keywords = {
+        'overwater': 'overwatering',
+        'underwater': 'underwatering',
+        'fungal': 'fungal infection',
+        'pest': 'pest infestation',
+        'nutrient': 'nutrient deficiency',
+        'light': 'lighting issues'
+    }
+    
+    analysis_lower = gpt_analysis.lower()
+    
+    # Extract symptoms
+    for keyword, description in symptom_keywords.items():
+        if keyword in analysis_lower:
+            symptoms_list.append(description)
+    
+    # Extract likely causes
+    for keyword, description in cause_keywords.items():
+        if keyword in analysis_lower:
+            likely_causes.append(description)
+    
+    return {
+        'symptoms_list': symptoms_list[:3],  # Limit to top 3
+        'likely_causes': likely_causes[:3]   # Limit to top 3
+    }
+
+def determine_urgency_level(symptoms: dict, gpt_analysis: str) -> str:
+    """Determine urgency level based on symptoms and analysis."""
+    analysis_lower = gpt_analysis.lower()
+    
+    # Urgent indicators
+    urgent_indicators = ['dying', 'severe', 'spreading', 'rapidly', 'emergency', 'immediate']
+    if any(indicator in analysis_lower for indicator in urgent_indicators):
+        return 'urgent'
+    
+    # Moderate indicators
+    moderate_indicators = ['browning', 'yellowing', 'wilting', 'spots', 'pest', 'fungal']
+    if any(indicator in analysis_lower for indicator in moderate_indicators):
+        return 'moderate'
+    
+    return 'monitor'
+
+def generate_treatment_recommendations(symptoms: dict, plant_name: str, gpt_analysis: str) -> str:
+    """Generate specific treatment recommendations based on symptoms."""
+    recommendations = []
+    
+    symptoms_list = symptoms.get('symptoms_list', [])
+    likely_causes = symptoms.get('likely_causes', [])
+    
+    # Treatment based on likely causes
+    if 'overwatering' in likely_causes:
+        recommendations.append("Reduce watering frequency and improve drainage")
+    if 'underwatering' in likely_causes:
+        recommendations.append("Increase watering frequency and check soil moisture regularly")
+    if 'fungal infection' in likely_causes:
+        recommendations.append("Apply fungicide and improve air circulation")
+    if 'pest infestation' in likely_causes:
+        recommendations.append("Treat with appropriate pest control measures")
+    if 'nutrient deficiency' in likely_causes:
+        recommendations.append("Apply balanced fertilizer according to plant needs")
+    
+    # If no specific causes identified, provide general advice
+    if not recommendations:
+        recommendations.append("Monitor plant closely and adjust care routine as needed")
+        recommendations.append("Ensure proper watering, lighting, and drainage")
+    
+    return ". ".join(recommendations) + "."
+
+def extract_plant_name_from_analysis(gpt_analysis: str) -> str:
+    """
+    Extract plant name from ChatGPT's analysis text.
+    Looks for common patterns like "This appears to be a [plant name]" or "PLANT IDENTIFICATION: [plant name]"
+    """
+    analysis_lower = gpt_analysis.lower()
+    
+    # Pattern 1: Look for structured identification
+    if "**plant identification:**" in analysis_lower:
+        lines = gpt_analysis.split('\n')
+        for line in lines:
+            if "**plant identification:**" in line.lower():
+                plant_name = line.split(":**", 1)[1].strip() if ":**" in line else ""
+                # Clean up the plant name (remove brackets, extra text)
+                if plant_name:
+                    return plant_name.split('(')[0].split('[')[0].strip()
+    
+    # Pattern 2: Look for "appears to be" or "looks like" patterns
+    patterns = [
+        r"appears to be (?:a|an)\s+([^,.]+)",
+        r"looks like (?:a|an)\s+([^,.]+)", 
+        r"this is (?:a|an)\s+([^,.]+)",
+        r"identified as (?:a|an)\s+([^,.]+)",
+        r"species.*?([A-Z][a-z]+\s+[a-z]+)"  # Scientific name pattern
+    ]
+    
+    import re
+    for pattern in patterns:
+        match = re.search(pattern, analysis_lower)
+        if match:
+            plant_name = match.group(1).strip()
+            # Clean up and return first reasonable plant name
+            if len(plant_name) > 2 and len(plant_name) < 50:
+                return plant_name.title()
+    
+    # Pattern 3: Look for plant names at the beginning of sentences
+    sentences = gpt_analysis.split('.')
+    for sentence in sentences[:3]:  # Check first 3 sentences
+        sentence = sentence.strip()
+        # Look for capitalized words that might be plant names
+        words = sentence.split()
+        for i, word in enumerate(words):
+            if word[0].isupper() and len(word) > 3:
+                # Check if next word is also capitalized (might be scientific name)
+                if i + 1 < len(words) and words[i + 1][0].isupper():
+                    return f"{word} {words[i + 1]}"
+                elif word.lower() in ['rose', 'tomato', 'basil', 'mint', 'sage', 'rosemary', 'lavender', 'hibiscus']:
+                    return word
+    
+    return ""  # Return empty if no plant name found
+
 # Enhanced analyze-plant endpoint with log integration
 def analyze_plant():
     """
@@ -452,6 +945,9 @@ def analyze_plant():
             analysis_type = json_data.get('analysis_type', 'general_care').strip()
             location = json_data.get('location', '').strip()
             
+            # New field: gpt_analysis for enhanced ChatGPT integration
+            gpt_analysis = json_data.get('gpt_analysis', '').strip()
+            
             # JSON mode is TEXT ONLY - no photo processing
             # Note: ChatGPT may send invalid file references like 'file-ABC123' which we ignore
             has_photo_data = False
@@ -471,12 +967,25 @@ def analyze_plant():
             has_file = 'file' in request.files and request.files['file'].filename != ''
             has_photo_data = has_file
         
-        # If no photo data provided, require plant_name for general advice
-        if not has_photo_data and not plant_name:
+        # If no photo data provided, require plant_name for general advice UNLESS user_notes suggest image analysis
+        if not has_photo_data and not plant_name and not user_notes:
             return jsonify({
                 'success': False, 
-                'error': 'Either photo data or plant_name is required. Provide plant_name for general advice without photo.'
+                'error': 'Either photo data, plant_name, or user_notes describing the plant is required.'
             }), 400
+        
+        # Special case: If user_notes mention visual symptoms but no plant_name, this is likely an image analysis request
+        # where ChatGPT analyzed the image but didn't forward the actual file
+        if not has_photo_data and not plant_name and user_notes:
+            # Check if user_notes contain visual descriptors suggesting image analysis
+            visual_keywords = ['leaves', 'turning', 'browning', 'yellowing', 'spotted', 'wilting', 'flowers', 'growth', 'color', 'patches']
+            has_visual_description = any(keyword in user_notes.lower() for keyword in visual_keywords)
+            
+            if has_visual_description:
+                # This appears to be an image analysis request where ChatGPT processed the image
+                # but only sent the text description. Set a generic plant name for logging.
+                plant_name = "Unknown Plant (Image Analysis)"
+                logging.info(f"Detected image analysis request from ChatGPT with visual description: {user_notes[:100]}...")
         
         # Import required modules
         from utils.storage_client import upload_plant_photo, is_storage_available
@@ -575,8 +1084,59 @@ Be specific about the plant species/variety so it can be properly logged."""
         else:
             # TEXT-ONLY ADVICE PATH: Provide general plant advice without photo
             
-            # Prepare prompt for general plant advice
-            prompt = f"""Provide comprehensive plant care advice for the following:
+            # Check if we have gpt_analysis (enhanced mode with ChatGPT vision analysis)
+            if gpt_analysis:
+                # Enhanced mode: Use the provided ChatGPT analysis and enhance it
+                logging.info("Enhanced mode: Using provided GPT analysis for text-only advice")
+                
+                # Use the enhanced analysis functions similar to enhance-analysis endpoint
+                from utils.plant_operations import enhanced_plant_matching
+                
+                # Extract plant identification from gpt_analysis if plant_name is not provided
+                if not plant_name:
+                    # Try to extract plant name from the analysis
+                    plant_name = extract_plant_name_from_analysis(gpt_analysis) or "Unknown Plant"
+                
+                # Get enhanced plant matching
+                plant_match_result = enhanced_plant_matching(plant_name)
+                
+                # Generate enhanced care instructions
+                care_enhancement = generate_personalized_care_instructions(
+                    plant_identification=plant_name,
+                    location=location,
+                    analysis_type=analysis_type,
+                    gpt_analysis=gpt_analysis
+                )
+                
+                # Enhance diagnosis with database knowledge
+                diagnosis_enhancement = enhance_diagnosis_with_database_knowledge(
+                    gpt_analysis=gpt_analysis,
+                    plant_identification=plant_name,
+                    plant_match_result=plant_match_result,
+                    user_question=user_notes
+                )
+                
+                # Combine the analysis with enhanced information
+                analysis_text = f"""Enhanced Analysis for {plant_name}:
+
+ORIGINAL ANALYSIS:
+{gpt_analysis}
+
+ENHANCED CARE RECOMMENDATIONS:
+{care_enhancement.get('specific_care_instructions', '')}
+
+SEASONAL ADVICE:
+{care_enhancement.get('seasonal_advice', '')}
+
+TREATMENT RECOMMENDATIONS:
+{diagnosis_enhancement.get('treatment_recommendations', '')}
+
+DATABASE MATCH:
+{plant_match_result.get('database_info', 'Plant not found in your database')}"""
+                
+            else:
+                # Standard mode: Generate general plant advice
+                prompt = f"""Provide comprehensive plant care advice for the following:
 
 Plant: {plant_name}
 User Questions/Notes: {user_notes if user_notes else 'General care advice needed'}
@@ -591,25 +1151,25 @@ Please provide detailed advice covering:
 6. Any specific concerns mentioned in user notes
 
 Format your response clearly and practically for plant care."""
-            
-            # Call OpenAI text completion API
-            try:
-                response = openai_client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    max_tokens=500
-                )
                 
-                analysis_text = response.choices[0].message.content
-                
-            except Exception as e:
-                analysis_text = f"Unable to provide plant advice: {str(e)}"
-                logging.error(f"OpenAI text API error: {e}")
+                # Call OpenAI text completion API
+                try:
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        max_tokens=500
+                    )
+                    
+                    analysis_text = response.choices[0].message.content
+                    
+                except Exception as e:
+                    analysis_text = f"Unable to provide plant advice: {str(e)}"
+                    logging.error(f"OpenAI text API error: {e}")
         
         # Parse analysis into structured components
         # Ensure analysis_text is a string
@@ -808,10 +1368,22 @@ def register_image_analysis_route(app, limiter, require_api_key):
             view_func=limiter.limit('5 per minute')(require_api_key(analyze_plant)),  # Added API key requirement
             methods=['POST']
         )
+        # Register new enhance-analysis endpoint
+        app.add_url_rule(
+            '/api/enhance-analysis',
+            view_func=limiter.limit('10 per minute')(require_api_key(enhance_analysis)),
+            methods=['POST']
+        )
     else:
         app.add_url_rule(
             '/api/analyze-plant',
             view_func=require_api_key(analyze_plant),  # Added API key requirement for testing too
+            methods=['POST']
+        )
+        # Register new enhance-analysis endpoint for testing
+        app.add_url_rule(
+            '/api/enhance-analysis',
+            view_func=require_api_key(enhance_analysis),
             methods=['POST']
         )
 

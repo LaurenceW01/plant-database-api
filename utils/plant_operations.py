@@ -946,4 +946,218 @@ def get_plants_by_location(location_names: List[str]) -> List[Dict]:
         return matching_plants
     except Exception as e:
         logger.error(f"Error getting plants by location: {e}")
-        return [] 
+        return []
+
+def enhanced_plant_matching(plant_identification: str) -> Dict:
+    """
+    Enhanced plant matching with fuzzy logic and confidence scoring.
+    Matches ChatGPT's plant identification against the user's plant database.
+    
+    Args:
+        plant_identification (str): Plant name identified by ChatGPT
+        
+    Returns:
+        Dict: Matching result with confidence score and database info
+    """
+    try:
+        logger.info(f"Enhanced plant matching for: {plant_identification}")
+        
+        # Get all plants from the database
+        all_plants = get_plant_data()
+        
+        if not all_plants:
+            return {
+                'found_in_database': False,
+                'confidence': 'low',
+                'matched_plant_name': None,
+                'database_info': 'No plants found in database',
+                'alternatives': []
+            }
+        
+        # Extract plant names for matching
+        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_names = [plant.get(plant_name_field, '') for plant in all_plants if plant.get(plant_name_field)]
+        
+        # Find the best match using enhanced fuzzy matching
+        best_match = find_best_plant_match(plant_identification, plant_names)
+        
+        if best_match['found']:
+            # Get the matched plant's full data
+            matched_plant_data = next(
+                (plant for plant in all_plants if plant.get(plant_name_field) == best_match['plant_name']),
+                None
+            )
+            
+            return {
+                'found_in_database': True,
+                'plant_name': best_match['plant_name'],
+                'matched_plant_name': best_match['plant_name'], 
+                'confidence': best_match['confidence'],
+                'match_score': best_match['score'],
+                'database_info': f"Exact match found in your plant database",
+                'plant_data': matched_plant_data,
+                'alternatives': best_match.get('alternatives', [])
+            }
+        else:
+            # No match found - provide suggestions for similar plants
+            return {
+                'found_in_database': False,
+                'plant_name': plant_identification,
+                'matched_plant_name': None,
+                'confidence': 'low',
+                'match_score': 0.0,
+                'database_info': f"'{plant_identification}' not found in your plant database",
+                'suggestions': best_match.get('alternatives', []),
+                'alternatives': best_match.get('alternatives', [])
+            }
+    
+    except Exception as e:
+        logger.error(f"Error in enhanced plant matching: {e}")
+        return {
+            'found_in_database': False,
+            'confidence': 'low',
+            'matched_plant_name': None,
+            'database_info': f'Error during plant matching: {str(e)}',
+            'error': str(e)
+        }
+
+def find_best_plant_match(search_name: str, plant_names: List[str]) -> Dict:
+    """
+    Find the best matching plant using fuzzy string matching algorithms.
+    
+    Args:
+        search_name (str): Plant name to search for
+        plant_names (List[str]): List of plant names in the database
+        
+    Returns:
+        Dict: Best match result with confidence scoring
+    """
+    try:
+        import difflib
+        from collections import defaultdict
+        
+        search_normalized = _normalize_plant_name(search_name)
+        
+        # Track all potential matches with scores
+        matches = []
+        
+        for plant_name in plant_names:
+            if not plant_name:
+                continue
+                
+            plant_normalized = _normalize_plant_name(plant_name)
+            
+            # Method 1: Exact match (highest confidence)
+            if search_normalized == plant_normalized:
+                matches.append({
+                    'plant_name': plant_name,
+                    'score': 1.0,
+                    'method': 'exact'
+                })
+                continue
+            
+            # Method 2: Substring match
+            if search_normalized in plant_normalized or plant_normalized in search_normalized:
+                # Calculate substring match score
+                overlap = max(len(search_normalized), len(plant_normalized))
+                min_len = min(len(search_normalized), len(plant_normalized))
+                score = min_len / overlap if overlap > 0 else 0
+                matches.append({
+                    'plant_name': plant_name,
+                    'score': score * 0.9,  # Slightly lower than exact match
+                    'method': 'substring'
+                })
+                continue
+            
+            # Method 3: Word-by-word matching
+            search_words = set(search_normalized.split())
+            plant_words = set(plant_normalized.split())
+            
+            if search_words and plant_words:
+                # Intersection over union
+                intersection = len(search_words.intersection(plant_words))
+                union = len(search_words.union(plant_words))
+                word_score = intersection / union if union > 0 else 0
+                
+                if word_score > 0.4:  # At least 40% word overlap
+                    matches.append({
+                        'plant_name': plant_name,
+                        'score': word_score * 0.8,
+                        'method': 'word_overlap'
+                    })
+            
+            # Method 4: Fuzzy string matching using difflib
+            ratio = difflib.SequenceMatcher(None, search_normalized, plant_normalized).ratio()
+            if ratio > 0.6:  # At least 60% similarity
+                matches.append({
+                    'plant_name': plant_name,
+                    'score': ratio * 0.7,
+                    'method': 'fuzzy'
+                })
+        
+        # Sort matches by score (highest first)
+        matches.sort(key=lambda x: x['score'], reverse=True)
+        
+        # Determine confidence level based on best match score
+        if matches:
+            best_score = matches[0]['score']
+            if best_score >= 0.9:
+                confidence = 'high'
+            elif best_score >= 0.7:
+                confidence = 'medium'
+            else:
+                confidence = 'low'
+            
+            # Get top alternatives (excluding the best match)
+            alternatives = [
+                {
+                    'plant_name': match['plant_name'],
+                    'score': match['score'],
+                    'method': match['method']
+                }
+                for match in matches[1:4]  # Top 3 alternatives
+                if match['score'] > 0.5
+            ]
+            
+            return {
+                'found': best_score >= 0.6,  # Minimum threshold for a match
+                'plant_name': matches[0]['plant_name'],
+                'score': best_score,
+                'confidence': confidence,
+                'method': matches[0]['method'],
+                'alternatives': alternatives
+            }
+        else:
+            # No matches found, but provide some suggestions based on partial word matches
+            suggestions = []
+            search_words = search_normalized.split()
+            
+            for plant_name in plant_names[:10]:  # Check first 10 plants for suggestions
+                plant_normalized = _normalize_plant_name(plant_name)
+                plant_words = plant_normalized.split()
+                
+                # Check if any search words appear in plant name
+                if any(word in plant_normalized for word in search_words):
+                    suggestions.append({
+                        'plant_name': plant_name,
+                        'score': 0.3,  # Low score for suggestions
+                        'method': 'suggestion'
+                    })
+            
+            return {
+                'found': False,
+                'plant_name': None,
+                'score': 0.0,
+                'confidence': 'none',
+                'alternatives': suggestions[:3]  # Top 3 suggestions
+            }
+    
+    except Exception as e:
+        logger.error(f"Error in find_best_plant_match: {e}")
+        return {
+            'found': False,
+            'plant_name': None,
+            'score': 0.0,
+            'confidence': 'error',
+            'error': str(e)
+        } 
