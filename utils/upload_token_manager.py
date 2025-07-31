@@ -164,7 +164,7 @@ def mark_token_used(token: str, ip_address: str = "") -> bool:
         logger.error(f"Error marking token as used: {e}")
         return False
 
-def generate_upload_url(token: str, base_url: str = "https://plant-database-api.onrender.com") -> str:
+def generate_upload_url(token: str, base_url: str = "https://dev-plant-database-api.onrender.com") -> str:
     """
     Generate the complete upload URL for a token.
     
