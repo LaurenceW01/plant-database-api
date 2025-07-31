@@ -8,6 +8,13 @@ servers:
   - url: https://dev-plant-database-api.onrender.com
 
 paths:
+  /api/enhance-analysis:
+    post:
+      operationId: enhanceAnalysis
+      summary: Enhance plant analysis with database knowledge
+      description: Enhance ChatGPT's image analysis with personalized care instructions
+      security:
+        - ApiKeyAuth: []
   /api/plants:
     get:
       operationId: listPlants

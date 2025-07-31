@@ -67,7 +67,8 @@ def main():
     # Files to update
     yaml_files = [
         'chatgpt_actions_schema.yaml',
-        'minimal_test_schema.yaml', 
+        'minimal_test_schema.yaml',
+        'tests/minimal_test_schema.yaml', 
         'tests/simple_test_schema.yaml'
     ]
     

@@ -148,6 +148,45 @@ GET /api/weather/forecast/daily?days=10
 }
 ```
 
+### Image Analysis Integration
+
+#### Enhanced /api/analyze-plant
+
+The existing `/api/analyze-plant` endpoint now supports an optional `gpt_analysis` field for enhanced ChatGPT integration:
+
+```javascript
+POST /api/analyze-plant
+Content-Type: application/json
+
+{
+  "plant_name": "Tomato Plant",
+  "user_notes": "I'm concerned about yellowing leaves",
+  "analysis_type": "health_assessment",
+  "location": "Houston, TX",
+  "gpt_analysis": "This tomato plant shows yellowing leaves on the lower portion, which could indicate overwatering or nutrient deficiency..."
+}
+```
+
+**When `gpt_analysis` is provided**:
+- Triggers enhanced mode with database knowledge integration
+- Provides personalized care instructions based on location
+- Matches plants against user's database
+- Includes seasonal advice and treatment recommendations
+- Maintains backward compatibility with existing usage
+
+**Enhanced Response Example**:
+```javascript
+{
+  "success": true,
+  "analysis": {
+    "diagnosis": "Enhanced Analysis for Tomato Plant:\n\nORIGINAL ANALYSIS:\nThis tomato plant shows yellowing...\n\nENHANCED CARE RECOMMENDATIONS:\nFor Houston's humid subtropical climate...",
+    "treatment": "Enhanced analysis with database knowledge",
+    "confidence": 0.8,
+    "advice_type": "photo_analysis"
+  }
+}
+```
+
 ### Plant Management
 
 #### Search Plants
@@ -205,6 +244,104 @@ Content-Type: application/json
   "message": "Updated Tomato",
   "upload_url": "...",
   "upload_instructions": "..."
+}
+```
+
+### Enhanced Plant Analysis
+
+#### POST /api/enhance-analysis
+
+**Purpose**: Enhance ChatGPT's image analysis with database knowledge and personalized care instructions.
+
+**When to Use**:
+- After ChatGPT analyzes plant images using native vision capabilities
+- To get personalized care instructions based on user's database and location
+- For consultation-only analysis (does NOT force log creation)
+- To match identified plants against user's existing plant database
+
+**Request Format**:
+```javascript
+POST /api/enhance-analysis
+Content-Type: application/json
+
+{
+  "gpt_analysis": "This appears to be a tomato plant with yellowing leaves showing brown spots...",
+  "plant_identification": "Tomato Plant", 
+  "user_question": "What's wrong with my plant?",
+  "location": "Garden bed 2",
+  "analysis_type": "health_assessment"
+}
+```
+
+**Response Format**:
+```javascript
+{
+  "success": true,
+  "enhanced_analysis": {
+    "plant_match": {
+      "found_in_database": true,
+      "plant_name": "Tomato",
+      "confidence": "high",
+      "database_info": "Found exact match in your plant database"
+    },
+    "care_enhancement": {
+      "specific_care_instructions": "For Houston's humid subtropical climate...",
+      "common_issues": "Tomatoes in Houston commonly experience...",
+      "seasonal_advice": "For January in Houston...",
+      "watering_recommendations": "Water deeply but less frequently..."
+    },
+    "diagnosis_enhancement": {
+      "likely_causes": ["Overwatering", "Fungal infection"],
+      "treatment_recommendations": "Reduce watering frequency...",
+      "urgency_level": "moderate",
+      "symptoms_identified": ["yellowing leaves", "brown spots"]
+    },
+    "database_context": {
+      "your_plant_history": "You have 3 tomato plants logged",
+      "previous_issues": ["Similar yellowing reported in Plant Log #123"]
+    }
+  },
+  "suggested_actions": {
+    "immediate_care": ["Begin recommended treatment within 24-48 hours"],
+    "monitoring": ["Check plant daily for changes"],
+    "follow_up": "Re-evaluate in 1 week"
+  },
+  "logging_offer": {
+    "recommended": true,
+    "reason": "Track treatment progress",
+    "pre_filled_data": {
+      "plant_name": "Tomato",
+      "symptoms": "Yellow patches on leaves",
+      "diagnosis": "Likely overwatering stress",
+      "treatment": "Reduce watering frequency"
+    }
+  }
+}
+```
+
+**Key Features**:
+- **Plant Matching**: Fuzzy logic matching against user's database with confidence scoring
+- **Location-Specific Advice**: Houston climate considerations and seasonal timing
+- **Urgency Assessment**: Classifies issues as urgent/moderate/monitor
+- **Optional Logging**: Recommends but doesn't force log creation
+- **Pre-filled Data**: Ready-to-use data if user chooses to log
+
+**Error Handling**:
+```javascript
+// 400 - Missing required fields
+{
+  "success": false,
+  "error": "Both gpt_analysis and plant_identification are required"
+}
+
+// 500 - Server error with graceful degradation
+{
+  "success": false,
+  "error": "Server error during enhanced analysis",
+  "enhanced_analysis": {
+    "plant_match": {"error": "Analysis failed"},
+    "care_enhancement": {"error": "Could not generate care instructions"}
+  }
 }
 ```
 

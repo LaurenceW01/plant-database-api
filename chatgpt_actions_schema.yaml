@@ -600,6 +600,38 @@ paths:
                     example: "Failed to upload photo to storage"
       security: []
 
+  /api/enhance-analysis:
+    post:
+      operationId: enhanceAnalysis
+      summary: Enhance plant analysis with database knowledge
+      description: Enhance ChatGPT's image analysis with personalized care instructions and database matches
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gpt_analysis:
+                  type: string
+                plant_identification:
+                  type: string  
+                user_question:
+                  type: string
+                location:
+                  type: string
+                analysis_type:
+                  type: string
+                  enum: [health_assessment, identification, general_care]
+              required: [gpt_analysis, plant_identification]
+      responses:
+        '200':
+          description: Enhanced analysis response
+        '400':
+          description: Invalid request
+      security:
+        - ApiKeyAuth: []
+
   /api/analyze-plant:
     post:
       operationId: analyzeAndLogPlant
@@ -632,6 +664,10 @@ paths:
                   enum: [health_assessment, identification, general_care, follow_up]
                   default: general_care
                   description: Type of advice being requested
+                gpt_analysis:
+                  type: string
+                  description: Optional ChatGPT image analysis text for enhanced processing
+                  example: "This appears to be a tomato plant with yellowing leaves..."
             examples:
               plant_advice:
                 summary: Request plant care advice (text only, no photo needed)
