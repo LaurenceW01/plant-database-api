@@ -13,8 +13,8 @@ def run_tests_safely():
     print("🚀 SAFE TEST RUNNER - Google Sheets API Rate Limit Aware")
     print("=" * 60)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"API Limit: 60 requests/minute (1 request/second)")
-    print(f"Safety measures: 3-5 second delays between tests")
+    print("API Limit: 60 requests/minute (1 request/second)")
+    print("Safety measures: 3-5 second delays between tests")
     print("=" * 60)
     
     # Test categories in order of priority
@@ -58,18 +58,18 @@ def run_tests_safely():
             # Run the test category
             cmd = [
                 sys.executable, "-m", "pytest", 
-                "-v", "-s", "--tb=short",
+                "-v", "--tb=short",
                 "--timeout=300"
             ] + category['path'].split()
             
-            print(f"   🏃 Running tests...")
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+            print("   🏃 Running tests...")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=False)
             
             if result.returncode == 0:
-                print(f"   ✅ PASSED")
+                print("   ✅ PASSED")
                 passed_categories += 1
             else:
-                print(f"   ❌ FAILED")
+                print("   ❌ FAILED")
                 print(f"   Error output: {result.stderr}")
                 
                 # Check if it's a rate limit error
@@ -78,8 +78,8 @@ def run_tests_safely():
                     time.sleep(30)  # Wait 30 seconds on rate limit
                     
         except subprocess.TimeoutExpired:
-            print(f"   ⏰ TIMEOUT - Test took longer than 10 minutes")
-        except Exception as e:
+            print("   ⏰ TIMEOUT - Test took longer than 10 minutes")
+        except (OSError, subprocess.SubprocessError) as e:
             print(f"   💥 ERROR - {e}")
     
     # Final summary
