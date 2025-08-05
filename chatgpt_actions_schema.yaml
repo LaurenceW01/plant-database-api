@@ -1159,6 +1159,324 @@ paths:
                         relevance_score:
                           type: number
 
+  # =============================================
+  # PHASE 1: LOCATIONS & CONTAINERS INTEGRATION
+  # =============================================
+
+  /api/plants/{plant_id}/location-context:
+    get:
+      operationId: getPlantLocationContext
+      summary: Get comprehensive location and container context for a specific plant
+      description: |
+        Returns all containers for the plant with their location details and care recommendations.
+        Use this when you need precise, location-aware care advice for a specific plant.
+      security: []
+      parameters:
+        - name: plant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The plant ID to get context for
+      responses:
+        '200':
+          description: Plant location context successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plant_id:
+                    type: string
+                  contexts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        container:
+                          type: object
+                          properties:
+                            container_id:
+                              type: string
+                            plant_id:
+                              type: string
+                            location_id:
+                              type: string
+                            container_type:
+                              type: string
+                            container_size:
+                              type: string
+                            container_material:
+                              type: string
+                        location:
+                          type: object
+                          properties:
+                            location_id:
+                              type: string
+                            location_name:
+                              type: string
+                            morning_sun_hours:
+                              type: integer
+                            afternoon_sun_hours:
+                              type: integer
+                            evening_sun_hours:
+                              type: integer
+                            total_sun_hours:
+                              type: integer
+                            shade_pattern:
+                              type: string
+                            microclimate_conditions:
+                              type: string
+                        context:
+                          type: object
+                          properties:
+                            placement_description:
+                              type: string
+                            sun_exposure_summary:
+                              type: string
+                            care_complexity:
+                              type: string
+                            priority_considerations:
+                              type: array
+                              items:
+                                type: string
+                  total_contexts:
+                    type: integer
+        '404':
+          description: Plant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/locations/{location_id}/care-profile:
+    get:
+      operationId: getLocationCareProfile
+      summary: Get comprehensive care profile for a specific location
+      description: |
+        Returns sun exposure analysis, watering strategy, and general recommendations for a location.
+        Use this when you need location-specific care strategies.
+      security: []
+      parameters:
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The location ID to get care profile for
+      responses:
+        '200':
+          description: Location care profile successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location_id:
+                    type: string
+                  care_profile:
+                    type: object
+                    properties:
+                      location_info:
+                        type: object
+                        properties:
+                          location_id:
+                            type: string
+                          location_name:
+                            type: string
+                          classification:
+                            type: string
+                      watering_strategy:
+                        type: object
+                        properties:
+                          primary_time:
+                            type: string
+                          secondary_time:
+                            type: string
+                          avoid_times:
+                            type: array
+                            items:
+                              type: string
+                          reasoning:
+                            type: string
+                      environmental_factors:
+                        type: object
+                        properties:
+                          sun_exposure:
+                            type: object
+                          microclimate:
+                            type: object
+                      general_recommendations:
+                        type: array
+                        items:
+                          type: string
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/garden/containers/{container_id}/care-requirements:
+    get:
+      operationId: getContainerCareRequirements
+      summary: Get specific care requirements for a container
+      description: |
+        Returns container details, location context, and integrated care recommendations.
+        Use this when you need container-specific care guidance.
+      security: []
+      parameters:
+        - name: container_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The container ID to get care requirements for
+      responses:
+        '200':
+          description: Container care requirements successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  container_id:
+                    type: string
+                  care_requirements:
+                    type: object
+                    properties:
+                      container_info:
+                        type: object
+                        properties:
+                          container_id:
+                            type: string
+                          plant_id:
+                            type: string
+                          type:
+                            type: string
+                          size:
+                            type: string
+                          material:
+                            type: string
+                      location_context:
+                        type: object
+                        properties:
+                          location_id:
+                            type: string
+                          location_name:
+                            type: string
+                          sun_exposure:
+                            type: string
+                          microclimate:
+                            type: string
+                      care_adjustments:
+                        type: object
+                        properties:
+                          material_considerations:
+                            type: array
+                            items:
+                              type: string
+                          size_adjustments:
+                            type: array
+                            items:
+                              type: string
+                          drainage_recommendations:
+                            type: array
+                            items:
+                              type: string
+                          temperature_management:
+                            type: array
+                            items:
+                              type: string
+                      watering_strategy:
+                        type: object
+                      integrated_recommendations:
+                        type: array
+                        items:
+                          type: string
+        '404':
+          description: Container not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/locations/all:
+    get:
+      operationId: getAllLocations
+      summary: Get all locations with complete metadata
+      description: |
+        Returns list of all locations with sun exposure and microclimate data.
+        Use this when you need to understand all available locations.
+      security: []
+      responses:
+        '200':
+          description: All locations successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        location_id:
+                          type: string
+                        location_name:
+                          type: string
+                        morning_sun_hours:
+                          type: integer
+                        afternoon_sun_hours:
+                          type: integer
+                        evening_sun_hours:
+                          type: integer
+                        total_sun_hours:
+                          type: integer
+                        shade_pattern:
+                          type: string
+                        microclimate_conditions:
+                          type: string
+                  total:
+                    type: integer
+
+  /api/containers/all:
+    get:
+      operationId: getAllContainers
+      summary: Get all containers with complete metadata
+      description: |
+        Returns list of all containers with plant, location, and specification data.
+        Use this when you need to understand container distribution.
+      security: []
+      responses:
+        '200':
+          description: All containers successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  containers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        container_id:
+                          type: string
+                        plant_id:
+                          type: string
+                        location_id:
+                          type: string
+                        container_type:
+                          type: string
+                        container_size:
+                          type: string
+                        container_material:
+                          type: string
+                  total:
+                    type: integer
+
   /api/weather/current:
     get:
       operationId: getCurrentWeather
