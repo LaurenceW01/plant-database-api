@@ -1,12 +1,41 @@
 #!/usr/bin/env python3
 """
-Simple environment switcher - reads from .env file and updates YAML files accordingly.
-Usage: python scripts/switch_env.py
+Simple environment switcher - copies the appropriate .env file and updates YAML files accordingly.
+Usage: python scripts/switch_env.py [development|production]
 """
 
 import os
 import re
+import sys
+import shutil
 from dotenv import load_dotenv
+
+def copy_env_file(environment):
+    """Copy the appropriate .env file based on environment."""
+    env_file_map = {
+        'development': '.env.developemnt',  # Note: keeping the typo as it exists
+        'dev': '.env.developemnt',
+        'production': '.env.prod',
+        'prod': '.env.prod'
+    }
+    
+    source_file = env_file_map.get(environment.lower())
+    if not source_file:
+        print(f"❌ Unknown environment: {environment}")
+        print(f"Available environments: {', '.join(set(env_file_map.values()))}")
+        return False
+    
+    if not os.path.exists(source_file):
+        print(f"❌ Environment file not found: {source_file}")
+        return False
+    
+    try:
+        shutil.copy2(source_file, '.env')
+        print(f"✅ Copied {source_file} to .env")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to copy environment file: {e}")
+        return False
 
 def update_yaml_files():
     """Update YAML files with the correct URL based on .env settings."""
@@ -91,4 +120,18 @@ def update_yaml_files():
     print(f"🚀 Ready to use: {api_url}")
 
 if __name__ == "__main__":
-    update_yaml_files() 
+    # Get environment from command line argument
+    if len(sys.argv) < 2:
+        print("❌ Please specify an environment: development or production")
+        print("Usage: python scripts/switch_env.py [development|production]")
+        sys.exit(1)
+    
+    environment = sys.argv[1]
+    
+    # Copy the appropriate .env file
+    if copy_env_file(environment):
+        # Update YAML files with the new environment settings
+        update_yaml_files()
+    else:
+        print("❌ Failed to switch environment")
+        sys.exit(1) 

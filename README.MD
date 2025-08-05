@@ -204,3 +204,85 @@ The API automatically handles ChatGPT's field name transformations:
 - ✅ Phase 7: ChatGPT Integration
 
 **🚀 Ready for Production Use** 
+
+## Environment Configuration
+
+The Plant Database API supports multiple environments (development, production) through environment variables. This allows you to easily switch between different Google Sheets, storage buckets, and configurations without changing code.
+
+### Quick Setup
+
+1. **Copy the environment example**:
+   ```bash
+   cp config/environment.example .env
+   ```
+
+2. **Edit `.env` file** with your specific values:
+   ```bash
+   # For Development (using "Dev Plan Journal" sheet):
+   SPREADSHEET_ID=your-dev-plan-journal-spreadsheet-id
+   SHEET_GID=your-dev-sheet-gid
+   GCS_BUCKET_NAME=plant-database-photos-dev
+   
+   # Required API keys:
+   OPENAI_API_KEY=your-openai-key
+   GOOGLE_CREDENTIALS=your-google-service-account-json
+   ```
+
+3. **For Render deployment**, set environment variables in the dashboard:
+   - **Production service**: Use production spreadsheet ID and bucket
+   - **Development service**: Use development spreadsheet ID and bucket
+
+### Environment Variables
+
+| Variable | Description | Default (Production) |
+|----------|-------------|---------------------|
+| `SPREADSHEET_ID` | Google Sheets ID for plant database | `1zmKVuDTbgColGuoHJDF0ZJxXB6N2WfwLkp7LZ0vqOag` |
+| `SHEET_GID` | Sheet GID for formatting | `828349954` |
+| `RANGE_NAME` | Sheet range for plant data | `Plants!A:Q` |
+| `LOG_SHEET_NAME` | Sheet name for plant logs | `Plant_Log` |
+| `LOG_RANGE_NAME` | Range for log data | `Plant_Log!A:Q` |
+| `GCS_BUCKET_NAME` | Google Cloud Storage bucket | `plant-database-photos` |
+| `GCS_PROJECT_ID` | Google Cloud Project ID | `gardenllm` |
+
+### Benefits
+
+- **No code changes** needed to switch environments
+- **Separate data** for development and production
+- **Safe testing** without affecting production users
+- **Multiple developers** can use different sheets simultaneously
+
+See `config/environment.example` for detailed setup instructions. 
+
+### Environment Switching
+
+**Easy Development/Production Switching:**
+
+1. **For Development Work:**
+   ```bash
+   # Copy the development environment file
+   cp .env.development .env
+   
+   # Update YAML files to use dev URLs
+   python scripts/switch_env.py
+   ```
+
+2. **For Production Work:**
+   ```bash
+   # Set production environment in .env
+   echo "ENVIRONMENT=production" > .env
+   echo "API_BASE_URL=https://plant-database-api.onrender.com" >> .env
+   
+   # Update YAML files to use production URLs  
+   python scripts/switch_env.py
+   ```
+
+3. **Current Environment Check:**
+   ```bash
+   # See which environment you're currently using
+   python -c "from dotenv import load_dotenv; import os; load_dotenv(); print(f'Environment: {os.getenv(\"ENVIRONMENT\", \"production\")}'); print(f'API URL: {os.getenv(\"API_BASE_URL\", \"auto-detected\")}')"
+   ```
+
+**Benefits:**
+- **No manual URL editing** - Everything automatic
+- **Safe switching** - Never accidentally use wrong environment  
+- **Simple workflow** - Just copy `.env.development` and run one command 

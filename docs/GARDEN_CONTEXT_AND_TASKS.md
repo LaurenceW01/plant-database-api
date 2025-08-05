@@ -22,13 +22,14 @@
 - Special care requirements distribution (e.g., % drought-tolerant, % shade-loving)
 - Maintenance intensity distribution
 - Soil pH requirement distribution (acidic, neutral, alkaline)
-- Soil amendment needs based on pH requirements
+- Soil amendment needs based on pH requirements and measured soil conditions
 - Watering requirement distribution
 - Location-based environmental conditions
 
 #### Watering Classification System
 
 ##### Water Frequency Categories
+- Multiple intrady
 - Daily
 - Every 2-3 days
 - Weekly

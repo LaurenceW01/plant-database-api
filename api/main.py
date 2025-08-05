@@ -405,6 +405,155 @@ def register_routes(app, limiter, require_api_key):
             methods=['PUT']
         )
 
+    # Phase 1 Locations & Containers Integration Endpoints
+    
+    # Get plant location context - combines container and location data for specific plant
+    @app.route('/api/plants/<plant_id>/location-context', methods=['GET'])
+    def get_plant_location_context(plant_id):
+        """
+        Get comprehensive location and container context for a specific plant.
+        Returns all containers for the plant with their location details and care recommendations.
+        """
+        from utils.locations_operations import get_plant_location_context
+        
+        try:
+            contexts = get_plant_location_context(plant_id)
+            
+            if not contexts:
+                return jsonify({
+                    "error": f"No location context found for plant {plant_id}",
+                    "plant_id": plant_id,
+                    "message": "This plant may not have any containers assigned to locations"
+                }), 404
+            
+            return jsonify({
+                "plant_id": plant_id,
+                "contexts": contexts,
+                "total_contexts": len(contexts),
+                "message": f"Found {len(contexts)} location context(s) for plant {plant_id}"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error getting plant location context for {plant_id}: {e}")
+            return jsonify({
+                "error": "Internal server error getting plant location context",
+                "plant_id": plant_id
+            }), 500
+    
+    # Get location care profile - comprehensive care analysis for specific location
+    @app.route('/api/locations/<location_id>/care-profile', methods=['GET'])
+    def get_location_care_profile(location_id):
+        """
+        Get comprehensive care profile for a specific location.
+        Returns sun exposure analysis, watering strategy, and general recommendations.
+        """
+        from utils.care_intelligence import generate_care_profile_for_location
+        
+        try:
+            care_profile = generate_care_profile_for_location(location_id)
+            
+            if not care_profile:
+                return jsonify({
+                    "error": f"Location not found: {location_id}",
+                    "location_id": location_id,
+                    "message": "Please check that the location ID exists"
+                }), 404
+            
+            return jsonify({
+                "location_id": location_id,
+                "care_profile": care_profile,
+                "message": f"Care profile generated for location {care_profile.get('location_info', {}).get('location_name', location_id)}"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error generating care profile for location {location_id}: {e}")
+            return jsonify({
+                "error": "Internal server error generating location care profile",
+                "location_id": location_id
+            }), 500
+    
+    # Get container care requirements - specific care needs for individual container
+    @app.route('/api/garden/containers/<container_id>/care-requirements', methods=['GET'])
+    def get_container_care_requirements(container_id):
+        """
+        Get specific care requirements for a container.
+        Returns container details, location context, and integrated care recommendations.
+        """
+        from utils.care_intelligence import generate_container_care_requirements
+        
+        try:
+            requirements = generate_container_care_requirements(container_id)
+            
+            if not requirements:
+                return jsonify({
+                    "error": f"Container not found: {container_id}",
+                    "container_id": container_id,
+                    "message": "Please check that the container ID exists"
+                }), 404
+            
+            return jsonify({
+                "container_id": container_id,
+                "care_requirements": requirements,
+                "message": f"Care requirements generated for container {container_id}"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error generating care requirements for container {container_id}: {e}")
+            return jsonify({
+                "error": "Internal server error generating container care requirements",
+                "container_id": container_id
+            }), 500
+    
+    # Locations data endpoints for GPT integration
+    
+    # Get all locations with metadata
+    @app.route('/api/locations/all', methods=['GET'])
+    def get_all_locations():
+        """
+        Get all locations with complete metadata.
+        Returns list of all locations with sun exposure and microclimate data.
+        """
+        from utils.locations_operations import get_all_locations
+        
+        try:
+            locations = get_all_locations()
+            
+            return jsonify({
+                "locations": locations,
+                "total": len(locations),
+                "message": f"Retrieved {len(locations)} locations"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error getting all locations: {e}")
+            return jsonify({
+                "error": "Internal server error getting locations"
+            }), 500
+    
+    # Get all containers with metadata
+    @app.route('/api/containers/all', methods=['GET'])
+    def get_all_containers():
+        """
+        Get all containers with complete metadata.
+        Returns list of all containers with plant, location, and specification data.
+        """
+        from utils.locations_operations import get_all_containers
+        
+        try:
+            containers = get_all_containers()
+            
+            return jsonify({
+                "containers": containers,
+                "total": len(containers),
+                "message": f"Retrieved {len(containers)} containers"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error getting all containers: {e}")
+            return jsonify({
+                "error": "Internal server error getting containers"
+            }), 500
+
 # New enhance-analysis endpoint for ChatGPT Vision + API Consultation
 def enhance_analysis():
     """

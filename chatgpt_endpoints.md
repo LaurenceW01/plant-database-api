@@ -224,7 +224,7 @@ Content-Type: application/json
 // Example response:
 {
   "message": "Added Basil to garden",
-  "upload_url": "https://plant-database-api.onrender.com/upload/plant/abc123xyz",
+  "upload_url": "https://dev-plant-database-api.onrender.com/upload/plant/abc123xyz",
   "upload_instructions": "To add a photo of your plant, visit: [upload_url]"
 }
 ```
@@ -366,7 +366,7 @@ Content-Type: application/json
 {
   "success": true,
   "log_id": "LOG-20240115-001",
-  "upload_url": "https://plant-database-api.onrender.com/upload/abc123xyz",
+  "upload_url": "https://dev-plant-database-api.onrender.com/upload/abc123xyz",
   "upload_instructions": "To add a photo to this log entry, visit: [upload_url]"
 }
 ```
@@ -470,4 +470,234 @@ The link is valid for 24 hours."
 - `Symptoms`: Observed issues
 - `User Notes`: Additional comments
 - `Follow-up Required`: Need monitoring
-- `Follow-up Date`: Next check date 
+- `Follow-up Date`: Next check date
+
+---
+
+## Phase 1: Locations & Containers Integration (NEW)
+
+### Location-Aware Plant Care Endpoints
+
+These endpoints provide **precise, context-aware plant care recommendations** based on specific location and container data. Use these for individual plant care queries where precise advice is needed.
+
+#### Plant Location Context
+```javascript
+GET /api/plants/{plant_id}/location-context
+
+// Returns comprehensive location and container context for a specific plant
+// Use when: User asks about care for a specific plant
+// Example: "How should I care for my hibiscus?" (plant ID 1)
+
+{
+  "plant_id": "1",
+  "contexts": [
+    {
+      "container": {
+        "container_id": "1",
+        "plant_id": "1", 
+        "location_id": "1",
+        "container_type": "Pot in ground",
+        "container_size": "Medium",
+        "container_material": "Plastic"
+      },
+      "location": {
+        "location_id": "1",
+        "location_name": "arboretum right",
+        "morning_sun_hours": 0,
+        "afternoon_sun_hours": 2,
+        "evening_sun_hours": 4,
+        "shade_pattern": "Afternoon Sun",
+        "microclimate_conditions": "North Facing",
+        "total_sun_hours": 6
+      },
+      "context": {
+        "placement_description": "Pot in ground (Medium, Plastic) in arboretum right",
+        "sun_exposure_summary": "6 total hours (Afternoon Sun)",
+        "care_complexity": "low",
+        "priority_considerations": [
+          "Water early morning to prepare for evening heat stress",
+          "Cooler microclimate - adjust watering frequency accordingly"
+        ]
+      }
+    }
+    // ... more containers if plant is in multiple locations
+  ],
+  "total_contexts": 1
+}
+```
+
+#### Location Care Profile
+```javascript
+GET /api/locations/{location_id}/care-profile
+
+// Returns comprehensive care analysis for a specific location
+// Use when: User asks about a specific location or plants in that location
+// Example: "What's the best care strategy for plants in the arboretum right?"
+
+{
+  "location_id": "1",
+  "care_profile": {
+    "location_info": {
+      "location_id": "1",
+      "location_name": "arboretum right",
+      "classification": "Moderate full sun"
+    },
+    "watering_strategy": {
+      "primary_time": "Very early morning (5:30-7:00 AM)",
+      "secondary_time": "Early morning (7:00-8:30 AM)", 
+      "avoid_times": ["Afternoon (2:00-6:00 PM)", "Evening (6:00-8:00 PM)"],
+      "reasoning": "Location receives 4 hours of evening sun, requiring very early watering to prepare for heat stress"
+    },
+    "environmental_factors": {
+      "sun_exposure": {
+        "morning_hours": 0,
+        "afternoon_hours": 2,
+        "evening_hours": 4,
+        "total_hours": 6,
+        "pattern_description": "Afternoon Sun"
+      },
+      "microclimate": {
+        "conditions": "North Facing",
+        "implications": [
+          "Cooler temperatures, less intense sun",
+          "May need less frequent watering"
+        ]
+      }
+    },
+    "general_recommendations": [
+      "Evening sun location - ensure morning watering to prepare for heat"
+    ]
+  }
+}
+```
+
+#### Container Care Requirements
+```javascript
+GET /api/garden/containers/{container_id}/care-requirements
+
+// Returns specific care requirements for an individual container
+// Use when: User asks about a specific container or plant-container combination
+// Example: "What care does container 1 need?"
+
+{
+  "container_id": "1",
+  "care_requirements": {
+    "container_info": {
+      "container_id": "1",
+      "plant_id": "1",
+      "type": "Pot in ground",
+      "size": "Medium", 
+      "material": "Plastic"
+    },
+    "location_context": {
+      "location_id": "1",
+      "location_name": "arboretum right",
+      "sun_exposure": "6 hours (Afternoon Sun)",
+      "microclimate": "North Facing"
+    },
+    "care_adjustments": {
+      "material_considerations": [
+        "Plastic containers heat up quickly in direct sun",
+        "High heat retention risk - monitor soil temperature"
+      ],
+      "size_adjustments": [
+        "Medium containers offer good balance of moisture retention and drainage"
+      ],
+      "drainage_recommendations": [
+        "Ground placement provides temperature stability"
+      ],
+      "temperature_management": [
+        "Water early morning to cool container before peak heat"
+      ]
+    },
+    "watering_strategy": {
+      "primary_time": "Very early morning (5:30-7:00 AM)",
+      "secondary_time": "Early morning (7:00-8:30 AM)",
+      "avoid_times": ["Afternoon (2:00-6:00 PM)", "Evening (6:00-8:00 PM)"],
+      "reasoning": "Location receives 4 hours of evening sun, requiring very early watering to prepare for heat stress"
+    },
+    "integrated_recommendations": [
+      "Water Very early morning (5:30-7:00 AM)",
+      "Plastic containers heat up quickly in direct sun",
+      "Medium containers offer good balance of moisture retention and drainage"
+    ]
+  }
+}
+```
+
+### Location & Container Data Endpoints
+
+#### All Locations
+```javascript
+GET /api/locations/all
+
+// Returns all locations with metadata
+// Use when: Need to understand all available locations or location options
+
+{
+  "locations": [
+    {
+      "location_id": "1",
+      "location_name": "arboretum right",
+      "morning_sun_hours": 0,
+      "afternoon_sun_hours": 2,
+      "evening_sun_hours": 4,
+      "shade_pattern": "Afternoon Sun",
+      "microclimate_conditions": "North Facing",
+      "total_sun_hours": 6
+    }
+    // ... more locations (36 total)
+  ],
+  "total": 36
+}
+```
+
+#### All Containers
+```javascript
+GET /api/containers/all
+
+// Returns all containers with metadata  
+// Use when: Need to understand container distribution or find specific containers
+
+{
+  "containers": [
+    {
+      "container_id": "1",
+      "plant_id": "1",
+      "location_id": "1", 
+      "container_type": "Pot in ground",
+      "container_size": "Medium",
+      "container_material": "Plastic"
+    }
+    // ... more containers (71 total)
+  ],
+  "total": 71
+}
+```
+
+### Usage Guidelines for Location-Aware Care
+
+**🎯 Primary Use Cases (High Value)**
+1. **Individual Plant Care Queries**: "How should I water my hibiscus?" → Use `/api/plants/{id}/location-context`
+2. **Location-Specific Questions**: "What's the best watering time for arboretum right?" → Use `/api/locations/{id}/care-profile`  
+3. **Container-Specific Care**: "How do I care for my plastic containers?" → Use `/api/garden/containers/{id}/care-requirements`
+
+**✅ When to Use These Endpoints**
+- User asks about specific plant care
+- Questions about watering times or frequencies
+- Container material considerations needed
+- Location-specific advice required
+- Microclimate factors are relevant
+
+**🔄 Integration Pattern**
+1. Get plant location context for specific care advice
+2. Use location care profile for general location guidance
+3. Get container requirements for material-specific considerations
+4. **Always combine with weather data** for current conditions
+
+**💡 Response Enhancement**
+Transform generic advice like:
+> "Water regularly, ensuring soil doesn't dry out"
+
+Into precise, location-aware guidance:
+> "Your hibiscus in arboretum right (4 hours evening sun) in a medium plastic container: Water very early morning (5:30-7:00 AM) to prevent afternoon heat stress on the plastic container. Check soil daily during hot weather as plastic containers in evening sun locations dry faster." 
