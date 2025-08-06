@@ -17,7 +17,8 @@ def get_current_weather():
         weather_data = baron_client.get_current_weather()
         if weather_data is None:
             return jsonify({
-                'error': 'Weather service temporarily unavailable'
+                'error': 'Weather service temporarily unavailable. The external weather API may be experiencing delays or connectivity issues.',
+                'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
             }), 503
             
         return jsonify(weather_data), 200
@@ -25,7 +26,9 @@ def get_current_weather():
     except Exception as e:
         logging.error(f"Error getting current weather: {e}")
         return jsonify({
-            'error': 'Internal server error while fetching weather data'
+            'error': 'Weather service error - this may be due to external API timeout or connectivity issues.',
+            'technical_details': str(e),
+            'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
         }), 500
 
 def get_weather_forecast():

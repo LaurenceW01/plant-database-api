@@ -61,6 +61,7 @@ class BaronWeatherVelocityAPI:
         # Request delay to be respectful
         self.last_request_time = 0
         self.min_request_delay = 1  # Minimum 1 second between requests
+        self.default_timeout = 20  # Default timeout for requests
     
     def _sign(self, string_to_sign: str, secret: str) -> str:
         """
@@ -100,7 +101,7 @@ class BaronWeatherVelocityAPI:
         
         return signed_url
     
-    def _respectful_request(self, url: str, timeout: int = 10) -> Optional[requests.Response]:
+    def _respectful_request(self, url: str, timeout: int = 20) -> Optional[requests.Response]:
         """
         Make a respectful request with delays and error handling
         
