@@ -639,36 +639,86 @@ def _identify_location_optimization_opportunities(location: Dict, containers: Li
 def _analyze_plant_distribution(containers: List[Dict]) -> Dict:
     """
     Analyze plant distribution patterns at the location.
+    Includes plant names for better GPT responses.
     
     Args:
         containers (List[Dict]): Containers at the location
         
     Returns:
-        Dict: Plant distribution analysis
+        Dict: Plant distribution analysis with plant names
     """
     if not containers:
         return {
             'total_plants': 0,
             'unique_plants': 0,
             'plant_counts': {},
+            'plant_details': {},
             'multiple_container_plants': [],
             'single_container_plants': []
         }
     
-    # Count plants by ID
+    # Import here to avoid circular imports
+    from utils.plant_operations import find_plant_by_id_or_name
+    
+    # Count plants by ID and get their names
     plant_counts = {}
+    plant_details = {}
+    
     for container in containers:
         plant_id = container.get('plant_id', 'Unknown')
         plant_counts[plant_id] = plant_counts.get(plant_id, 0) + 1
+        
+        # Get plant name if we don't have it yet
+        if plant_id not in plant_details and plant_id != 'Unknown':
+            try:
+                plant_row, plant_data = find_plant_by_id_or_name(plant_id)
+                if plant_data and len(plant_data) > 1:
+                    plant_name = plant_data[1]
+                else:
+                    plant_name = f"Plant ID {plant_id}"
+                plant_details[plant_id] = {
+                    'plant_name': plant_name,
+                    'containers': []
+                }
+            except Exception as e:
+                logger.warning(f"Could not get plant name for ID {plant_id}: {e}")
+                plant_details[plant_id] = {
+                    'plant_name': f"Plant ID {plant_id}",
+                    'containers': []
+                }
+    
+    # Add container information to plant details
+    for container in containers:
+        plant_id = container.get('plant_id', 'Unknown')
+        if plant_id in plant_details:
+            plant_details[plant_id]['containers'].append({
+                'container_id': container.get('container_id'),
+                'material': container.get('container_material'),
+                'size': container.get('container_size'),
+                'type': container.get('container_type')
+            })
     
     # Categorize plants by container count
-    multiple_container_plants = [plant_id for plant_id, count in plant_counts.items() if count > 1]
-    single_container_plants = [plant_id for plant_id, count in plant_counts.items() if count == 1]
+    multiple_container_plants = []
+    single_container_plants = []
+    
+    for plant_id, count in plant_counts.items():
+        plant_info = {
+            'plant_id': plant_id,
+            'plant_name': plant_details.get(plant_id, {}).get('plant_name', f"Plant ID {plant_id}"),
+            'container_count': count
+        }
+        
+        if count > 1:
+            multiple_container_plants.append(plant_info)
+        else:
+            single_container_plants.append(plant_info)
     
     return {
         'total_plants': sum(plant_counts.values()),
         'unique_plants': len(plant_counts),
         'plant_counts': plant_counts,
+        'plant_details': plant_details,
         'multiple_container_plants': multiple_container_plants,
         'single_container_plants': single_container_plants,
         'distribution_summary': f"{len(single_container_plants)} single-container plants, {len(multiple_container_plants)} multi-container plants"
