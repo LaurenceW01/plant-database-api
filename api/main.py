@@ -618,8 +618,15 @@ def register_routes(app, limiter, require_api_key):
             generate_location_recommendations
         )
         from utils.care_intelligence import generate_container_care_requirements
+        from utils.plant_operations import find_plant_by_id_or_name
         
         try:
+            # Get plant information including name
+            plant_row, plant_data = find_plant_by_id_or_name(plant_id)
+            plant_name = "Unknown Plant"
+            if plant_data and len(plant_data) > 1:
+                plant_name = plant_data[1]  # Plant Name is typically in column 2 (index 1)
+            
             # Get all containers for this plant
             containers = get_containers_by_plant_id(plant_id)
             
@@ -627,6 +634,7 @@ def register_routes(app, limiter, require_api_key):
                 return jsonify({
                     "error": f"No containers found for plant {plant_id}",
                     "plant_id": plant_id,
+                    "plant_name": plant_name,
                     "message": "This plant may not have any containers assigned"
                 }), 404
             
@@ -652,9 +660,10 @@ def register_routes(app, limiter, require_api_key):
             
             return jsonify({
                 "plant_id": plant_id,
+                "plant_name": plant_name,
                 "contexts": contexts,
                 "total_contexts": len(contexts),
-                "message": f"Generated {len(contexts)} comprehensive context(s) for plant {plant_id}"
+                "message": f"Generated {len(contexts)} comprehensive context(s) for plant {plant_id} ({plant_name})"
             }), 200
             
         except Exception as e:
