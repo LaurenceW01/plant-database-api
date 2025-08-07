@@ -701,3 +701,371 @@ Transform generic advice like:
 
 Into precise, location-aware guidance:
 > "Your hibiscus in arboretum right (4 hours evening sun) in a medium plastic container: Water very early morning (5:30-7:00 AM) to prevent afternoon heat stress on the plastic container. Check soil daily during hot weather as plastic containers in evening sun locations dry faster." 
+
+---
+
+## Phase 2: Advanced Metadata Aggregation (NEW)
+
+### Enhanced Location Intelligence Endpoints
+
+These endpoints provide **comprehensive location analysis and cross-reference intelligence** for advanced garden management and optimization recommendations.
+
+#### Comprehensive Location Analysis
+```javascript
+GET /api/garden/location-analysis/{location_id}
+
+// Returns comprehensive location analysis with container context and optimization suggestions
+// Use when: Need complete analysis of a location including all containers and recommendations
+// Example: "Give me a complete analysis of the arboretum right location"
+
+{
+  "location_id": "1",
+  "location_profile": {
+    "location_data": {
+      "location_id": "1", 
+      "location_name": "arboretum right",
+      "morning_sun_hours": 0,
+      "afternoon_sun_hours": 2,
+      "evening_sun_hours": 4,
+      "total_sun_hours": 6,
+      "shade_pattern": "Afternoon Sun",
+      "microclimate_conditions": "North Facing"
+    },
+    "container_statistics": {
+      "total_containers": 4,
+      "unique_plants": 3,
+      "container_types": ["Pot in ground"],
+      "container_sizes": ["Medium", "Large"],
+      "container_materials": ["Plastic", "Ceramic"],
+      "type_breakdown": ["4 Pot in ground"],
+      "size_breakdown": ["2 Medium", "2 Large"],
+      "material_breakdown": ["3 Plastic", "1 Ceramic"]
+    },
+    "care_intelligence": {
+      "watering_strategy": {
+        "frequency": "every_other_day",
+        "frequency_note": "High sun exposure - check every 1-2 days",
+        "total_containers": 4,
+        "special_considerations": 1
+      },
+      "optimal_times": {
+        "primary": "early_morning",
+        "reasoning": "Evening sun dominant - water early to prepare plants for end-of-day heat stress"
+      },
+      "material_considerations": [
+        {
+          "concern": "plastic_heat_retention",
+          "containers_affected": 3,
+          "recommendation": "Monitor plastic containers closely during hot weather",
+          "priority": "medium"
+        }
+      ],
+      "risk_assessments": []
+    },
+    "optimization_opportunities": [
+      {
+        "type": "container_material",
+        "priority": "medium",
+        "description": "3 plastic containers in high afternoon sun",
+        "recommendation": "Consider upgrading to ceramic containers",
+        "containers_affected": 3
+      }
+    ],
+    "plant_distribution": {
+      "total_plants": 4,
+      "unique_plants": 3,
+      "multiple_container_plants": ["1"],
+      "single_container_plants": ["2", "3"],
+      "distribution_summary": "2 single-container plants, 1 multi-container plants"
+    }
+  },
+  "care_recommendations": {
+    "location_analysis": {
+      "location_name": "arboretum right",
+      "sun_exposure_profile": {
+        "hours_breakdown": {
+          "morning": 0,
+          "afternoon": 2, 
+          "evening": 4,
+          "total": 6
+        },
+        "pattern": "Afternoon Sun",
+        "peak_intensity_period": "evening",
+        "intensity_classification": "high",
+        "heat_stress_risk": "high"
+      },
+      "microclimate_assessment": {
+        "microclimate_type": "north facing",
+        "benefits": ["Cooler temperatures, less heat stress"],
+        "care_considerations": ["May need less frequent watering"],
+        "suitability": "excellent"
+      },
+      "container_compatibility": {
+        "overall_compatibility": "good",
+        "compatible_containers": 3,
+        "concerning_combinations": [
+          {
+            "container_id": "1",
+            "issue": "Plastic container in high afternoon sun",
+            "risk_level": "medium",
+            "impact": "Root heating, increased water needs"
+          }
+        ],
+        "compatibility_percentage": 75.0
+      }
+    },
+    "watering_strategy": {
+      "optimal_timing": "early_morning",
+      "timing_reason": "High evening sun - water early to prepare plants for end-of-day heat",
+      "frequency": "Every other day",
+      "frequency_days": 2,
+      "total_containers": 4,
+      "special_needs_containers": 3
+    },
+    "plant_placement": {
+      "sun_category": "partial_sun", 
+      "suitable_plant_types": ["Most vegetables", "Many flowering plants", "Fruit plants"],
+      "placement_cautions": ["Monitor for heat stress in very hot weather"],
+      "container_recommendations": ["Use ceramic or terracotta containers to prevent root heating"],
+      "current_utilization": "4 containers currently placed"
+    }
+  }
+}
+```
+
+#### Enhanced Plant Context
+```javascript
+GET /api/plants/{plant_id}/context
+
+// Returns full contextual analysis for specific plant across all containers and locations
+// Use when: Need comprehensive environmental analysis for a specific plant
+// Example: "Give me complete context for plant 1 across all its locations"
+
+{
+  "plant_id": "1",
+  "contexts": [
+    {
+      "container": {
+        "container_id": "1",
+        "plant_id": "1",
+        "location_id": "1",
+        "container_type": "Pot in ground", 
+        "container_size": "Medium",
+        "container_material": "Plastic"
+      },
+      "location": {
+        "location_id": "1",
+        "location_name": "arboretum right",
+        "morning_sun_hours": 0,
+        "afternoon_sun_hours": 2,
+        "evening_sun_hours": 4,
+        "total_sun_hours": 6,
+        "shade_pattern": "Afternoon Sun",
+        "microclimate_conditions": "North Facing"
+      },
+      "care_plan": {
+        // Full care requirements for this container
+      },
+      "location_intelligence": {
+        // Complete location recommendations
+      },
+      "optimization_tips": [
+        {
+          "type": "material_upgrade",
+          "priority": "medium",
+          "current_issue": "Plastic container in high afternoon sun",
+          "recommendation": "Consider upgrading to ceramic container",
+          "benefit": "Better temperature regulation"
+        }
+      ]
+    }
+    // ... additional containers for this plant
+  ],
+  "total_contexts": 1
+}
+```
+
+#### Enhanced Garden Metadata
+```javascript
+GET /api/garden/metadata/enhanced
+
+// Returns comprehensive garden metadata with location + container intelligence
+// Use when: Need garden-wide analysis, statistics, and optimization insights
+// Example: "Give me a complete overview of my garden's status and optimization opportunities"
+
+{
+  "enhanced_metadata": {
+    "garden_overview": {
+      "total_locations": 36,
+      "total_containers": 49,
+      "unique_plants": 35,
+      "locations_with_containers": 20,
+      "location_utilization_percentage": 55.6,
+      "average_containers_per_location": 1.4,
+      "sun_exposure_distribution": {
+        "very_high": 8,
+        "high": 12,
+        "moderate": 10,
+        "low": 6
+      },
+      "busiest_location": "patio main"
+    },
+    "location_distribution": {
+      "empty_locations": ["location_12", "location_15"],
+      "light_usage_locations": ["location_3", "location_7"],
+      "moderate_usage_locations": ["location_1", "location_2"],
+      "heavy_usage_locations": ["patio_main"],
+      "underutilized_prime_locations": ["location_8", "location_9"],
+      "usage_distribution": {
+        "empty": 16,
+        "light": 10,
+        "moderate": 8,
+        "heavy": 2
+      }
+    },
+    "container_intelligence": {
+      "material_distribution": {"Plastic": 35, "Ceramic": 10, "Terracotta": 4},
+      "size_distribution": {"Medium": 25, "Large": 15, "Small": 9},
+      "type_distribution": {"Pot in ground": 30, "Raised pot": 19},
+      "risk_assessments": {
+        "plastic_containers_high_sun": 15,
+        "small_containers_high_sun": 6
+      },
+      "most_common_material": "Plastic",
+      "most_common_size": "Medium"
+    },
+    "care_complexity_analysis": {
+      "overall_complexity": "medium",
+      "average_complexity_score": 2.3,
+      "garden_management_approach": "Regular monitoring with location-specific care adjustments",
+      "daily_care_locations": ["patio_main", "south_garden"],
+      "weekly_care_locations": ["north_shade", "arboretum_left"],
+      "complexity_distribution": {
+        "high": 2,
+        "medium": 15,
+        "low": 3
+      }
+    },
+    "optimization_opportunities": [
+      {
+        "type": "location_utilization",
+        "priority": "medium",
+        "description": "8 good locations are empty",
+        "recommendation": "Consider utilizing: location_8, location_9, location_12",
+        "locations_affected": 8
+      },
+      {
+        "type": "container_material_upgrade", 
+        "priority": "medium",
+        "description": "15 plastic containers in high afternoon sun",
+        "recommendation": "Consider upgrading to ceramic containers for better heat management",
+        "containers_affected": 15
+      }
+    ]
+  },
+  "api_version": "Phase 2 - Advanced Metadata Aggregation"
+}
+```
+
+#### Location Profiles
+```javascript
+GET /api/garden/location-profiles
+
+// Returns all location profiles with aggregated container statistics
+// Use when: Need overview of all locations with their container distributions
+// Example: "Show me all my locations and their container usage"
+
+{
+  "location_profiles": [
+    {
+      "location_id": "1",
+      "location_name": "arboretum right",
+      "morning_sun_hours": 0,
+      "afternoon_sun_hours": 2,
+      "evening_sun_hours": 4,
+      "total_sun_hours": 6,
+      "shade_pattern": "Afternoon Sun", 
+      "microclimate_conditions": "North Facing",
+      "total_containers": 4,
+      "unique_plants": 3,
+      "container_types": ["Pot in ground"],
+      "container_sizes": ["Medium", "Large"],
+      "container_materials": ["Plastic", "Ceramic"]
+    }
+    // ... 35 more location profiles
+  ],
+  "total_profiles": 36
+}
+```
+
+#### Care Optimization
+```javascript
+GET /api/garden/care-optimization
+
+// Returns location and container-based care optimization suggestions
+// Use when: Need proactive recommendations and efficiency improvements
+// Example: "What optimizations can I make to improve my garden care?"
+
+{
+  "optimization_analysis": {
+    "garden_wide_opportunities": [
+      {
+        "type": "location_utilization",
+        "priority": "medium", 
+        "description": "8 good locations are empty",
+        "recommendation": "Consider utilizing: location_8, location_9, location_12"
+      }
+    ],
+    "care_complexity_summary": {
+      "overall_complexity": "medium",
+      "daily_care_locations": ["patio_main", "south_garden"],
+      "weekly_care_locations": ["north_shade", "arboretum_left"]
+    },
+    "high_priority_locations": [
+      {
+        "location_id": "5",
+        "location_name": "patio_main",
+        "complexity_factors": ["Very high sun exposure requires careful water management"],
+        "recommended_frequency": "Daily"
+      }
+    ],
+    "container_upgrade_recommendations": [
+      {
+        "location_name": "south_garden",
+        "container_id": "15",
+        "issue": "Small container in very high sun",
+        "impact": "Rapid moisture loss, frequent watering needed"
+      }
+    ],
+    "efficiency_improvements": [
+      {
+        "type": "daily_care_routing",
+        "description": "2 locations require daily care",
+        "recommendation": "Create efficient care routes for: patio_main, south_garden",
+        "priority": "medium"
+      }
+    ]
+  },
+  "total_opportunities": 3,
+  "high_priority_locations": 1
+}
+```
+
+### Phase 2 Usage Guidelines
+
+**🎯 Primary Use Cases (High Value)**
+1. **Complete Location Analysis**: Use `/api/garden/location-analysis/{id}` for comprehensive location insights
+2. **Full Plant Context**: Use `/api/plants/{id}/context` for complete environmental analysis
+3. **Garden Overview**: Use `/api/garden/metadata/enhanced` for garden-wide insights
+4. **Optimization Planning**: Use `/api/garden/care-optimization` for improvement recommendations
+
+**🔄 Integration Pattern for Phase 2**
+1. Start with enhanced metadata for garden overview
+2. Use location analysis for specific location questions  
+3. Use plant context for individual plant optimization
+4. Use care optimization for proactive recommendations
+5. **Always combine with weather** for current conditions
+
+**💡 Enhanced Response Capabilities**
+Transform basic location advice into intelligent recommendations:
+> "Based on your arboretum right location analysis: 4 containers with 3 plastic in afternoon sun creates medium care complexity. Primary optimization: upgrade plastic containers to ceramic for better heat management. Watering strategy: early morning (5:30-7:00 AM) every other day. Location utilization: excellent for heat-sensitive plants due to north-facing microclimate."

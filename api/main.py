@@ -554,6 +554,316 @@ def register_routes(app, limiter, require_api_key):
                 "error": "Internal server error getting containers"
             }), 500
 
+    # =============================================================================
+    # PHASE 2: ADVANCED METADATA AGGREGATION ENDPOINTS
+    # =============================================================================
+    
+    # Enhanced location analysis endpoint - comprehensive location analysis with container context
+    @app.route('/api/garden/location-analysis/<location_id>', methods=['GET'])
+    def get_location_analysis(location_id):
+        """
+        Returns comprehensive location analysis with container context.
+        
+        This endpoint implements the Phase 2 location analysis functionality described
+        in the Locations & Containers Integration Strategy. It provides:
+        - Location profile with aggregated container statistics
+        - Care recommendations based on location and container combination
+        - Optimization suggestions for the location
+        - Cross-reference intelligence analysis
+        """
+        from utils.locations_operations import get_location_profile, generate_location_recommendations
+        
+        try:
+            # Get comprehensive location profile
+            location_profile = get_location_profile(location_id)
+            
+            if not location_profile:
+                return jsonify({
+                    "error": f"Location not found: {location_id}",
+                    "location_id": location_id,
+                    "message": "Please check that the location ID exists"
+                }), 404
+            
+            # Generate comprehensive recommendations
+            recommendations = generate_location_recommendations(location_id)
+            
+            return jsonify({
+                "location_id": location_id,
+                "location_profile": location_profile,
+                "care_recommendations": recommendations,
+                "optimization_suggestions": location_profile.get('optimization_opportunities', []),
+                "message": f"Comprehensive analysis generated for location {location_profile['location_data']['location_name']}"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error generating location analysis for {location_id}: {e}")
+            return jsonify({
+                "error": "Internal server error generating location analysis",
+                "location_id": location_id
+            }), 500
+    
+    # Enhanced plant context endpoint - full environmental and container context for specific plants
+    @app.route('/api/plants/<plant_id>/context', methods=['GET'])
+    def get_plant_context(plant_id):
+        """
+        Returns full contextual analysis for specific plant.
+        
+        This endpoint provides comprehensive environmental and container context
+        by analyzing all containers for a plant and their respective locations.
+        Includes care plans and optimization tips for each context.
+        """
+        from utils.locations_operations import (
+            get_containers_by_plant_id, 
+            get_location_by_id, 
+            generate_location_recommendations
+        )
+        from utils.care_intelligence import generate_container_care_requirements
+        
+        try:
+            # Get all containers for this plant
+            containers = get_containers_by_plant_id(plant_id)
+            
+            if not containers:
+                return jsonify({
+                    "error": f"No containers found for plant {plant_id}",
+                    "plant_id": plant_id,
+                    "message": "This plant may not have any containers assigned"
+                }), 404
+            
+            contexts = []
+            
+            # For each container, build comprehensive context
+            for container in containers:
+                location = get_location_by_id(container['location_id'])
+                
+                if location:
+                    # Generate contextual care plan
+                    care_requirements = generate_container_care_requirements(container['container_id'])
+                    location_recommendations = generate_location_recommendations(container['location_id'])
+                    
+                    context = {
+                        "container": container,
+                        "location": location,
+                        "care_plan": care_requirements,
+                        "location_intelligence": location_recommendations,
+                        "optimization_tips": _suggest_container_improvements_helper(container, location)
+                    }
+                    contexts.append(context)
+            
+            return jsonify({
+                "plant_id": plant_id,
+                "contexts": contexts,
+                "total_contexts": len(contexts),
+                "message": f"Generated {len(contexts)} comprehensive context(s) for plant {plant_id}"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error getting plant context for {plant_id}: {e}")
+            return jsonify({
+                "error": "Internal server error getting plant context",
+                "plant_id": plant_id
+            }), 500
+    
+    # Enhanced garden metadata endpoint - comprehensive garden metadata with location + container intelligence
+    @app.route('/api/garden/metadata/enhanced', methods=['GET'])
+    def get_enhanced_metadata():
+        """
+        Returns comprehensive garden metadata with location + container intelligence.
+        
+        This endpoint implements the Phase 2 enhanced metadata aggregation, providing:
+        - Garden overview with comprehensive statistics
+        - Location distribution analysis
+        - Container intelligence insights
+        - Care complexity assessment
+        - Optimization opportunities across the garden
+        """
+        from utils.locations_operations import get_garden_metadata_enhanced
+        
+        try:
+            enhanced_metadata = get_garden_metadata_enhanced()
+            
+            if not enhanced_metadata:
+                return jsonify({
+                    "error": "Unable to generate enhanced metadata",
+                    "message": "No location or container data available"
+                }), 404
+            
+            return jsonify({
+                "enhanced_metadata": enhanced_metadata,
+                "api_version": "Phase 2 - Advanced Metadata Aggregation",
+                "message": "Enhanced garden metadata generated successfully"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error generating enhanced metadata: {e}")
+            return jsonify({
+                "error": "Internal server error generating enhanced metadata"
+            }), 500
+    
+    # Location profiles endpoint - get all location profiles with aggregated data
+    @app.route('/api/garden/location-profiles', methods=['GET'])
+    def get_all_location_profiles():
+        """
+        Get comprehensive profiles for all locations with aggregated container statistics.
+        
+        This endpoint returns location profiles that combine location data with
+        container statistics, implementing the Phase 2 location profiles view.
+        """
+        from utils.locations_operations import get_all_location_profiles
+        
+        try:
+            location_profiles = get_all_location_profiles()
+            
+            return jsonify({
+                "location_profiles": location_profiles,
+                "total_profiles": len(location_profiles),
+                "message": f"Generated {len(location_profiles)} location profiles"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error getting location profiles: {e}")
+            return jsonify({
+                "error": "Internal server error getting location profiles"
+            }), 500
+    
+    # Care optimization endpoint - get location and container-based care optimization suggestions
+    @app.route('/api/garden/care-optimization', methods=['GET'])
+    def get_care_optimization():
+        """
+        Get location and container-based care optimization suggestions.
+        
+        This endpoint provides proactive care recommendations and efficiency
+        improvements based on cross-analysis of locations and containers.
+        """
+        from utils.locations_operations import get_garden_metadata_enhanced, get_all_location_profiles
+        
+        try:
+            # Get enhanced metadata which includes optimization opportunities
+            enhanced_metadata = get_garden_metadata_enhanced()
+            location_profiles = get_all_location_profiles()
+            
+            if not enhanced_metadata:
+                return jsonify({
+                    "error": "Unable to generate care optimization",
+                    "message": "No data available for optimization analysis"
+                }), 404
+            
+            # Extract optimization-focused data
+            optimization_data = {
+                "garden_wide_opportunities": enhanced_metadata.get('optimization_opportunities', []),
+                "care_complexity_summary": enhanced_metadata.get('care_complexity_analysis', {}),
+                "high_priority_locations": [],
+                "container_upgrade_recommendations": [],
+                "efficiency_improvements": []
+            }
+            
+            # Analyze each location for specific optimization opportunities
+            for profile in location_profiles:
+                location_id = profile.get('location_id')
+                
+                # Get detailed recommendations for this location
+                recommendations = generate_location_recommendations(location_id)
+                
+                if recommendations:
+                    # Check for high priority care needs
+                    complexity = recommendations.get('care_complexity_assessment', {})
+                    if complexity.get('complexity_level') == 'high':
+                        optimization_data['high_priority_locations'].append({
+                            'location_id': location_id,
+                            'location_name': profile.get('location_name'),
+                            'complexity_factors': complexity.get('complexity_factors', []),
+                            'recommended_frequency': complexity.get('recommended_monitoring_frequency')
+                        })
+                    
+                    # Extract container upgrade recommendations
+                    container_compat = recommendations.get('location_analysis', {}).get('container_compatibility', {})
+                    concerning_combinations = container_compat.get('concerning_combinations', [])
+                    
+                    for combination in concerning_combinations:
+                        if combination.get('risk_level') == 'high':
+                            optimization_data['container_upgrade_recommendations'].append({
+                                'location_name': profile.get('location_name'),
+                                'container_id': combination.get('container_id'),
+                                'issue': combination.get('issue'),
+                                'impact': combination.get('impact')
+                            })
+            
+            # Add efficiency improvements from garden-wide analysis
+            care_complexity = enhanced_metadata.get('care_complexity_analysis', {})
+            daily_care_locations = care_complexity.get('daily_care_locations', [])
+            
+            if len(daily_care_locations) > 0:
+                optimization_data['efficiency_improvements'].append({
+                    'type': 'daily_care_routing',
+                    'description': f"{len(daily_care_locations)} locations require daily care",
+                    'recommendation': f"Create efficient care routes for: {', '.join(daily_care_locations[:3])}{'...' if len(daily_care_locations) > 3 else ''}",
+                    'priority': 'high' if len(daily_care_locations) > 3 else 'medium'
+                })
+            
+            return jsonify({
+                "optimization_analysis": optimization_data,
+                "total_opportunities": len(optimization_data['garden_wide_opportunities']),
+                "high_priority_locations": len(optimization_data['high_priority_locations']),
+                "message": "Care optimization analysis completed"
+            }), 200
+            
+        except Exception as e:
+            logging.error(f"Error generating care optimization: {e}")
+            return jsonify({
+                "error": "Internal server error generating care optimization"
+            }), 500
+
+def _suggest_container_improvements_helper(container, location):
+    """
+    Helper function to suggest container improvements based on location analysis.
+    
+    Args:
+        container: Container information dictionary
+        location: Location information dictionary
+        
+    Returns:
+        List of improvement suggestions
+    """
+    suggestions = []
+    
+    # Analyze material vs sun exposure
+    material = container.get('container_material', '').lower()
+    afternoon_sun = location.get('afternoon_sun_hours', 0)
+    total_sun = location.get('total_sun_hours', 0)
+    
+    if material == 'plastic' and afternoon_sun > 3:
+        suggestions.append({
+            'type': 'material_upgrade',
+            'priority': 'medium',
+            'current_issue': 'Plastic container in high afternoon sun',
+            'recommendation': 'Consider upgrading to ceramic or terracotta container',
+            'benefit': 'Better temperature regulation and root protection'
+        })
+    
+    # Analyze size vs sun exposure
+    size = container.get('container_size', '').lower()
+    if size == 'small' and total_sun > 7:
+        suggestions.append({
+            'type': 'size_upgrade',
+            'priority': 'medium',
+            'current_issue': 'Small container in high sun location',
+            'recommendation': 'Consider upgrading to medium or large container',
+            'benefit': 'Better water retention and reduced watering frequency'
+        })
+    
+    # Microclimate optimization
+    microclimate = location.get('microclimate_conditions', '').lower()
+    if 'north' in microclimate and material != 'ceramic':
+        suggestions.append({
+            'type': 'microclimate_optimization',
+            'priority': 'low',
+            'current_issue': 'Not optimizing cool microclimate benefits',
+            'recommendation': 'This location is perfect for heat-sensitive plants',
+            'benefit': 'Take advantage of cooler conditions for specialized plants'
+        })
+    
+    return suggestions
+
 # New enhance-analysis endpoint for ChatGPT Vision + API Consultation
 def enhance_analysis():
     """

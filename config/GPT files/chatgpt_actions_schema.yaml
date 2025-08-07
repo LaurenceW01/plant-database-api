@@ -1477,6 +1477,256 @@ paths:
                   total:
                     type: integer
 
+  # =============================================
+  # PHASE 2: ADVANCED METADATA AGGREGATION
+  # =============================================
+
+  /api/garden/location-analysis/{location_id}:
+    get:
+      operationId: getLocationAnalysis
+      summary: Get comprehensive location analysis with container context
+      description: |
+        Returns comprehensive location analysis with container context and optimization suggestions.
+        Use this for complete analysis of a location including all containers and recommendations.
+      security: []
+      parameters:
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The location ID to analyze
+      responses:
+        '200':
+          description: Location analysis successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location_id:
+                    type: string
+                  location_profile:
+                    type: object
+                    properties:
+                      location_data:
+                        type: object
+                      container_statistics:
+                        type: object
+                      care_intelligence:
+                        type: object
+                      optimization_opportunities:
+                        type: array
+                        items:
+                          type: object
+                      plant_distribution:
+                        type: object
+                  care_recommendations:
+                    type: object
+                    properties:
+                      location_analysis:
+                        type: object
+                      watering_strategy:
+                        type: object
+                      plant_placement:
+                        type: object
+                      optimization_recommendations:
+                        type: array
+                        items:
+                          type: object
+                      care_complexity_assessment:
+                        type: object
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/plants/{plant_id}/context:
+    get:
+      operationId: getPlantContext
+      summary: Get full contextual analysis for specific plant
+      description: |
+        Returns full contextual analysis for specific plant across all containers and locations.
+        Use this for comprehensive environmental analysis for a specific plant.
+      security: []
+      parameters:
+        - name: plant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The plant ID to get context for
+      responses:
+        '200':
+          description: Plant context successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plant_id:
+                    type: string
+                  contexts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        container:
+                          type: object
+                        location:
+                          type: object
+                        care_plan:
+                          type: object
+                        location_intelligence:
+                          type: object
+                        optimization_tips:
+                          type: array
+                          items:
+                            type: object
+                  total_contexts:
+                    type: integer
+        '404':
+          description: Plant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/garden/metadata/enhanced:
+    get:
+      operationId: getEnhancedMetadata
+      summary: Get comprehensive garden metadata with location + container intelligence
+      description: |
+        Returns comprehensive garden metadata with location + container intelligence.
+        Use this for garden-wide analysis, statistics, and optimization insights.
+      security: []
+      responses:
+        '200':
+          description: Enhanced metadata successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enhanced_metadata:
+                    type: object
+                    properties:
+                      garden_overview:
+                        type: object
+                      location_distribution:
+                        type: object
+                      container_intelligence:
+                        type: object
+                      care_complexity_analysis:
+                        type: object
+                      optimization_opportunities:
+                        type: array
+                        items:
+                          type: object
+                  api_version:
+                    type: string
+                    example: "Phase 2 - Advanced Metadata Aggregation"
+
+  /api/garden/location-profiles:
+    get:
+      operationId: getAllLocationProfiles
+      summary: Get all location profiles with aggregated container statistics
+      description: |
+        Returns all location profiles with aggregated container statistics.
+        Use this for overview of all locations with their container distributions.
+      security: []
+      responses:
+        '200':
+          description: Location profiles successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location_profiles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        location_id:
+                          type: string
+                        location_name:
+                          type: string
+                        morning_sun_hours:
+                          type: integer
+                        afternoon_sun_hours:
+                          type: integer
+                        evening_sun_hours:
+                          type: integer
+                        total_sun_hours:
+                          type: integer
+                        shade_pattern:
+                          type: string
+                        microclimate_conditions:
+                          type: string
+                        total_containers:
+                          type: integer
+                        unique_plants:
+                          type: integer
+                        container_types:
+                          type: array
+                          items:
+                            type: string
+                        container_sizes:
+                          type: array
+                          items:
+                            type: string
+                        container_materials:
+                          type: array
+                          items:
+                            type: string
+                  total_profiles:
+                    type: integer
+
+  /api/garden/care-optimization:
+    get:
+      operationId: getCareOptimization
+      summary: Get location and container-based care optimization suggestions
+      description: |
+        Returns location and container-based care optimization suggestions.
+        Use this for proactive recommendations and efficiency improvements.
+      security: []
+      responses:
+        '200':
+          description: Care optimization analysis successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  optimization_analysis:
+                    type: object
+                    properties:
+                      garden_wide_opportunities:
+                        type: array
+                        items:
+                          type: object
+                      care_complexity_summary:
+                        type: object
+                      high_priority_locations:
+                        type: array
+                        items:
+                          type: object
+                      container_upgrade_recommendations:
+                        type: array
+                        items:
+                          type: object
+                      efficiency_improvements:
+                        type: array
+                        items:
+                          type: object
+                  total_opportunities:
+                    type: integer
+                  high_priority_locations:
+                    type: integer
+
   /api/weather/current:
     get:
       operationId: getCurrentWeather
