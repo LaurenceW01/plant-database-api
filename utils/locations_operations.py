@@ -10,11 +10,28 @@ Created: Phase 1 Implementation - Locations & Containers Integration
 
 from typing import List, Dict, Optional
 import logging
+import time
 from config.config import SPREADSHEET_ID
 from utils.sheets_client import sheets_client, check_rate_limit
 
 # Set up logging for this module
 logger = logging.getLogger(__name__)
+
+# Simple caching to prevent excessive API calls
+_locations_cache = None
+_containers_cache = None
+_cache_timestamp = 0
+CACHE_DURATION = 300  # 5 minutes cache
+
+def _is_cache_valid() -> bool:
+    """Check if cache is still valid"""
+    global _cache_timestamp
+    return (time.time() - _cache_timestamp) < CACHE_DURATION
+
+def _update_cache_timestamp():
+    """Update cache timestamp"""
+    global _cache_timestamp
+    _cache_timestamp = time.time()
 
 # Sheet ranges for accessing Locations and Containers data
 LOCATIONS_RANGE = 'Locations!A:G'  # Location ID through Microclimate Conditions
@@ -23,6 +40,7 @@ CONTAINERS_RANGE = 'Containers!A:F'  # Container ID through Container Material
 def get_all_locations() -> List[Dict]:
     """
     Get all locations from the Locations sheet with complete metadata.
+    Uses caching to reduce API calls.
     
     Returns:
         List[Dict]: List of location dictionaries with keys:
@@ -35,6 +53,13 @@ def get_all_locations() -> List[Dict]:
             - microclimate_conditions: str
             - total_sun_hours: int (calculated)
     """
+    global _locations_cache
+    
+    # Return cached data if valid
+    if _locations_cache is not None and _is_cache_valid():
+        logger.debug("Returning cached locations data")
+        return _locations_cache
+    
     try:
         check_rate_limit()  # Respect API rate limits
         result = sheets_client.values().get(
@@ -75,6 +100,10 @@ def get_all_locations() -> List[Dict]:
                     logger.warning(f"Error parsing location row {row}: {e}")
                     continue
         
+        # Cache the results
+        _locations_cache = locations
+        _update_cache_timestamp()
+        
         logger.info(f"Retrieved {len(locations)} locations from sheet")
         return locations
         
@@ -108,6 +137,7 @@ def get_location_by_id(location_id: str) -> Optional[Dict]:
 def get_all_containers() -> List[Dict]:
     """
     Get all containers from the Containers sheet with complete metadata.
+    Uses caching to reduce API calls.
     
     Returns:
         List[Dict]: List of container dictionaries with keys:
@@ -118,6 +148,13 @@ def get_all_containers() -> List[Dict]:
             - container_size: str
             - container_material: str
     """
+    global _containers_cache
+    
+    # Return cached data if valid
+    if _containers_cache is not None and _is_cache_valid():
+        logger.debug("Returning cached containers data")
+        return _containers_cache
+    
     try:
         check_rate_limit()  # Respect API rate limits
         result = sheets_client.values().get(
@@ -145,6 +182,10 @@ def get_all_containers() -> List[Dict]:
                     'container_material': row[5]  # Material (plastic, ceramic, etc.)
                 }
                 containers.append(container)
+        
+        # Cache the results
+        _containers_cache = containers
+        _update_cache_timestamp()
         
         logger.info(f"Retrieved {len(containers)} containers from sheet")
         return containers
