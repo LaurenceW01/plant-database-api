@@ -1484,6 +1484,7 @@ paths:
       description: |
         Get real-time weather conditions for Houston, including temperature, humidity, 
         precipitation chance, and wind speed.
+      security: []
       responses:
         '200':
           description: Current weather conditions
@@ -1519,6 +1520,7 @@ paths:
       summary: Get hourly weather forecast for Houston
       description: |
         Get hourly weather forecast data for planning gardening activities.
+      security: []
       parameters:
         - name: hours
           in: query
@@ -1567,6 +1569,7 @@ paths:
       operationId: getDailyWeatherForecast
       summary: Get daily weather forecast
       description: Returns daily weather forecast for specified number of days (max 7 days)
+      security: []
       parameters:
         - name: days
           in: query
