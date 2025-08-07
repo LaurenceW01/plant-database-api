@@ -60,11 +60,11 @@ def update_yaml_files():
     
     # Files to update
     files_to_update = [
-        'chatgpt_actions_schema.yaml',
+        'config/GPT files/chatgpt_actions_schema.yaml',
+        'config/GPT files/chatgpt_endpoints.md',
         'minimal_test_schema.yaml',
         'tests/minimal_test_schema.yaml',
-        'tests/simple_test_schema.yaml',
-        'chatgpt_endpoints.md'
+        'tests/simple_test_schema.yaml'
     ]
     
     updated_count = 0
