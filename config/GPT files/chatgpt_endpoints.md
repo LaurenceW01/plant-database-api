@@ -843,6 +843,7 @@ GET /api/plants/{plant_id}/context
 
 {
   "plant_id": "1",
+  "plant_name": "Tropical Hibiscus",
   "contexts": [
     {
       "container": {
@@ -881,7 +882,8 @@ GET /api/plants/{plant_id}/context
     }
     // ... additional containers for this plant
   ],
-  "total_contexts": 1
+  "total_contexts": 1,
+  "message": "Generated 1 comprehensive context(s) for plant 1 (Tropical Hibiscus)"
 }
 ```
 
