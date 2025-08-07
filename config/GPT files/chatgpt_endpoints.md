@@ -715,8 +715,9 @@ These endpoints provide **comprehensive location analysis and cross-reference in
 GET /api/garden/location-analysis/{location_id}
 
 // Returns comprehensive location analysis with container context and optimization suggestions
+// INCLUDES: Plant names and detailed container information for each plant at the location  
 // Use when: Need complete analysis of a location including all containers and recommendations
-// Example: "Give me a complete analysis of the arboretum right location"
+// Example: "Give me a complete analysis of the arboretum right location" or "What plants are at the patio?"
 
 {
   "location_id": "1",
@@ -774,8 +775,34 @@ GET /api/garden/location-analysis/{location_id}
     "plant_distribution": {
       "total_plants": 4,
       "unique_plants": 3,
-      "multiple_container_plants": ["1"],
-      "single_container_plants": ["2", "3"],
+      "plant_details": {
+        "1": {
+          "plant_name": "Tropical Hibiscus",
+          "containers": [
+            {"container_id": "1", "material": "Plastic", "size": "Medium", "type": "Pot in ground"},
+            {"container_id": "2", "material": "Plastic", "size": "Medium", "type": "Pot in ground"}
+          ]
+        },
+        "2": {
+          "plant_name": "Rose",
+          "containers": [
+            {"container_id": "16", "material": "plastic", "size": "Medium", "type": "Pot in ground"}
+          ]
+        },
+        "3": {
+          "plant_name": "Azalea", 
+          "containers": [
+            {"container_id": "27", "material": "plastic", "size": "Medium", "type": "Pot in ground"}
+          ]
+        }
+      },
+      "multiple_container_plants": [
+        {"plant_id": "1", "plant_name": "Tropical Hibiscus", "container_count": 2}
+      ],
+      "single_container_plants": [
+        {"plant_id": "2", "plant_name": "Rose", "container_count": 1},
+        {"plant_id": "3", "plant_name": "Azalea", "container_count": 1}
+      ],
       "distribution_summary": "2 single-container plants, 1 multi-container plants"
     }
   },

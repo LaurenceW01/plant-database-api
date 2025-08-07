@@ -17,7 +17,8 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 
 **What it Provides**:
 - Complete location profile with container statistics
-- Care complexity assessment
+- **Plant names and detailed container information** for each plant at location
+- Care complexity assessment  
 - Optimization opportunities
 - Container compatibility analysis
 - Cross-reference intelligence recommendations

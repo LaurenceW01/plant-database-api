@@ -1521,6 +1521,17 @@ paths:
                           type: object
                       plant_distribution:
                         type: object
+                        description: Plant distribution with plant names and container details
+                        properties:
+                          plant_details:
+                            type: object
+                            description: Detailed information for each plant including name and containers
+                          multiple_container_plants:
+                            type: array
+                            description: Plants with multiple containers (includes plant names)
+                          single_container_plants:
+                            type: array  
+                            description: Plants with single containers (includes plant names)
                   care_recommendations:
                     type: object
                     properties:
