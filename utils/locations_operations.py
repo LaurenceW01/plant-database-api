@@ -1194,7 +1194,8 @@ def get_all_location_profiles() -> List[Dict]:
                 'container_types': container_types,
                 'container_sizes': container_sizes,
                 'container_materials': container_materials,
-                'containers_detail': location_containers
+                'containers_detail': location_containers,
+                'plant_distribution': _analyze_plant_distribution(location_containers)
             }
             
             location_profiles.append(profile)
