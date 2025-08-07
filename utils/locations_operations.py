@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 # Simple caching to prevent excessive API calls
 _locations_cache = None
 _containers_cache = None
+_plants_cache = None
 _cache_timestamp = 0
 CACHE_DURATION = 300  # 5 minutes cache
 
@@ -32,6 +33,44 @@ def _update_cache_timestamp():
     """Update cache timestamp"""
     global _cache_timestamp
     _cache_timestamp = time.time()
+
+def _get_cached_plants() -> Dict[str, str]:
+    """
+    Get cached plant data (ID -> name mapping) to avoid rate limiting.
+    
+    Returns:
+        Dict[str, str]: Mapping of plant_id to plant_name
+    """
+    global _plants_cache
+    
+    # Return cached data if valid
+    if _plants_cache is not None and _is_cache_valid():
+        logger.debug("Returning cached plants data")
+        return _plants_cache
+    
+    try:
+        # Import here to avoid circular imports
+        from utils.plant_operations import get_plant_data
+        
+        # Get all plant data
+        plants = get_plant_data()
+        
+        # Create ID -> name mapping
+        plant_mapping = {}
+        for plant in plants:
+            if isinstance(plant, dict) and 'ID' in plant and 'Plant Name' in plant:
+                plant_mapping[plant['ID']] = plant['Plant Name']
+        
+        # Cache the results
+        _plants_cache = plant_mapping
+        _update_cache_timestamp()
+        
+        logger.info(f"Cached {len(plant_mapping)} plant names")
+        return plant_mapping
+        
+    except Exception as e:
+        logger.error(f"Error getting cached plants: {e}")
+        return {}
 
 # Sheet ranges for accessing Locations and Containers data
 LOCATIONS_RANGE = 'Locations!A:G'  # Location ID through Microclimate Conditions
@@ -657,8 +696,8 @@ def _analyze_plant_distribution(containers: List[Dict]) -> Dict:
             'single_container_plants': []
         }
     
-    # Import here to avoid circular imports
-    from utils.plant_operations import find_plant_by_id_or_name
+    # Get cached plant names to avoid rate limiting
+    cached_plants = _get_cached_plants()
     
     # Count plants by ID and get their names
     plant_counts = {}
@@ -670,22 +709,12 @@ def _analyze_plant_distribution(containers: List[Dict]) -> Dict:
         
         # Get plant name if we don't have it yet
         if plant_id not in plant_details and plant_id != 'Unknown':
-            try:
-                plant_row, plant_data = find_plant_by_id_or_name(plant_id)
-                if plant_data and len(plant_data) > 1:
-                    plant_name = plant_data[1]
-                else:
-                    plant_name = f"Plant ID {plant_id}"
-                plant_details[plant_id] = {
-                    'plant_name': plant_name,
-                    'containers': []
-                }
-            except Exception as e:
-                logger.warning(f"Could not get plant name for ID {plant_id}: {e}")
-                plant_details[plant_id] = {
-                    'plant_name': f"Plant ID {plant_id}",
-                    'containers': []
-                }
+            # Use cached plant name if available
+            plant_name = cached_plants.get(plant_id, f"Plant ID {plant_id}")
+            plant_details[plant_id] = {
+                'plant_name': plant_name,
+                'containers': []
+            }
     
     # Add container information to plant details
     for container in containers:
