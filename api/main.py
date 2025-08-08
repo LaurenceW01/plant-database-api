@@ -11,8 +11,6 @@ from dotenv import load_dotenv  # For loading .env files
 from flask_limiter import Limiter  # Import Limiter for rate limiting
 from flask_limiter.util import get_remote_address  # Utility to get client IP for rate limiting
 import logging  # Import logging module for audit logging
-import sys  # Import sys to access stdout for logging
-from datetime import datetime  # For timestamps in print statements
 from utils.upload_token_manager import get_token_info  # Import token manager functions
 
 # Load environment variables from .env file
@@ -139,30 +137,19 @@ def add_plant():
     if not plant_name:
         return jsonify({"error": "'Plant Name' is required."}), 400
     
-    # Log the request for debugging - using both logging and print for Render.com visibility
-    log_msg = f"Adding plant: {plant_name} with {len(canonical_data)} fields"
-    print(f"[{datetime.now()}] INFO: {log_msg}")
-    logging.info(log_msg)
-    sys.stdout.flush()
+    # Log the request for debugging
+    logging.info(f"Adding plant: {plant_name} with {len(canonical_data)} fields")
     
     # Use the comprehensive add_plant_with_fields function that handles all fields
     try:
         result = add_plant_with_fields(canonical_data)
         if not result.get('success'):
             error_msg = result.get('error', 'Unknown error')
-            print(f"[{datetime.now()}] ERROR: Failed to add plant {plant_name}: {error_msg}")
             logging.error(f"Failed to add plant {plant_name}: {error_msg}")
-            sys.stdout.flush()
             return jsonify({"error": error_msg}), 400
     except Exception as e:
         error_msg = f"Exception while adding plant {plant_name}: {type(e).__name__}: {e}"
-        print(f"[{datetime.now()}] ERROR: {error_msg}")
         logging.error(error_msg)
-        import traceback
-        traceback_msg = f"Full traceback: {traceback.format_exc()}"
-        print(f"[{datetime.now()}] ERROR: {traceback_msg}")
-        logging.error(traceback_msg)
-        sys.stdout.flush()
         return jsonify({"error": f"Server error while adding plant: {str(e)}"}), 500
     
     # Generate upload token for photo upload
@@ -201,9 +188,7 @@ def add_plant():
         response_data["upload_instructions"] = "Photo upload temporarily unavailable"
     
     success_msg = f"Successfully added plant {plant_name} (ID: {plant_id})"
-    print(f"[{datetime.now()}] INFO: {success_msg}")
     logging.info(success_msg)
-    sys.stdout.flush()
     return jsonify(response_data), 201
 
 def update_plant(id_or_name):
@@ -302,7 +287,7 @@ def register_routes(app, limiter, require_api_key):
         """
         return jsonify({"status": "ok", "message": "Plant Database API is running."}), 200
 
-    # Redirect for ChatGPT's incorrect /add endpoint (temporary fix)
+    # Redirect for ChatGPT's incorrect /add endpoint (safety net)
     @app.route('/api/plants/add', methods=['POST'])
     def add_plant_redirect():
         """Redirect ChatGPT's incorrect /api/plants/add to correct /api/plants"""
@@ -2721,13 +2706,13 @@ def create_app(testing=False):
             app=app,
             default_limits=[]
         )
-    # Set up additional logging for auditability (file logging)
-    # Console logging is already configured in config.py for Render.com visibility
+    # Set up additional logging for auditability
     logger = logging.getLogger()
-    if not any(isinstance(h, logging.FileHandler) for h in logger.handlers):
-        file_handler = logging.FileHandler('api_audit.log')
-        file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
-        logger.addHandler(file_handler)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
     # Register all routes after config is set
     register_routes(app, limiter, require_api_key)
     # Register image analysis route

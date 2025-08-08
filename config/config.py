@@ -2,37 +2,19 @@ from dotenv import load_dotenv
 import os
 import logging
 import traceback
+
 import httpx
 from openai import OpenAI
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.discovery import Resource
 from google.cloud import storage
 import time
 import tempfile
 
-# Set up logging to ensure logs appear on console (for Render.com visibility)
-import sys
-from datetime import datetime
 
-# Force stdout unbuffering for Render.com
-sys.stdout.reconfigure(line_buffering=True)
 
-# Configure logging with force=True to override any existing config
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ],
-    force=True  # Force reconfiguration
-)
+# Configure logging
 logger = logging.getLogger(__name__)
-
-# Test logging immediately to verify it works
-print(f"[{datetime.now()}] STARTUP: config.py - Logging configuration initialized")
-logger.info("STARTUP: Logger configured successfully")
-sys.stdout.flush()
 
 # Load environment variables from .env file
 load_dotenv()

@@ -751,8 +751,6 @@ def _generate_ai_care_information(plant_name: str, location: str = "") -> Dict[s
         }
     except Exception as e:
         logger.error(f"Unexpected error generating AI care information for {plant_name}: {type(e).__name__}: {e}")
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
         # Return fallback care information if AI generation fails
         return {
             'Description': f"A {plant_name} plant suitable for Houston gardening.",
