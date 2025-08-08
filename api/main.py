@@ -1956,7 +1956,8 @@ def create_plant_log():
                 expiration_hours=24
             )
             
-            upload_url = f"{request.host_url.rstrip('/')}/upload/log/{upload_token}"
+            # Force HTTPS protocol to avoid reverse proxy issues 
+            upload_url = f"https://{request.host}/upload/log/{upload_token}"
             
             # Detect if user mentioned photos in their input
             photo_keywords = ['photo', 'picture', 'image', 'pic', 'camera', 'take', 'show', 'visual', 'upload']

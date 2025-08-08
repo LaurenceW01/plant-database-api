@@ -179,7 +179,10 @@ def generate_upload_url(token: str, base_url: str = None) -> str:
     if base_url is None:
         try:
             from flask import request
-            base_url = request.host_url.rstrip('/')
+            # Force HTTPS protocol to avoid reverse proxy issues
+            # where internal traffic is HTTP but external should be HTTPS
+            host = request.host
+            base_url = f"https://{host}"
         except RuntimeError:
             # Outside of request context, use production default
             base_url = "https://plant-database-api.onrender.com"
