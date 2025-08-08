@@ -366,7 +366,7 @@ Content-Type: application/json
 {
   "success": true,
   "log_id": "LOG-20240115-001",
-  "upload_url": "https://plant-database-api.onrender.com/upload/abc123xyz",
+  "upload_url": "https://plant-database-api.onrender.com/upload/log/abc123xyz",
   "upload_instructions": "To add a photo to this log entry, visit: [upload_url]"
 }
 ```

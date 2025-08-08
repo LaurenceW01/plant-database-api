@@ -164,17 +164,26 @@ def mark_token_used(token: str, ip_address: str = "") -> bool:
         logger.error(f"Error marking token as used: {e}")
         return False
 
-def generate_upload_url(token: str, base_url: str = "https://dev-plant-database-api.onrender.com") -> str:
+def generate_upload_url(token: str, base_url: str = None) -> str:
     """
     Generate the complete upload URL for a token.
     
     Args:
         token (str): Upload token
-        base_url (str): Base URL of the API
+        base_url (str): Base URL of the API (if None, will try to get from Flask request context)
         
     Returns:
         str: Complete upload URL
     """
+    # Get base URL from Flask request context if not provided
+    if base_url is None:
+        try:
+            from flask import request
+            base_url = request.host_url.rstrip('/')
+        except RuntimeError:
+            # Outside of request context, use production default
+            base_url = "https://plant-database-api.onrender.com"
+    
     # Get token info to determine URL path
     token_info = _token_storage.get(token, {})
     token_type = token_info.get('token_type')

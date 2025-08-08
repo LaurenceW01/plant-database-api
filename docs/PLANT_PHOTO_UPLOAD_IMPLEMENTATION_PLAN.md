@@ -183,7 +183,7 @@ if result['success']:
         plant_id=result['plant_id'],
         operation='add'
     )
-    result['upload_url'] = f"/upload/{upload_token}"
+    result['upload_url'] = f"/upload/plant/{upload_token}"
 ```
 
 ### Updating a Plant with New Photo
@@ -197,7 +197,7 @@ if result['success']:
         plant_id=plant_id,
         operation='update'
     )
-    result['upload_url'] = f"/upload/{upload_token}"
+    result['upload_url'] = f"/upload/plant/{upload_token}"
 ```
 
 ## Future Considerations
