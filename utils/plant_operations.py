@@ -646,6 +646,150 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
         logger.error(f"Error adding plant {plant_name}: {e}")
         return {"success": False, "error": str(e)}
 
+def _generate_ai_care_information(plant_name: str, location: str = "") -> Dict[str, str]:
+    """
+    Generate comprehensive AI care information for a plant.
+    
+    Args:
+        plant_name (str): Name of the plant to generate care for
+        location (str): Location where the plant will be grown
+        
+    Returns:
+        Dict[str, str]: Dictionary with care field names as keys and AI-generated content as values
+    """
+    try:
+        from config.config import openai_client
+        
+        # Create location context
+        location_context = f" in {location}" if location else ""
+        location_advice = f"Focus on practical advice for the specified location: {location}. " if location else ""
+        
+        # Create detailed plant care guide prompt for OpenAI
+        prompt = (
+            f"Create a detailed plant care guide for {plant_name} in Houston, TX{location_context}. "
+            "Include care requirements, growing conditions, and maintenance tips. "
+            f"{location_advice}"
+            "Provide comprehensive information suitable for a home gardener.\n\n"
+            "IMPORTANT: Use EXACTLY the section format shown below with double asterisks and colons:\n"
+            "**Description:**\n"
+            "**Light:**\n"
+            "**Soil:**\n"
+            "**Soil pH Type:**\n"
+            "**Soil pH Range:**\n"
+            "**Watering:**\n"
+            "**Temperature:**\n"
+            "**Pruning:**\n"
+            "**Mulching:**\n"
+            "**Fertilizing:**\n"
+            "**Winter Care:**\n"
+            "**Spacing:**\n"
+            "**Care Notes:**"
+        )
+        
+        # Get plant care information from OpenAI using GPT-4
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are an expert gardener and plant database manager specializing in Houston, Texas climate. "
+                               "Answer as a knowledgeable, friendly assistant. Important: Do not use markdown headers (###). "
+                               "For soil pH information: Soil pH Type must be one of: high alkalinity, medium alkalinity, "
+                               "slightly alkaline, neutral, slightly acidic, medium acidity, high acidity. "
+                               "Soil pH Range must be in format like '5.5 - 6.5' with numerical ranges only."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1200
+        )
+        
+        ai_response = response.choices[0].message.content or ""
+        logger.info(f"Generated AI care response for {plant_name}: {ai_response[:200]}...")
+        
+        # Parse the care guide response to extract structured data for database storage
+        care_details = _parse_care_guide(ai_response)
+        
+        logger.info(f"Successfully generated AI care information for {plant_name}")
+        return care_details
+        
+    except Exception as e:
+        logger.error(f"Error generating AI care information for {plant_name}: {e}")
+        # Return fallback care information
+        return {
+            'Description': f"A {plant_name} plant suitable for Houston gardening.",
+            'Care Notes': f"Care guide for {plant_name}: Please research specific care requirements for this plant based on Houston's climate and growing conditions.",
+            'Watering Needs': "Water when soil feels dry to touch",
+            'Light Requirements': "Provide appropriate light conditions for plant type"
+        }
+
+def _parse_care_guide(response: str) -> Dict[str, str]:
+    """
+    Parse the care guide response from OpenAI into a structured dictionary.
+    Handles **Section:** headers and maps short names to full field names.
+    
+    Args:
+        response (str): AI response text with section headers
+        
+    Returns:
+        Dict[str, str]: Dictionary mapping field names to care content
+    """
+    # Mapping from possible section names to spreadsheet field names
+    section_map = {
+        'Description': 'Description',
+        'Light': 'Light Requirements', 
+        'Soil': 'Soil Preferences',
+        'Soil pH Type': 'Soil pH Type',
+        'Soil pH Range': 'Soil pH Range',
+        'Watering': 'Watering Needs',
+        'Temperature': 'Frost Tolerance',
+        'Pruning': 'Pruning Instructions',
+        'Mulching': 'Mulching Needs',
+        'Fertilizing': 'Fertilizing Schedule',
+        'Winter Care': 'Winterizing Instructions',
+        'Spacing': 'Spacing Requirements',
+        'Care Notes': 'Care Notes'
+    }
+
+    care_details = {}
+    lines = response.split('\n')
+    current_section = None
+    current_content = []
+
+    def save_section(section, content):
+        """Save the current section content to care_details"""
+        if section and content:
+            # Extract section name from **Section:** format
+            section_name = section.strip('*').strip().rstrip(':').strip()
+            field_name = section_map.get(section_name)
+            if field_name:
+                content_text = '\n'.join(content).strip()
+                if content_text:  # Only add non-empty content
+                    care_details[field_name] = content_text
+
+    for line in lines:
+        line = line.strip()
+        # Check if this is a section header (starts and ends with **)
+        if line.startswith('**') and line.endswith('**'):
+            # Save previous section
+            save_section(current_section, current_content)
+            # Start new section
+            current_section = line
+            current_content = []
+        elif current_section and line:
+            # Add content to current section
+            current_content.append(line)
+    
+    # Save the last section
+    save_section(current_section, current_content)
+    
+    # If no structured content was found, add the full response as care notes
+    if not care_details:
+        care_details['Care Notes'] = response.strip()
+    
+    logger.info(f"Parsed care guide into {len(care_details)} fields: {list(care_details.keys())}")
+    return care_details
+
 def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bool, str]]:
     """
     Add a new plant to the database with comprehensive field support.
@@ -685,6 +829,27 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
                     plant_data[get_canonical_field_name('Raw Photo URL')] = field_value
                 else:
                     plant_data[canonical_field] = field_value
+        
+        # Check if we need to generate AI care information (minimal data provided)
+        care_fields_to_check = [
+            'Description', 'Light Requirements', 'Watering Needs', 'Soil Preferences',
+            'Pruning Instructions', 'Fertilizing Schedule', 'Care Notes'
+        ]
+        
+        provided_care_fields = sum(1 for field in care_fields_to_check 
+                                 if get_canonical_field_name(field) in plant_data and 
+                                 plant_data[get_canonical_field_name(field)].strip())
+        
+        # If minimal care information provided (less than 3 care fields), generate AI care
+        if provided_care_fields < 3:
+            logger.info(f"Generating AI care information for {plant_name} (only {provided_care_fields} care fields provided)")
+            ai_care_data = _generate_ai_care_information(plant_name, plant_data.get(get_canonical_field_name('Location'), ''))
+            
+            # Merge AI-generated care data with existing data (don't overwrite user-provided fields)
+            for field_name, ai_value in ai_care_data.items():
+                canonical_field = get_canonical_field_name(field_name)
+                if canonical_field and (canonical_field not in plant_data or not plant_data[canonical_field].strip()):
+                    plant_data[canonical_field] = ai_value
         
         # Add empty values for all fields not provided
         all_fields = get_all_field_names()
