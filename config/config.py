@@ -11,8 +11,15 @@ from google.cloud import storage
 import time
 import tempfile
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Set up logging to ensure logs appear on console (for Render.com visibility)
+import sys
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file

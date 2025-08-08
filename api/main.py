@@ -138,31 +138,59 @@ def add_plant():
     if not plant_name:
         return jsonify({"error": "'Plant Name' is required."}), 400
     
+    # Log the request for debugging
+    logging.info(f"Adding plant: {plant_name} with {len(canonical_data)} fields")
+    
     # Use the comprehensive add_plant_with_fields function that handles all fields
-    result = add_plant_with_fields(canonical_data)
-    if not result.get('success'):
-        return jsonify({"error": result.get('error', 'Unknown error')}), 400
+    try:
+        result = add_plant_with_fields(canonical_data)
+        if not result.get('success'):
+            error_msg = result.get('error', 'Unknown error')
+            logging.error(f"Failed to add plant {plant_name}: {error_msg}")
+            return jsonify({"error": error_msg}), 400
+    except Exception as e:
+        logging.error(f"Exception while adding plant {plant_name}: {type(e).__name__}: {e}")
+        import traceback
+        logging.error(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({"error": f"Server error while adding plant: {str(e)}"}), 500
     
     # Generate upload token for photo upload
     plant_id = result.get('plant_id')
     if not plant_id:
         logging.warning(f"No plant ID returned for {plant_name}, upload token may not work correctly")
     
-    upload_token = generate_upload_token(
-        plant_name=plant_name,
-        token_type='plant_upload',
-        plant_id=str(plant_id) if plant_id else None,
-        operation='add'
-    )
-    upload_url = generate_upload_url(upload_token)
+    try:
+        upload_token = generate_upload_token(
+            plant_name=plant_name,
+            token_type='plant_upload',
+            plant_id=str(plant_id) if plant_id else None,
+            operation='add'
+        )
+        upload_url = generate_upload_url(upload_token)
+        logging.info(f"Successfully generated upload token for {plant_name} (ID: {plant_id})")
+        
+    except Exception as e:
+        logging.error(f"Failed to generate upload token for {plant_name}: {e}")
+        # Continue without upload URL if token generation fails
+        upload_url = ""
+        upload_token = ""
     
     # Return success response with upload URL
-    return jsonify({
+    response_data = {
         "message": result.get('message', 'Plant added successfully'),
-        "plant_id": plant_id,
-        "upload_url": upload_url,
-        "upload_instructions": f"To add a photo of your plant, visit: {upload_url}"
-    }), 201
+        "plant_id": plant_id
+    }
+    
+    if upload_url:
+        response_data.update({
+            "upload_url": upload_url,
+            "upload_instructions": f"To add a photo of your plant, visit: {upload_url}"
+        })
+    else:
+        response_data["upload_instructions"] = "Photo upload temporarily unavailable"
+    
+    logging.info(f"Successfully added plant {plant_name} (ID: {plant_id})")
+    return jsonify(response_data), 201
 
 def update_plant(id_or_name):
     """
@@ -2653,15 +2681,13 @@ def create_app(testing=False):
             app=app,
             default_limits=[]
         )
-    # Set up logging for auditability
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(levelname)s %(message)s',
-        handlers=[
-            logging.FileHandler('api_audit.log'),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
+    # Set up additional logging for auditability (file logging)
+    # Console logging is already configured in config.py for Render.com visibility
+    logger = logging.getLogger()
+    if not any(isinstance(h, logging.FileHandler) for h in logger.handlers):
+        file_handler = logging.FileHandler('api_audit.log')
+        file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+        logger.addHandler(file_handler)
     # Register all routes after config is set
     register_routes(app, limiter, require_api_key)
     # Register image analysis route
