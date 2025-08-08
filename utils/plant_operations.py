@@ -657,8 +657,22 @@ def _generate_ai_care_information(plant_name: str, location: str = "") -> Dict[s
     Returns:
         Dict[str, str]: Dictionary with care field names as keys and AI-generated content as values
     """
+    logger.info(f"Starting AI care generation for {plant_name} at location: '{location}'")
+    
     try:
         from config.config import openai_client
+        import time
+        logger.info("OpenAI client imported successfully")
+        
+        # Check if OpenAI client is available
+        if not openai_client:
+            logger.error("OpenAI client is None - OpenAI API key may be missing")
+            return {
+                'Description': f"A {plant_name} plant suitable for Houston gardening.",
+                'Care Notes': f"Care guide for {plant_name}: Please research specific care requirements for this plant based on Houston's climate and growing conditions.",
+                'Watering Needs': "Water when soil feels dry to touch",
+                'Light Requirements': "Provide appropriate light conditions for plant type"
+            }
         
         # Create location context
         location_context = f" in {location}" if location else ""
@@ -686,6 +700,9 @@ def _generate_ai_care_information(plant_name: str, location: str = "") -> Dict[s
             "**Care Notes:**"
         )
         
+        logger.info(f"Calling OpenAI API for {plant_name}")
+        start_time = time.time()
+        
         # Get plant care information from OpenAI using GPT-4
         response = openai_client.chat.completions.create(
             model="gpt-4o",
@@ -704,18 +721,39 @@ def _generate_ai_care_information(plant_name: str, location: str = "") -> Dict[s
             max_tokens=1200
         )
         
+        ai_time = time.time() - start_time
+        logger.info(f"OpenAI API call completed in {ai_time:.2f} seconds for {plant_name}")
+        
         ai_response = response.choices[0].message.content or ""
-        logger.info(f"Generated AI care response for {plant_name}: {ai_response[:200]}...")
+        logger.info(f"Generated AI care response for {plant_name} (length: {len(ai_response)} chars): {ai_response[:150]}...")
         
         # Parse the care guide response to extract structured data for database storage
         care_details = _parse_care_guide(ai_response)
         
-        logger.info(f"Successfully generated AI care information for {plant_name}")
+        logger.info(f"Successfully generated AI care information for {plant_name}: {len(care_details)} fields parsed")
         return care_details
         
+    except ImportError as e:
+        logger.error(f"Import error for OpenAI client: {e}")
+        return {
+            'Description': f"A {plant_name} plant suitable for Houston gardening.",
+            'Care Notes': f"Care guide for {plant_name}: Please research specific care requirements for this plant based on Houston's climate and growing conditions.",
+            'Watering Needs': "Water when soil feels dry to touch",
+            'Light Requirements': "Provide appropriate light conditions for plant type"
+        }
+    except AttributeError as e:
+        logger.error(f"OpenAI client attribute error - API key may be invalid: {e}")
+        return {
+            'Description': f"A {plant_name} plant suitable for Houston gardening.",
+            'Care Notes': f"Care guide for {plant_name}: AI care generation failed due to configuration error. Please research specific care requirements.",
+            'Watering Needs': "Water when soil feels dry to touch", 
+            'Light Requirements': "Provide appropriate light conditions for plant type"
+        }
     except Exception as e:
-        logger.error(f"Error generating AI care information for {plant_name}: {e}")
-        # Return fallback care information
+        logger.error(f"Unexpected error generating AI care information for {plant_name}: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        # Return fallback care information if AI generation fails
         return {
             'Description': f"A {plant_name} plant suitable for Houston gardening.",
             'Care Notes': f"Care guide for {plant_name}: Please research specific care requirements for this plant based on Houston's climate and growing conditions.",
@@ -843,13 +881,22 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
         # If minimal care information provided (less than 3 care fields), generate AI care
         if provided_care_fields < 3:
             logger.info(f"Generating AI care information for {plant_name} (only {provided_care_fields} care fields provided)")
-            ai_care_data = _generate_ai_care_information(plant_name, plant_data.get(get_canonical_field_name('Location'), ''))
-            
-            # Merge AI-generated care data with existing data (don't overwrite user-provided fields)
-            for field_name, ai_value in ai_care_data.items():
-                canonical_field = get_canonical_field_name(field_name)
-                if canonical_field and (canonical_field not in plant_data or not plant_data[canonical_field].strip()):
-                    plant_data[canonical_field] = ai_value
+            try:
+                ai_care_data = _generate_ai_care_information(plant_name, plant_data.get(get_canonical_field_name('Location'), ''))
+                
+                # Merge AI-generated care data with existing data (don't overwrite user-provided fields)
+                fields_added = 0
+                for field_name, ai_value in ai_care_data.items():
+                    canonical_field = get_canonical_field_name(field_name)
+                    if canonical_field and (canonical_field not in plant_data or not plant_data[canonical_field].strip()):
+                        plant_data[canonical_field] = ai_value
+                        fields_added += 1
+                
+                logger.info(f"AI care generation successful: added {fields_added} care fields for {plant_name}")
+                
+            except Exception as e:
+                logger.error(f"AI care generation failed for {plant_name}, continuing with minimal data: {e}")
+                # Continue with whatever data we have - don't fail the entire operation
         
         # Add empty values for all fields not provided
         all_fields = get_all_field_names()
