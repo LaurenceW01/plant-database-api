@@ -12,6 +12,7 @@ from flask_limiter import Limiter  # Import Limiter for rate limiting
 from flask_limiter.util import get_remote_address  # Utility to get client IP for rate limiting
 import logging  # Import logging module for audit logging
 import sys  # Import sys to access stdout for logging
+from datetime import datetime  # For timestamps in print statements
 from utils.upload_token_manager import get_token_info  # Import token manager functions
 
 # Load environment variables from .env file
@@ -138,20 +139,30 @@ def add_plant():
     if not plant_name:
         return jsonify({"error": "'Plant Name' is required."}), 400
     
-    # Log the request for debugging
-    logging.info(f"Adding plant: {plant_name} with {len(canonical_data)} fields")
+    # Log the request for debugging - using both logging and print for Render.com visibility
+    log_msg = f"Adding plant: {plant_name} with {len(canonical_data)} fields"
+    print(f"[{datetime.now()}] INFO: {log_msg}")
+    logging.info(log_msg)
+    sys.stdout.flush()
     
     # Use the comprehensive add_plant_with_fields function that handles all fields
     try:
         result = add_plant_with_fields(canonical_data)
         if not result.get('success'):
             error_msg = result.get('error', 'Unknown error')
+            print(f"[{datetime.now()}] ERROR: Failed to add plant {plant_name}: {error_msg}")
             logging.error(f"Failed to add plant {plant_name}: {error_msg}")
+            sys.stdout.flush()
             return jsonify({"error": error_msg}), 400
     except Exception as e:
-        logging.error(f"Exception while adding plant {plant_name}: {type(e).__name__}: {e}")
+        error_msg = f"Exception while adding plant {plant_name}: {type(e).__name__}: {e}"
+        print(f"[{datetime.now()}] ERROR: {error_msg}")
+        logging.error(error_msg)
         import traceback
-        logging.error(f"Full traceback: {traceback.format_exc()}")
+        traceback_msg = f"Full traceback: {traceback.format_exc()}"
+        print(f"[{datetime.now()}] ERROR: {traceback_msg}")
+        logging.error(traceback_msg)
+        sys.stdout.flush()
         return jsonify({"error": f"Server error while adding plant: {str(e)}"}), 500
     
     # Generate upload token for photo upload
@@ -189,7 +200,10 @@ def add_plant():
     else:
         response_data["upload_instructions"] = "Photo upload temporarily unavailable"
     
-    logging.info(f"Successfully added plant {plant_name} (ID: {plant_id})")
+    success_msg = f"Successfully added plant {plant_name} (ID: {plant_id})"
+    print(f"[{datetime.now()}] INFO: {success_msg}")
+    logging.info(success_msg)
+    sys.stdout.flush()
     return jsonify(response_data), 201
 
 def update_plant(id_or_name):
@@ -259,6 +273,21 @@ def update_plant(id_or_name):
         "upload_instructions": f"To update your plant's photo, visit: {upload_url}"
     }), 200
 
+def test_logging():
+    """Test endpoint to verify logging works on server console"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("🧪 LOG TEST: This is an INFO message - should appear on Render console")
+    logger.warning("🧪 LOG TEST: This is a WARNING message - should appear on Render console") 
+    logger.error("🧪 LOG TEST: This is an ERROR message - should appear on Render console")
+    
+    return jsonify({
+        "success": True,
+        "message": "Logging test completed - check Render.com console for log messages",
+        "timestamp": "Check logs for messages with '🧪 LOG TEST' prefix"
+    })
+
 # Function to register all routes (GET, POST, PUT) after config is set
 def register_routes(app, limiter, require_api_key):
     """
@@ -272,6 +301,11 @@ def register_routes(app, limiter, require_api_key):
         Returns a simple JSON response to confirm the API is running.
         """
         return jsonify({"status": "ok", "message": "Plant Database API is running."}), 200
+
+    # Test logging endpoint (temporary for debugging)
+    @app.route('/test-logging', methods=['GET'])
+    def test_logging_endpoint():
+        return test_logging()
 
     # Privacy policy route
     @app.route('/privacy', methods=['GET'])
