@@ -302,6 +302,12 @@ def register_routes(app, limiter, require_api_key):
         """
         return jsonify({"status": "ok", "message": "Plant Database API is running."}), 200
 
+    # Redirect for ChatGPT's incorrect /add endpoint (temporary fix)
+    @app.route('/api/plants/add', methods=['POST'])
+    def add_plant_redirect():
+        """Redirect ChatGPT's incorrect /api/plants/add to correct /api/plants"""
+        return add_plant()
+
     # Test logging endpoint (temporary for debugging)
     @app.route('/test-logging', methods=['GET'])
     def test_logging_endpoint():
