@@ -4,16 +4,19 @@ You are a garden assistant for Houston, Texas with plant database access, health
 
 ## ✅ CURRENT: Fully Functional API System
 
-**STATUS**: 23 core endpoints operational (ChatGPT compatible) with AI-powered analysis and field normalization:
+**STATUS**: 24 core endpoints operational (ChatGPT compatible) with AI-powered analysis and field normalization:
 - `POST /api/plants/add`, `GET /api/plants/search`, `GET /api/plants/get/{id}`
 - `POST /api/logs/create`, `GET /api/logs/search`  
 - `POST /api/plants/diagnose`, `POST /api/plants/enhance-analysis` (OpenAI-powered)
 - `GET /api/plants/get-context/{id}`, `GET /api/garden/get-metadata`
 
-✅ **Field Normalization**: ChatGPT field names automatically converted (e.g., "Plant Name" → "plant_name")
+✅ **Advanced Field Normalization**: Comprehensive field name handling
+  - ANY ChatGPT underscore pattern: `Care___Notes`, `Plant___Name`, etc.
+  - 66+ field aliases supported automatically 
+  - Context-aware ID handling for plant vs log operations
 ✅ **AI Analysis**: Full OpenAI integration with location intelligence  
 ✅ **Photo Upload**: Token-based system with validation working
-✅ **Schema Optimized**: Streamlined to 23 operations for ChatGPT's 30 operation limit
+✅ **Schema Optimized**: Streamlined to 24 operations for ChatGPT's 30 operation limit
 
 See chatgpt_endpoints.md for complete endpoint list.
 
@@ -74,7 +77,7 @@ See chatgpt_endpoints.md for complete endpoint list.
    - Format for smartphones
    - Reference weather when relevant
    - Offer photo upload when mentioned
-   - Use exact field names
+   - Field names are flexible: use standard (`Plant Name`), ChatGPT patterns (`Plant___Name`), or aliases (`name`)
    - Check chatgpt_endpoints.md for API formats
 
 2. **Plant Problems:**

@@ -159,19 +159,19 @@ paths:
             type: string
       requestBody:
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                 Description:
-                  type: string
+                    type: string
                 Location:
-                  type: string
+                    type: string
                 Watering Needs:
-                  type: string
+                    type: string
                 Care Notes:
-                  type: string
+            type: string
       responses:
         '200':
           description: Plant updated successfully
@@ -183,9 +183,9 @@ paths:
                   success:
                     type: boolean
                   message:
-                    type: string
+            type: string
                   upload_url:
-                    type: string
+                type: string
 
   /api/plants/update:
     put:
@@ -207,17 +207,17 @@ paths:
                   description: Plant ID or name to update
                   example: "Vinca"
                 Description:
-                  type: string
+                    type: string
                 Location:
-                  type: string
+                    type: string
                 Watering Needs:
-                  type: string
+                    type: string
                 Care Notes:
-                  type: string
+                        type: string
                 Light Requirements:
-                  type: string
+                        type: string
                 Soil Preferences:
-                  type: string
+                        type: string
       responses:
         '200':
           description: Plant updated successfully
@@ -262,19 +262,19 @@ paths:
                   contexts:
                     type: array
                     items:
-                      type: object
-                      properties:
+                    type: object
+                    properties:
                         container:
-                          type: object
+                    type: object
                         location:
-                          type: object
+                    type: object
                         context:
-                          type: object
+                type: object
 
   # =============================================
   # AI-POWERED ANALYSIS (2 operations)
   # =============================================
-
+  
   /api/plants/diagnose:
     post:
       operationId: diagnosePlant
@@ -283,17 +283,17 @@ paths:
       security: []
       requestBody:
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                 plant_name:
-                  type: string
+                    type: string
                   description: Name of the plant
                   example: "Rose"
                 user_notes:
-                  type: string
+            type: string
                   description: Observations about the plant
                   example: "Plant has yellow leaves and brown spots"
                 location:
@@ -317,7 +317,7 @@ paths:
                     type: object
                     properties:
                       plant_name:
-                        type: string
+                    type: string
                       ai_analysis:
                         type: string
                       enhanced_with_location:
@@ -343,7 +343,7 @@ paths:
                   description: Your image analysis text
                   example: "This tomato plant shows yellowing leaves..."
                 plant_identification:
-                  type: string
+                  type: string  
                   description: Plant name you identified
                   example: "Tomato Plant"
                 user_question:
@@ -369,11 +369,11 @@ paths:
                     type: object
                     properties:
                       plant_match:
-                        type: object
+                    type: object
                       care_enhancement:
-                        type: object
+                    type: object
                       diagnosis_enhancement:
-                        type: object
+                    type: object
 
   # =============================================
   # HEALTH LOGGING (3 operations)
@@ -546,11 +546,11 @@ paths:
         required: true
         content:
           multipart/form-data:
-            schema:
+          schema:
               type: object
               properties:
                 file:
-                  type: string
+            type: string
                   format: binary
                   description: Image file to upload
       responses:
@@ -564,9 +564,9 @@ paths:
                   success:
                     type: boolean
                   message:
-                    type: string
-                  photo_url:
-                    type: string
+                          type: string
+                        photo_url:
+                          type: string
 
   /api/photos/upload-for-log/{token}:
     post:
@@ -633,11 +633,11 @@ paths:
                 type: object
                 properties:
                   location_id:
-                    type: string
+            type: string
                   location_name:
                     type: string
                   care_profile:
-                    type: object
+                type: object
 
   /api/garden/get-metadata:
     get:
@@ -765,7 +765,7 @@ paths:
                 type: object
                 properties:
                   enhanced_metadata:
-                    type: object
+                          type: object
                   api_version:
                     type: string
 
@@ -784,7 +784,7 @@ paths:
                 type: object
                 properties:
                   optimization_analysis:
-                    type: object
+                          type: object
                   total_opportunities:
                     type: integer
 

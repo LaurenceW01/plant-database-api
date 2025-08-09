@@ -2,19 +2,20 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 23 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
+**Status**: 24 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 ---
 
-## Quick Reference - All 23 Operations
+## Quick Reference - All 24 Operations
 
-### Plant Management (5 operations)
+### Plant Management (6 operations)
 ```javascript
 POST   /api/plants/add              // ✅ Add new plant with upload token
 GET    /api/plants/search           // ✅ Search plants with field normalization
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
-PUT    /api/plants/update/{id}      // ✅ Update plant with upload token
+PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
+PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
 GET    /api/plants/get-context/{id} // ✅ Get plant context with containers
 ```
 
@@ -25,7 +26,7 @@ POST   /api/plants/enhance-analysis // ✅ Enhanced analysis with database knowl
 ```
 
 ### Health Logging (3 operations)
-```javascript
+```javascript  
 POST   /api/logs/create             // ✅ Create plant log with upload token
 POST   /api/logs/create-simple      // ✅ Create simple log with field normalization  
 GET    /api/logs/search             // ✅ Search logs with comprehensive results
@@ -60,7 +61,12 @@ GET    /api/weather/forecast/daily    // ✅ Daily weather forecast
 
 ## Key Features
 
-✅ **Field Normalization**: Automatic conversion of ChatGPT field names (e.g., "Plant Name" → "plant_name")
+✅ **Advanced Field Normalization**: Comprehensive automatic field name conversion
+- Handles ANY ChatGPT underscore pattern: `Care___Notes`, `Light___Requirements`, etc.
+- Supports 66+ field aliases from centralized configuration  
+- Context-aware ID mapping: `id` → `plant_id` for plant operations
+- Future-proof: new fields automatically supported
+
 ✅ **AI-Powered Analysis**: Full OpenAI integration with location intelligence  
 ✅ **Photo Upload**: Secure token-based system with 24-hour expiration
 ✅ **Location Intelligence**: Container and microclimate context for precise care advice
@@ -70,10 +76,15 @@ GET    /api/weather/forecast/daily    // ✅ Daily weather forecast
 
 ## Essential Usage Guidelines
 
-### Field Names for Plant Operations
-Use these EXACT field names for best compatibility:
-- **Required**: `Plant Name`
-- **Optional**: `Description`, `Location`, `Light Requirements`, `Watering Needs`, `Care Notes`
+### Field Names - Flexible & Forgiving
+The API now accepts **ANY** reasonable field name variation:
+- **Standard**: `Plant Name`, `Care Notes`, `Light Requirements`
+- **ChatGPT Patterns**: `Plant___Name`, `Care___Notes`, `Light___Requirements`  
+- **Underscore**: `plant_name`, `care_notes`, `light_requirements`
+- **CamelCase**: `plantName`, `careNotes`, `lightRequirements`
+- **Aliases**: `name`, `notes`, `light`, `water`
+
+**Key Plant Fields**: Plant Name (required), Description, Location, Light Requirements, Watering Needs, Care Notes
 
 ### Field Names for Log Operations  
 Use these EXACT field names for best compatibility:
@@ -101,7 +112,7 @@ Content-Type: application/json
 
 {
   "Plant Name": "Basil",
-  "Location": "Herb Garden", 
+  "Location": "Herb Garden",
   "Light Requirements": "Full Sun",
   "Watering Needs": "Water daily",
   "Care Notes": "Harvest regularly"
@@ -114,6 +125,35 @@ Content-Type: application/json
   "plant_id": "42",
   "upload_url": "https://dev-plant-database-api.onrender.com/upload/plant/abc123",
   "upload_instructions": "To add a photo, visit: [upload_url]"
+}
+```
+
+### Update Plant (Flexible Format)
+```javascript
+// OPTION 1: ID in URL path (standard)
+PUT /api/plants/update/Basil
+Content-Type: application/json
+
+{
+  "Care Notes": "Updated care instructions",
+  "Watering Needs": "Water when dry"
+}
+
+// OPTION 2: ID in request body (ChatGPT-friendly) 
+PUT /api/plants/update
+Content-Type: application/json
+
+{
+  "id": "Basil",
+  "Care___Notes": "Updated care instructions",  // Any underscore pattern works
+  "Watering___Needs": "Water when dry"
+}
+
+// Both return the same response
+{
+  "success": true,
+  "message": "Updated Basil",
+  "endpoint_type": "flexible_update"  // Only for Option 2
 }
 ```
 
