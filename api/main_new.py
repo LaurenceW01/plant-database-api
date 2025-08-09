@@ -65,37 +65,34 @@ def map_underscore_fields_to_canonical(data):
 def add_plant():
     """Core plant addition logic called by the plants route module"""
     try:
-        from utils.plant_operations import add_plant_with_fields
+        from utils.plant_operations import add_plant_to_database
         from utils.upload_token_manager import generate_upload_token
         from utils.field_normalization_middleware import get_normalized_field, get_plant_name
         
-        # Get plant data using field normalization and convert to canonical format for add_plant_with_fields
-        plant_name = get_plant_name()
-        
+        # Get plant data using field normalization
         plant_data = {
-            'Plant Name': plant_name,
-            'Description': get_normalized_field('Description', ''),
-            'Light Requirements': get_normalized_field('Light Requirements', ''),
-            'Watering Needs': get_normalized_field('Watering Needs', ''),
-            'Soil Preferences': get_normalized_field('Soil Preferences', ''),
-            'Location': get_normalized_field('Location', ''),
-            'Care Notes': get_normalized_field('Care Notes', '')
+            'plant_name': get_plant_name(),
+            'description': get_normalized_field('Description', ''),
+            'light_requirements': get_normalized_field('Light Requirements', ''),
+            'watering_needs': get_normalized_field('Watering Needs', ''),
+            'soil_preferences': get_normalized_field('Soil Preferences', ''),
+            'location': get_normalized_field('Location', ''),
+            'care_notes': get_normalized_field('Care Notes', '')
         }
         
         # Validate required fields
-        if not plant_data['Plant Name']:
+        if not plant_data['plant_name']:
             return jsonify({'error': 'Plant name is required'}), 400
         
         # Add plant to database
-        result = add_plant_with_fields(plant_data)
+        result = add_plant_to_database(plant_data)
         
         if result.get('success'):
             # Generate upload token for photo
             upload_token = generate_upload_token(
                 plant_id=result.get('plant_id', result.get('id')),
-                plant_name=plant_data['Plant Name'],
+                plant_name=plant_data['plant_name'],
                 token_type='plant_upload',
-                operation='add',
                 expiration_hours=24
             )
             
@@ -117,7 +114,7 @@ def add_plant():
 def update_plant(id_or_name):
     """Core plant update logic called by the plants route module"""
     try:
-        from utils.plant_operations import update_plant as update_plant_util
+        from utils.plant_operations import update_plant_in_database
         from utils.field_normalization_middleware import get_normalized_field
         
         # Get update data using field normalization
@@ -136,7 +133,7 @@ def update_plant(id_or_name):
             return jsonify({'error': 'No update data provided'}), 400
         
         # Update plant in database
-        result = update_plant_util(id_or_name, update_data)
+        result = update_plant_in_database(id_or_name, update_data)
         
         if result.get('success'):
             return jsonify(result), 200
@@ -151,19 +148,14 @@ def update_plant(id_or_name):
 def list_or_search_plants():
     """Core plant search logic called by the plants route module"""
     try:
-        from utils.plant_operations import search_plants, get_all_plants
+        from utils.plant_operations import search_plants_in_database
         
         # Get search parameters
         search_query = request.args.get('search', '').strip()
         location = request.args.get('location', '').strip()
         
         # Search plants
-        if search_query:
-            plants = search_plants(search_query)
-            result = {'plants': plants, 'count': len(plants)}
-        else:
-            plants = get_all_plants()
-            result = {'plants': plants, 'count': len(plants)}
+        result = search_plants_in_database(search_query, location)
         
         return jsonify(result), 200
         
@@ -175,15 +167,10 @@ def list_or_search_plants():
 def get_plant_details(id_or_name):
     """Core plant details retrieval called by the plants route module"""
     try:
-        from utils.plant_operations import find_plant_by_id_or_name
+        from utils.plant_operations import get_plant_from_database
         
-        # Find the plant
-        plant_row, plant_list = find_plant_by_id_or_name(id_or_name)
-        if plant_row is not None and plant_list:
-            result = {'success': True, 'plant': plant_list[0] if plant_list else {}}
-        else:
-            result = {'success': False, 'error': 'Plant not found'}
-         
+        result = get_plant_from_database(id_or_name)
+        
         if result.get('success'):
             return jsonify(result), 200
         else:
@@ -319,13 +306,13 @@ def create_plant_log_simple():
 def search_plant_logs():
     """Core log search logic called by route modules"""
     try:
-        from utils.plant_log_operations import search_log_entries
+        from utils.plant_log_operations import search_logs_in_database
         
         # Get search parameters
         plant_name = request.args.get('plant_name', '').strip()
         search_query = request.args.get('search', '').strip()
         
-        result = search_log_entries(plant_name=plant_name, query=search_query)
+        result = search_logs_in_database(plant_name, search_query)
         return jsonify(result), 200
         
     except Exception as e:
@@ -338,29 +325,31 @@ def search_plant_logs():
 # ========================================
 
 def analyze_plant():
-    """Core plant analysis logic called by analysis route module - OpenAI powered"""
+    """Core plant analysis logic called by analysis route module"""
     try:
-        from utils.care_intelligence import analyze_plant_with_ai
-        from utils.field_normalization_middleware import get_plant_name, get_normalized_field
+        from utils.care_intelligence import analyze_plant_health
         
-        # Use field normalization to get data
-        plant_name = get_plant_name() or ''
-        user_notes = get_normalized_field('user_notes', '') or get_normalized_field('User Notes', '')
-        analysis_type = get_normalized_field('analysis_type', 'general_care')
-        location = get_normalized_field('location', '') or get_normalized_field('Location', '')
+        data = request.get_json() if request.is_json else request.form.to_dict()
         
-        # Perform AI analysis
-        result = analyze_plant_with_ai(plant_name, user_notes, analysis_type, location)
+        plant_name = data.get('plant_name', '').strip()
+        user_notes = data.get('user_notes', '').strip()
         
-        # Convert result to appropriate HTTP response
-        if result.get('success'):
-            return jsonify(result), 200
-        else:
-            status_code = 500 if 'AI analysis failed' in result.get('error', '') else 400
-            return jsonify(result), status_code
+        if not any([plant_name, user_notes]):
+            return jsonify({
+                'success': False,
+                'error': 'Either photo data, plant_name, or user_notes describing the plant is required.'
+            }), 400
+        
+        # Perform analysis
+        result = analyze_plant_health(plant_name, user_notes)
+        
+        return jsonify({
+            'success': True,
+            'analysis': result
+        }), 200
         
     except Exception as e:
-        logging.error(f"Error in analyze_plant: {e}")
+        logging.error(f"Error analyzing plant: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -370,70 +359,31 @@ def analyze_plant():
 def enhance_analysis():
     """Core analysis enhancement logic called by analysis route module"""
     try:
-        from utils.care_intelligence import analyze_plant_with_ai
-        from utils.field_normalization_middleware import get_normalized_field
+        from utils.care_intelligence import enhance_plant_analysis
         
-        # Get data using field normalization
-        gpt_analysis = get_normalized_field('gpt_analysis', '') or get_normalized_field('GPT Analysis', '')
-        plant_identification = get_normalized_field('plant_identification', '') or get_normalized_field('Plant Identification', '')
-        user_question = get_normalized_field('user_question', '') or get_normalized_field('User Question', '')
-        location = get_normalized_field('location', '') or get_normalized_field('Location', '')
-        analysis_type = get_normalized_field('analysis_type', 'health_assessment')
-        
-        # Fallback: if no normalized data, try direct JSON access
-        if not any([gpt_analysis, plant_identification]):
-            data = request.get_json() if request.is_json else {}
-            gpt_analysis = data.get('gpt_analysis', '').strip()
-            plant_identification = data.get('plant_identification', '').strip()
-            user_question = data.get('user_question', '').strip()
-            location = data.get('location', '').strip()
-            analysis_type = data.get('analysis_type', 'health_assessment').strip()
-        
-        if not any([gpt_analysis, plant_identification]):
+        data = request.get_json()
+        if not data:
             return jsonify({
                 'success': False,
-                'error': 'Either gpt_analysis or plant_identification is required'
+                'error': 'JSON data required'
             }), 400
         
-        # Use plant_identification as plant_name for AI analysis
-        plant_name = plant_identification or ''
-        user_notes = gpt_analysis or user_question or ''
+        gpt_analysis = data.get('gpt_analysis', '').strip()
+        plant_identification = data.get('plant_identification', '').strip()
         
-        # Perform enhanced AI analysis with location context
-        result = analyze_plant_with_ai(plant_name, user_notes, analysis_type, location)
+        if not all([gpt_analysis, plant_identification]):
+            return jsonify({
+                'success': False,
+                'error': 'Both gpt_analysis and plant_identification are required'
+            }), 400
         
-        if result.get('success'):
-            # Enhance the response with additional metadata for enhanced analysis
-            enhanced_result = {
-                'success': True,
-                'enhanced_analysis': {
-                    'plant_match': {
-                        'found_in_database': False,  # Basic implementation
-                        'original_identification': plant_identification,
-                        'ai_refined_name': plant_name
-                    },
-                    'care_enhancement': result.get('analysis', {}),
-                    'diagnosis_enhancement': {
-                        'urgency_level': 'monitor',  # Basic implementation
-                        'treatment_recommendations': 'Follow AI analysis recommendations'
-                    },
-                    'database_context': {
-                        'note': 'Enhanced analysis with location intelligence integrated'
-                    }
-                },
-                'suggested_actions': {
-                    'immediate_care': ['Follow AI recommendations'],
-                    'monitoring': ['Check plant regularly'],
-                    'follow_up': 'Re-evaluate in 1 week'
-                },
-                'logging_offer': {
-                    'recommended': True,
-                    'reason': 'Enhanced analysis completed'
-                }
-            }
-            return jsonify(enhanced_result), 200
-        else:
-            return jsonify(result), 500
+        # Enhance analysis
+        result = enhance_plant_analysis(gpt_analysis, plant_identification)
+        
+        return jsonify({
+            'success': True,
+            **result
+        }), 200
         
     except Exception as e:
         logging.error(f"Error enhancing analysis: {e}")
@@ -450,15 +400,15 @@ def enhance_analysis():
 def upload_photo_to_plant(token):
     """Core photo upload logic for plants"""
     try:
-        from utils.upload_token_manager import validate_upload_token, mark_token_used
+        from utils.upload_token_manager import validate_upload_token
         from utils.storage_client import upload_plant_photo
         
         # Validate token
-        is_valid, token_data, error_message = validate_upload_token(token)
-        if not is_valid:
+        token_data = validate_upload_token(token)
+        if not token_data:
             return jsonify({
                 'success': False,
-                'error': error_message or 'Invalid or expired token'
+                'error': 'Invalid or expired token'
             }), 401
         
         if 'file' not in request.files:
@@ -477,9 +427,6 @@ def upload_photo_to_plant(token):
         # Upload photo
         result = upload_plant_photo(file, token_data['plant_name'])
         
-        # Mark token as used
-        mark_token_used(token, request.remote_addr or '')
-        
         return jsonify({
             'success': True,
             'message': 'Photo uploaded successfully',
@@ -497,15 +444,15 @@ def upload_photo_to_plant(token):
 def upload_photo_to_log(token):
     """Core photo upload logic for logs"""
     try:
-        from utils.upload_token_manager import validate_upload_token, mark_token_used
-        from utils.storage_client import upload_log_photo
+        from utils.upload_token_manager import validate_upload_token
+        from utils.storage_client import upload_plant_photo
         
         # Validate token
-        is_valid, token_data, error_message = validate_upload_token(token)
-        if not is_valid:
+        token_data = validate_upload_token(token)
+        if not token_data:
             return jsonify({
                 'success': False,
-                'error': error_message or 'Invalid or expired token'
+                'error': 'Invalid or expired token'
             }), 401
         
         if 'file' not in request.files:
@@ -522,10 +469,7 @@ def upload_photo_to_log(token):
             }), 400
         
         # Upload photo
-        result = upload_log_photo(file, token_data['log_id'])
-        
-        # Mark token as used
-        mark_token_used(token, request.remote_addr or '')
+        result = upload_plant_photo(file, token_data['plant_name'])
         
         return jsonify({
             'success': True,
@@ -534,7 +478,7 @@ def upload_photo_to_log(token):
         }), 200
         
     except Exception as e:
-        logging.error(f"Error uploading log photo: {e}")
+        logging.error(f"Error uploading photo: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
