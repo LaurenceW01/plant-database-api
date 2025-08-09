@@ -200,7 +200,8 @@
         // Extract token and upload type from URL
         const urlParts = window.location.pathname.split('/');
         const token = urlParts[urlParts.length - 1];
-        const uploadType = urlParts[urlParts.length - 2];  // 'log' or 'plant'
+        const uploadTypeFull = urlParts[urlParts.length - 2];  // 'upload-for-plant' or 'upload-for-log'
+        const uploadType = uploadTypeFull.includes('plant') ? 'plant' : 'log';
         
         // DOM elements
         const plantName = document.getElementById('plantName');
