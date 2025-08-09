@@ -465,6 +465,51 @@ def update_plant_field(plant_row: int, field_name: str, new_value: str) -> bool:
         logger.error(f"Error updating plant field: {e}")
         return False
 
+def upload_and_link_plant_photo(file, plant_id: str, plant_name: str) -> Dict[str, Any]:
+    """
+    Upload a photo to storage and link it to the plant record in the database.
+    
+    Args:
+        file: The uploaded file object
+        plant_id (str): ID of the plant to update
+        plant_name (str): Name of the plant for storage organization
+        
+    Returns:
+        Dict containing success status, photo URLs, and update results
+    """
+    try:
+        from .storage_client import upload_plant_photo
+        
+        # Upload photo to Google Cloud Storage
+        upload_result = upload_plant_photo(file, plant_name)
+        
+        # Update plant record with photo URLs
+        photo_url = upload_result.get('photo_url', '')
+        raw_photo_url = upload_result.get('raw_photo_url', '')
+        
+        update_data = {
+            'Photo URL': f'=IMAGE("{photo_url}")' if photo_url else '',
+            'Raw Photo URL': raw_photo_url
+        }
+        
+        db_update_result = update_plant(plant_id, update_data)
+        
+        return {
+            'success': True,
+            'message': 'Photo uploaded and linked to plant record',
+            'upload_result': upload_result,
+            'database_update': db_update_result,
+            'photo_url': photo_url,
+            'raw_photo_url': raw_photo_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in upload_and_link_plant_photo: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
 def migrate_photo_urls():
     """
     Migrates photo URLs from the Photo URL column (which may contain IMAGE formulas)
@@ -548,6 +593,216 @@ def migrate_photo_urls():
         
     except Exception as e:
         return f"Migration failed: {str(e)}"
+
+# ========================================
+# API ENDPOINT OPERATIONS (moved from main.py)
+# ========================================
+
+def add_plant_api():
+    """Core plant addition logic for API endpoints"""
+    try:
+        from flask import request, jsonify
+        from .upload_token_manager import generate_upload_token
+        from .field_normalization_middleware import get_normalized_field, get_plant_name
+        
+        # Get plant data using field normalization and convert to canonical format
+        plant_name = get_plant_name()
+        
+        plant_data = {
+            'Plant Name': plant_name,
+            'Description': get_normalized_field('Description', ''),
+            'Light Requirements': get_normalized_field('Light Requirements', ''),
+            'Watering Needs': get_normalized_field('Watering Needs', ''),
+            'Soil Preferences': get_normalized_field('Soil Preferences', ''),
+            'Location': get_normalized_field('Location', ''),
+            'Care Notes': get_normalized_field('Care Notes', '')
+        }
+        
+        # Validate required fields
+        if not plant_data['Plant Name']:
+            return jsonify({'error': 'Plant name is required'}), 400
+        
+        # Add plant to database
+        result = add_plant_with_fields(plant_data)
+        
+        if result.get('success'):
+            # Generate upload token for photo
+            upload_token = generate_upload_token(
+                plant_id=result.get('plant_id', result.get('id')),
+                plant_name=plant_data['Plant Name'],
+                token_type='plant_upload',
+                operation='add',
+                expiration_hours=24
+            )
+            
+            upload_url = f"https://{request.host}/api/photos/upload-for-plant/{upload_token}"
+            
+            return jsonify({
+                **result,
+                'upload_url': upload_url,
+                'upload_instructions': f"To add a photo, visit: {upload_url}"
+            }), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error adding plant: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def update_plant_api(id_or_name):
+    """Core plant update logic for API endpoints"""
+    try:
+        from flask import request, jsonify
+        from .field_normalization_middleware import get_normalized_field
+        
+        # Build update data from normalized fields
+        update_data = {}
+        
+        # Map common field variations to canonical names
+        field_mappings = {
+            'Description': get_normalized_field('Description'),
+            'Light Requirements': get_normalized_field('Light Requirements'), 
+            'Watering Needs': get_normalized_field('Watering Needs'),
+            'Soil Preferences': get_normalized_field('Soil Preferences'),
+            'Location': get_normalized_field('Location'),
+            'Care Notes': get_normalized_field('Care Notes')
+        }
+        
+        # Only include fields that have values
+        for canonical_name, value in field_mappings.items():
+            if value:
+                update_data[canonical_name] = value
+        
+        if not update_data:
+            return jsonify({'error': 'No valid fields provided for update'}), 400
+        
+        # Update the plant
+        result = update_plant(id_or_name, update_data)
+        
+        if result.get('success'):
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error updating plant: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def list_or_search_plants_api():
+    """Core plant listing/search logic for API endpoints"""
+    try:
+        from flask import request, jsonify
+        
+        search_query = request.args.get('q', '').strip()
+        limit = request.args.get('limit', type=int)
+        
+        if search_query:
+            # Search for plants by name
+            plants = search_plants(search_query)
+            if plants is not None:
+                result_plants = plants[:limit] if limit else plants
+                return jsonify({
+                    'count': len(result_plants),
+                    'plants': result_plants
+                }), 200
+            else:
+                return jsonify({'error': 'Search failed'}), 500
+        else:
+            # Return all plants
+            plants = get_all_plants()
+            if plants is not None:
+                result_plants = plants[:limit] if limit else plants
+                return jsonify({
+                    'count': len(result_plants),
+                    'plants': result_plants
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to retrieve plants'}), 500
+                
+    except Exception as e:
+        import logging
+        logging.error(f"Error listing/searching plants: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def get_plant_details_api(id_or_name):
+    """Core plant details retrieval logic for API endpoints"""
+    try:
+        from flask import jsonify
+        
+        plant = get_plant_by_id_or_name(id_or_name)
+        
+        if plant:
+            return jsonify({
+                'success': True,
+                'plant': plant
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Plant not found: {id_or_name}'
+            }), 404
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error getting plant details: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def upload_photo_to_plant_api(token):
+    """Core photo upload logic for plants"""
+    try:
+        from flask import request, jsonify
+        from .upload_token_manager import validate_upload_token, mark_token_used
+        
+        # Validate token
+        is_valid, token_data, error_message = validate_upload_token(token)
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'error': error_message or 'Invalid or expired token'
+            }), 401
+        
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No file provided'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected'
+            }), 400
+        
+        # Upload photo and link to plant record
+        if token_data.get('plant_id'):
+            # Use the comprehensive upload and link function
+            result = upload_and_link_plant_photo(file, token_data['plant_id'], token_data['plant_name'])
+        else:
+            # Fallback to simple upload if no plant_id
+            from .storage_client import upload_plant_photo
+            result = upload_plant_photo(file, token_data['plant_name'])
+            import logging
+            logging.warning("No plant_id in token - photo uploaded but not linked to plant record")
+        
+        # Mark token as used
+        mark_token_used(token, request.remote_addr or '')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Photo uploaded successfully',
+            **result
+        }), 200
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error uploading photo: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 def add_test_photo_url():
     """

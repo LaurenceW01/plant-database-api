@@ -64,88 +64,14 @@ def map_underscore_fields_to_canonical(data):
 
 def add_plant():
     """Core plant addition logic called by the plants route module"""
-    try:
-        from utils.plant_operations import add_plant_with_fields
-        from utils.upload_token_manager import generate_upload_token
-        from utils.field_normalization_middleware import get_normalized_field, get_plant_name
-        
-        # Get plant data using field normalization and convert to canonical format for add_plant_with_fields
-        plant_name = get_plant_name()
-        
-        plant_data = {
-            'Plant Name': plant_name,
-            'Description': get_normalized_field('Description', ''),
-            'Light Requirements': get_normalized_field('Light Requirements', ''),
-            'Watering Needs': get_normalized_field('Watering Needs', ''),
-            'Soil Preferences': get_normalized_field('Soil Preferences', ''),
-            'Location': get_normalized_field('Location', ''),
-            'Care Notes': get_normalized_field('Care Notes', '')
-        }
-        
-        # Validate required fields
-        if not plant_data['Plant Name']:
-            return jsonify({'error': 'Plant name is required'}), 400
-        
-        # Add plant to database
-        result = add_plant_with_fields(plant_data)
-        
-        if result.get('success'):
-            # Generate upload token for photo
-            upload_token = generate_upload_token(
-                plant_id=result.get('plant_id', result.get('id')),
-                plant_name=plant_data['Plant Name'],
-                token_type='plant_upload',
-                operation='add',
-                expiration_hours=24
-            )
-            
-            upload_url = f"https://{request.host}/api/photos/upload-for-plant/{upload_token}"
-            
-            return jsonify({
-                **result,
-                'upload_url': upload_url,
-                'upload_instructions': f"To add a photo, visit: {upload_url}"
-            }), 201
-        else:
-            return jsonify(result), 400
-            
-    except Exception as e:
-        logging.error(f"Error adding plant: {e}")
-        return jsonify({'error': str(e)}), 500
+    from utils.plant_operations import add_plant_api
+    return add_plant_api()
 
 
 def update_plant(id_or_name):
     """Core plant update logic called by the plants route module"""
-    try:
-        from utils.plant_operations import update_plant as update_plant_util
-        from utils.field_normalization_middleware import get_normalized_field
-        
-        # Get update data using field normalization
-        update_data = {}
-        
-        # Only include fields that are provided
-        for field in ['plant_name', 'description', 'light_requirements', 'watering_needs', 
-                     'soil_preferences', 'location', 'care_notes', 'pruning_instructions',
-                     'fertilizing_schedule', 'mulching_needs', 'spacing_requirements',
-                     'winterizing_instructions', 'frost_tolerance', 'soil_ph_range']:
-            value = get_normalized_field(field)
-            if value is not None and value != '':
-                update_data[field] = value
-        
-        if not update_data:
-            return jsonify({'error': 'No update data provided'}), 400
-        
-        # Update plant in database
-        result = update_plant_util(id_or_name, update_data)
-        
-        if result.get('success'):
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 400
-            
-    except Exception as e:
-        logging.error(f"Error updating plant: {e}")
-        return jsonify({'error': str(e)}), 500
+    from utils.plant_operations import update_plant_api
+    return update_plant_api(id_or_name)
 
 
 def list_or_search_plants():
@@ -474,8 +400,16 @@ def upload_photo_to_plant(token):
                 'error': 'No file selected'
             }), 400
         
-        # Upload photo
-        result = upload_plant_photo(file, token_data['plant_name'])
+        # Upload photo and link to plant record
+        if token_data.get('plant_id'):
+            # Use the comprehensive upload and link function
+            from utils.plant_operations import upload_and_link_plant_photo
+            result = upload_and_link_plant_photo(file, token_data['plant_id'], token_data['plant_name'])
+        else:
+            # Fallback to simple upload if no plant_id
+            from utils.storage_client import upload_plant_photo
+            result = upload_plant_photo(file, token_data['plant_name'])
+            logging.warning("No plant_id in token - photo uploaded but not linked to plant record")
         
         # Mark token as used
         mark_token_used(token, request.remote_addr or '')

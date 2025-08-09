@@ -542,5 +542,91 @@ def _generate_integrated_recommendations(container: Dict, location: Dict, care_a
     total_sun = location.get('total_sun_hours', 0)
     if total_sun > 7:
         recommendations.append('High sun location - check soil moisture daily during summer')
-    
-    return recommendations
+
+# ========================================
+# API ENDPOINT OPERATIONS (moved from main.py)
+# ========================================
+
+def analyze_plant_api():
+    """Core plant analysis logic for API endpoints - OpenAI powered"""
+    try:
+        from flask import jsonify
+        from .field_normalization_middleware import get_plant_name, get_normalized_field
+        
+        # Use field normalization to get data
+        plant_name = get_plant_name() or ''
+        user_notes = get_normalized_field('user_notes', '') or get_normalized_field('User Notes', '')
+        analysis_type = get_normalized_field('analysis_type', 'general_care')
+        location = get_normalized_field('location', '') or get_normalized_field('Location', '')
+        
+        # Perform AI analysis
+        result = analyze_plant_with_ai(plant_name, user_notes, analysis_type, location)
+        
+        # Convert result to appropriate HTTP response
+        if result.get('success'):
+            return jsonify(result), 200
+        else:
+            status_code = 500 if 'AI analysis failed' in result.get('error', '') else 400
+            return jsonify(result), status_code
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error in analyze_plant: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def enhance_analysis_api():
+    """Enhanced analysis combining AI insights with database knowledge"""
+    try:
+        from flask import jsonify
+        from .field_normalization_middleware import get_plant_name, get_normalized_field
+        
+        # Use field normalization to get data
+        plant_name = get_plant_name()
+        gpt_analysis = get_normalized_field('gpt_analysis', '')
+        plant_identification = get_normalized_field('plant_identification', '')
+        location = get_normalized_field('location', '') or get_normalized_field('Location', '')
+        analysis_type = get_normalized_field('analysis_type', 'health_assessment')
+        
+        # Require either gpt_analysis or plant_identification
+        if not gpt_analysis and not plant_identification:
+            return jsonify({
+                'success': False,
+                'error': 'Either gpt_analysis or plant_identification is required'
+            }), 400
+        
+        # Use AI analysis for the core logic, passing either the analysis text or identification
+        analysis_input = gpt_analysis or f"Plant identification: {plant_identification}"
+        result = analyze_plant_with_ai(plant_name or plant_identification, analysis_input, analysis_type, location)
+        
+        # Format response as enhanced_analysis structure
+        if result.get('success'):
+            enhanced_response = {
+                'success': True,
+                'enhanced_analysis': {
+                    'plant_match': {
+                        'found_in_database': bool(plant_name),
+                        'original_identification': plant_identification or plant_name
+                    },
+                    'care_enhancement': {
+                        'ai_analysis': result.get('ai_analysis', result.get('diagnosis', ''))
+                    },
+                    'diagnosis_enhancement': {
+                        'urgency_level': 'monitor',  # Default, could be enhanced based on AI analysis
+                        'treatment_recommendations': result.get('ai_analysis', result.get('diagnosis', ''))
+                    }
+                }
+            }
+            return jsonify(enhanced_response), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error in enhance_analysis: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

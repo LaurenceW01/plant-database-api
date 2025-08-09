@@ -653,4 +653,197 @@ def search_log_entries(
         
     except Exception as e:
         logger.error(f"Failed to search log entries: {e}")
-        return {"success": False, "error": str(e)} 
+        return {"success": False, "error": str(e)}
+
+# ========================================
+# API ENDPOINT OPERATIONS (moved from main.py)
+# ========================================
+
+def create_plant_log_api():
+    """Core plant log creation with multipart support for API endpoints"""
+    try:
+        from flask import request, jsonify
+        from .storage_client import upload_plant_photo, is_storage_available
+        from .upload_token_manager import generate_upload_token
+        
+        # Get form data
+        plant_name = request.form.get('plant_name', '').strip()
+        user_notes = request.form.get('user_notes', '').strip()
+        diagnosis = request.form.get('diagnosis', '').strip()
+        treatment = request.form.get('treatment', '').strip()
+        symptoms = request.form.get('symptoms', '').strip()
+        
+        if not plant_name:
+            return jsonify({'success': False, 'error': 'plant_name is required'}), 400
+        
+        # Handle file upload
+        photo_url = ""
+        raw_photo_url = ""
+        
+        if 'file' in request.files and request.files['file'].filename:
+            file = request.files['file']
+            if is_storage_available():
+                upload_result = upload_plant_photo(file, plant_name)
+                photo_url = upload_result['photo_url']
+                raw_photo_url = upload_result['raw_photo_url']
+        
+        # Create log entry
+        result = create_log_entry(
+            plant_name=plant_name,
+            photo_url=photo_url,
+            raw_photo_url=raw_photo_url,
+            diagnosis=diagnosis,
+            treatment=treatment,
+            symptoms=symptoms,
+            user_notes=user_notes
+        )
+        
+        if result.get('success'):
+            # Generate upload token
+            upload_token = generate_upload_token(
+                log_id=result['log_id'],
+                plant_name=plant_name,
+                token_type='log_upload',
+                expiration_hours=24
+            )
+            
+            upload_url = f"https://{request.host}/api/photos/upload-for-log/{upload_token}"
+            
+            return jsonify({
+                **result,
+                'upload_url': upload_url
+            }), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error creating plant log: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def create_plant_log_simple_api():
+    """Simplified plant log creation for API endpoints"""
+    try:
+        from flask import request, jsonify
+        from .field_normalization_middleware import get_normalized_field, get_plant_name
+        from .upload_token_manager import generate_upload_token
+        
+        # Use field normalization
+        plant_name = get_plant_name()
+        user_notes = get_normalized_field('User Notes', '') or get_normalized_field('user_notes', '')
+        diagnosis = get_normalized_field('Diagnosis', '') or get_normalized_field('diagnosis', '')
+        treatment = get_normalized_field('Treatment', '') or get_normalized_field('treatment', '')
+        symptoms = get_normalized_field('Symptoms', '') or get_normalized_field('symptoms', '')
+        
+        if not plant_name:
+            return jsonify({'success': False, 'error': 'Plant name is required'}), 400
+        
+        # Create log entry (no photo upload here)
+        result = create_log_entry(
+            plant_name=plant_name,
+            diagnosis=diagnosis,
+            treatment=treatment,
+            symptoms=symptoms,
+            user_notes=user_notes
+        )
+        
+        if result.get('success'):
+            # Generate upload token for optional photo
+            upload_token = generate_upload_token(
+                log_id=result['log_id'],
+                plant_name=plant_name,
+                token_type='log_upload',
+                expiration_hours=24
+            )
+            
+            upload_url = f"https://{request.host}/api/photos/upload-for-log/{upload_token}"
+            
+            return jsonify({
+                **result,
+                'upload_url': upload_url
+            }), 201
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        import logging
+        logging.error(f"Error creating simple plant log: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def search_plant_logs_api():
+    """Core plant log search logic for API endpoints"""
+    try:
+        from flask import request, jsonify
+        
+        plant_name = request.args.get('plant_name', '').strip()
+        
+        if not plant_name:
+            return jsonify({'success': False, 'error': 'plant_name parameter is required'}), 400
+        
+        logs = get_logs_for_plant(plant_name)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs)
+        }), 200
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error searching plant logs: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def upload_photo_to_log_api(token):
+    """Core photo upload logic for logs"""
+    try:
+        from flask import request, jsonify
+        from .upload_token_manager import validate_upload_token, mark_token_used
+        from .storage_client import upload_plant_photo
+        
+        # Validate token
+        is_valid, token_data, error_message = validate_upload_token(token)
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'error': error_message or 'Invalid or expired token'
+            }), 401
+        
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No file provided'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected'
+            }), 400
+        
+        # Upload photo (use plant_photo function with appropriate identifier)
+        # Handle both log upload tokens and plant upload tokens
+        if token_data.get('token_type') == 'log_upload':
+            identifier = f"log_{token_data['log_id']}"
+        else:
+            # For plant upload tokens, use plant info
+            identifier = token_data.get('plant_name', 'unknown_plant')
+        
+        result = upload_plant_photo(file, identifier)
+        
+        # Mark token as used
+        mark_token_used(token, request.remote_addr or '')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Photo uploaded successfully',
+            **result
+        }), 200
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Error uploading photo to log: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500 
