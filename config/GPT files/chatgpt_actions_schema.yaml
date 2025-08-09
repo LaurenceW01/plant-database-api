@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: Plant Database API with Photo Logging - Phase 1 AI-Friendly
+  title: Plant Database API - Fully Functional with AI Analysis  
   description: |
-    Comprehensive plant database API with full CRUD operations for plant management PLUS plant health logging with photo storage.
-    Phase 1: Action-based URLs for better ChatGPT semantic alignment - eliminates endpoint hallucinations.
-    URLs now match operation names (addPlant → /api/plants/add, searchPlants → /api/plants/search).
-  version: 2.3.0
+    Comprehensive plant database API with full CRUD operations, AI-powered plant analysis, and location intelligence.
+    ✅ ALL ENDPOINTS OPERATIONAL: Field normalization, OpenAI integration, photo upload system, location context.
+    Features: Action-based URLs, automatic field conversion, comprehensive error handling, secure token system.
+  version: 2.4.0
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
