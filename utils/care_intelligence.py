@@ -402,6 +402,114 @@ def _generate_location_recommendations(location: Dict) -> List[str]:
     
     return recommendations
 
+def analyze_plant_with_ai(plant_name: str = '', user_notes: str = '', analysis_type: str = 'general_care', location: str = '') -> Dict[str, Any]:
+    """
+    AI-powered plant analysis using OpenAI.
+    
+    Args:
+        plant_name (str): Name of the plant to analyze
+        user_notes (str): User observations and notes
+        analysis_type (str): Type of analysis to perform
+        location (str): Plant location for enhanced context
+        
+    Returns:
+        Dict[str, Any]: Analysis results with AI recommendations
+    """
+    try:
+        from config.config import openai_client
+        import logging
+        
+        if not any([plant_name, user_notes]):
+            return {
+                'success': False,
+                'error': 'Either plant_name or user_notes describing the plant is required.'
+            }
+        
+        # Check if OpenAI client is available
+        if not openai_client:
+            return {
+                'success': False,
+                'error': 'AI analysis not available - OpenAI API key not configured'
+            }
+        
+        # Build enhanced prompt with location context if available
+        location_context = ""
+        if location:
+            # Try to get location/container intelligence for enhanced analysis
+            try:
+                from utils.locations_operations import get_plant_location_context
+                # Find plant ID if we have a plant name
+                from utils.plant_operations import find_plant_by_id_or_name
+                plant_row, plant_data = find_plant_by_id_or_name(plant_name)
+                if plant_row is not None:
+                    plant_id = str(plant_row + 1)  # Convert to 1-based ID
+                    context_data = get_plant_location_context(plant_id)
+                    if context_data:
+                        location_context = f"\n\nENVIRONMENTAL CONTEXT:\nThis plant is located in {location}. Container and microclimate details: {context_data[0].get('context', {}) if context_data else 'No specific container data available'}."
+            except:
+                location_context = f"\n\nLOCATION: {location}"
+        
+        # Create comprehensive prompt for OpenAI
+        prompt = f"""Provide comprehensive plant care analysis for:
+
+Plant: {plant_name if plant_name else 'Plant requiring identification'}
+User Observations: {user_notes if user_notes else 'General care advice needed'}
+Analysis Type: {analysis_type}{location_context}
+
+Please provide detailed advice covering:
+1. Plant identification (if needed) and health assessment
+2. Specific treatment for any issues mentioned
+3. Watering requirements and schedule
+4. Light and location preferences
+5. Soil and fertilization needs
+6. Common problems and prevention
+7. Seasonal care tips
+
+Format your response clearly and practically for plant care in Houston, Texas climate."""
+        
+        # Call OpenAI API
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=600
+            )
+            
+            analysis_text = response.choices[0].message.content
+            
+            return {
+                'success': True,
+                'analysis': {
+                    'plant_name': plant_name,
+                    'ai_analysis': analysis_text,
+                    'user_notes': user_notes,
+                    'location': location,
+                    'analysis_type': analysis_type,
+                    'enhanced_with_location': bool(location_context)
+                }
+            }
+            
+        except Exception as e:
+            logging.error(f"OpenAI API error: {e}")
+            return {
+                'success': False,
+                'error': f'AI analysis failed: {str(e)}',
+                'fallback_advice': f'For {plant_name}: Monitor plant health, ensure proper watering and light conditions. Consult local garden center for specific advice.'
+            }
+        
+    except Exception as e:
+        logging.error(f"Error in analyze_plant_with_ai: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
 def _generate_integrated_recommendations(container: Dict, location: Dict, care_adjustments: Dict, watering_strategy: Dict) -> List[str]:
     """
     Generate integrated recommendations combining all factors.

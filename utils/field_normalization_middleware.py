@@ -89,13 +89,13 @@ def get_plant_name_field() -> Optional[str]:
     Returns:
         Plant name string or None if not found
     """
-    # Try canonical name first
-    plant_name = get_normalized_field('Plant Name')
+    # Try canonical underscore name first (new normalization target)
+    plant_name = get_normalized_field('plant_name')
     if plant_name:
         return plant_name.strip()
     
-    # Try common variations
-    for field_name in ['plant_name', 'plantName', 'name', 'plant-name']:
+    # Try other variations as fallback
+    for field_name in ['Plant Name', 'plantName', 'name', 'plant-name']:
         value = get_normalized_field(field_name)
         if value:
             return value.strip()
@@ -261,32 +261,32 @@ def get_field_with_fallbacks(canonical_name: str, *fallback_names) -> Optional[s
 # Pre-defined field getters for common use cases
 def get_plant_name() -> Optional[str]:
     """Get plant name using all possible field variations"""
-    return get_field_with_fallbacks('Plant Name', 'plant_name', 'plantName', 'name', 'plant-name')
+    return get_field_with_fallbacks('plant_name', 'Plant Name', 'plantName', 'name', 'plant-name')
 
 
 def get_location() -> Optional[str]:
     """Get location using all possible field variations"""
-    return get_field_with_fallbacks('Location', 'location', 'loc', 'position', 'place')
+    return get_field_with_fallbacks('location', 'Location', 'loc', 'position', 'place')
 
 
 def get_entry() -> Optional[str]:
     """Get log entry using all possible field variations"""
-    return get_field_with_fallbacks('Entry', 'entry', 'log_entry', 'logEntry', 'message', 'text')
+    return get_field_with_fallbacks('user_notes', 'Entry', 'entry', 'log_entry', 'logEntry', 'message', 'text')
 
 
 def get_diagnosis() -> Optional[str]:
     """Get diagnosis using all possible field variations"""
-    return get_field_with_fallbacks('Diagnosis', 'diagnosis')
+    return get_field_with_fallbacks('diagnosis', 'Diagnosis')
 
 
 def get_treatment() -> Optional[str]:
     """Get treatment using all possible field variations"""
-    return get_field_with_fallbacks('Treatment', 'treatment')
+    return get_field_with_fallbacks('treatment', 'Treatment')
 
 
 def get_symptoms() -> Optional[str]:
     """Get symptoms using all possible field variations"""
-    return get_field_with_fallbacks('Symptoms', 'symptoms')
+    return get_field_with_fallbacks('symptoms', 'Symptoms')
 
 
 if __name__ == '__main__':

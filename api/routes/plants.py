@@ -1,0 +1,214 @@
+"""
+Plant Management Routes
+
+Handles all plant-related endpoints including CRUD operations,
+search functionality, and plant context retrieval.
+"""
+
+from flask import Blueprint, request, jsonify
+from api.core.middleware import require_api_key
+import logging
+
+# Create the plants blueprint
+plants_bp = Blueprint('plants', __name__, url_prefix='/api/plants')
+
+
+@plants_bp.route('/add', methods=['POST'])
+def add_plant_new():
+    """
+    Phase 2 direct implementation: Add a new plant with action-based URL.
+    Provides semantic alignment: addPlant operationId → /api/plants/add URL
+    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    """
+    # Apply field normalization middleware (already handled by @app.before_request)
+    from utils.field_normalization_middleware import (
+        get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
+        validate_required_fields
+    )
+    
+    # Get normalized field values
+    plant_name = get_plant_name()
+    
+    # Validate required fields  
+    if not plant_name:
+        error_response = create_error_response_with_field_suggestions(
+            "Plant name is required for adding a plant",
+            ['plant_name']
+        )
+        return jsonify(error_response), 400
+    
+    # Import the core business logic function
+    from api.main import add_plant
+    
+    # Direct implementation using existing add_plant logic with field normalization
+    response = add_plant()
+    
+    # Mark as Phase 2 direct implementation in response
+    if hasattr(response, 'get_json'):
+        try:
+            data = response.get_json()
+            if isinstance(data, dict):
+                data['phase2_direct'] = True
+                data['endpoint_type'] = 'direct_implementation'
+                return jsonify(data), response.status_code
+        except:
+            pass
+    
+    return response
+
+
+@plants_bp.route('/search', methods=['GET'])
+def search_plants_new():
+    """
+    Phase 2 direct implementation: Search for plants with action-based URL.
+    Provides semantic alignment: searchPlants operationId → /api/plants/search URL
+    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    """
+    # Import the original search function
+    from api.main import list_or_search_plants
+    
+    # Direct implementation using existing search logic
+    response = list_or_search_plants()
+    
+    # Mark as Phase 2 direct implementation in response
+    if hasattr(response, 'get_json'):
+        try:
+            data = response.get_json()
+            if isinstance(data, dict):
+                data['phase2_direct'] = True
+                data['endpoint_type'] = 'direct_implementation'
+                return jsonify(data), response.status_code
+        except:
+            pass
+    
+    return response
+
+
+@plants_bp.route('/get/<id_or_name>', methods=['GET'])
+def get_plant_new(id_or_name):
+    """
+    Phase 2 direct implementation: Get plant details with action-based URL.
+    Provides semantic alignment: getPlant operationId → /api/plants/get/{id} URL
+    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    """
+    # Import the original get function
+    from api.main import get_plant_details
+    
+    # Direct implementation using existing get logic
+    response = get_plant_details(id_or_name)
+    
+    # Mark as Phase 2 direct implementation in response
+    if hasattr(response, 'get_json'):
+        try:
+            data = response.get_json()
+            if isinstance(data, dict):
+                data['phase2_direct'] = True
+                data['endpoint_type'] = 'direct_implementation'
+                return jsonify(data), response.status_code
+        except:
+            pass
+    
+    return response
+
+
+@plants_bp.route('/update/<id_or_name>', methods=['PUT'])
+def update_plant_new(id_or_name):
+    """
+    Phase 2 direct implementation: Update plant with action-based URL.
+    Provides semantic alignment: updatePlant operationId → /api/plants/update/{id} URL
+    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    """
+    # Import the original update function
+    from api.main import update_plant
+    
+    # Direct implementation using existing update logic
+    response = update_plant(id_or_name)
+    
+    # Mark as Phase 2 direct implementation in response
+    if hasattr(response, 'get_json'):
+        try:
+            data = response.get_json()
+            if isinstance(data, dict):
+                data['phase2_direct'] = True
+                data['endpoint_type'] = 'direct_implementation'
+                return jsonify(data), response.status_code
+        except:
+            pass
+    
+    return response
+
+
+@plants_bp.route('/remove/<id_or_name>', methods=['DELETE'])
+def remove_plant_new(id_or_name):
+    """
+    Phase 2 direct implementation: Remove plant with action-based URL.
+    Provides semantic alignment: removePlant operationId → /api/plants/remove/{id} URL
+    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    """
+    # For now, return 501 Not Implemented (original behavior)
+    return jsonify({
+        "error": "Plant removal not implemented",
+        "message": "Delete functionality is not available for safety reasons",
+        "suggested_action": "Use update to mark as inactive instead",
+        "phase2_direct": True,
+        "endpoint_type": "direct_implementation"
+    }), 501
+
+
+@plants_bp.route('/get-context/<plant_id>', methods=['GET'])
+def get_plant_context_new(plant_id):
+    """
+    Phase 2 direct implementation: Get comprehensive plant context with location/container intelligence.
+    Provides semantic alignment: getPlantContext operationId → /api/plants/get-context/{id} URL
+    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    """
+    try:
+        from utils.locations_operations import get_plant_location_context
+        
+        # Generate comprehensive context
+        context_result = get_plant_location_context(plant_id)
+        
+        if context_result:
+            return jsonify({
+                'contexts': context_result,
+                'plant_id': plant_id,
+                'phase2_direct': True,
+                'endpoint_type': 'direct_implementation'
+            }), 200
+        else:
+            return jsonify({
+                "error": f"No containers found for plant {plant_id}",
+                "message": "This plant may not have any containers assigned",
+                "plant_id": plant_id,
+                "phase2_direct": True
+            }), 404
+            
+    except Exception as e:
+        logging.error(f"Error getting plant context: {e}")
+        return jsonify({
+            "error": "Failed to get plant context",
+            "details": str(e),
+            "plant_id": plant_id,
+            "phase2_direct": True
+        }), 500
+
+
+# Legacy route redirects for backward compatibility
+@plants_bp.route('', methods=['GET'])
+@plants_bp.route('/all', methods=['GET'])
+def legacy_search_plants():
+    """Legacy redirect to maintain backward compatibility"""
+    return search_plants_new()
+
+
+@plants_bp.route('/<id_or_name>', methods=['GET'])
+def legacy_get_plant(id_or_name):
+    """Legacy redirect to maintain backward compatibility"""
+    return get_plant_new(id_or_name)
+
+
+@plants_bp.route('/<plant_id>/location-context', methods=['GET'])
+@plants_bp.route('/<plant_id>/context', methods=['GET'])
+def legacy_get_plant_context(plant_id):
+    """Legacy redirect to maintain backward compatibility"""
+    return get_plant_context_new(plant_id)

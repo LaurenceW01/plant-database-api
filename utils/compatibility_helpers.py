@@ -27,54 +27,67 @@ def normalize_request_fields(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not data:
         return {}
     
-    # Simple mapping for most common variations
+    # Simple mapping for most common variations - mapping TO canonical underscore format
     field_map = {
         # Plant name variations
-        'plant_name': 'Plant Name',
-        'plantName': 'Plant Name', 
-        'name': 'Plant Name',
+        'Plant Name': 'plant_name',
+        'plantName': 'plant_name', 
+        'name': 'plant_name',
         
         # Plant ID variations
-        'plant_id': 'Plant ID',
-        'plantId': 'Plant ID',
-        'id': 'Plant ID',
+        'Plant ID': 'plant_id',
+        'plantId': 'plant_id',
+        'id': 'plant_id',
         
         # Light variations
-        'light_requirements': 'Light Requirements',
-        'lightRequirements': 'Light Requirements',
-        'light': 'Light Requirements',
+        'Light Requirements': 'light_requirements',
+        'lightRequirements': 'light_requirements',
+        'light': 'light_requirements',
         
         # Water variations  
-        'water_requirements': 'Water Requirements',
-        'waterRequirements': 'Water Requirements',
-        'water': 'Water Requirements',
-        'watering': 'Water Requirements',
+        'Water Requirements': 'watering_needs',
+        'Watering Needs': 'watering_needs',
+        'waterRequirements': 'watering_needs',
+        'water': 'watering_needs',
+        'watering': 'watering_needs',
+        
+        # Soil variations
+        'Soil Preferences': 'soil_preferences',
+        'soilPreferences': 'soil_preferences',
+        'soil': 'soil_preferences',
         
         # Location variations
-        'location_id': 'Location ID',
-        'locationId': 'Location ID',
-        'location': 'Location',
+        'Location ID': 'location_id',
+        'locationId': 'location_id',
+        'Location': 'location',
         
         # Container variations
-        'container_id': 'Container ID',
-        'containerId': 'Container ID',
+        'Container ID': 'container_id',
+        'containerId': 'container_id',
         
         # Log entry variations
-        'entry': 'Entry',
-        'log_entry': 'Entry',
-        'logEntry': 'Entry',
-        'message': 'Entry',
-        'text': 'Entry',
+        'Entry': 'user_notes',
+        'entry': 'user_notes',
+        'log_entry': 'user_notes',
+        'logEntry': 'user_notes',
+        'message': 'user_notes',
+        'text': 'user_notes',
+        'User Notes': 'user_notes',
+        'user_notes': 'user_notes',
         
         # Date variations
-        'date': 'Date',
-        'timestamp': 'Date',
-        'log_date': 'Date',
+        'Date': 'date',
+        'timestamp': 'date',
+        'log_date': 'date',
         
         # Description variations
-        'description': 'Description',
-        'desc': 'Description',
-        'notes': 'Description',
+        'Description': 'description',
+        'desc': 'description',
+        'notes': 'description',
+        
+        # Care notes
+        'Care Notes': 'care_notes',
+        'careNotes': 'care_notes',
     }
     
     normalized = {}
@@ -119,11 +132,11 @@ def ensure_required_fields(data: Dict[str, Any],
         # Provide helpful suggestions for common mistakes
         suggestions = []
         for missing in missing_fields:
-            if missing == 'Plant Name':
+            if missing == 'plant_name':
                 suggestions.append("Try: 'Plant Name', 'plant_name', 'plantName', or 'name'")
-            elif missing == 'Entry':
-                suggestions.append("Try: 'Entry', 'entry', 'log_entry', 'message', or 'text'")
-            elif missing == 'Location ID':
+            elif missing == 'user_notes':
+                suggestions.append("Try: 'Entry', 'entry', 'User Notes', 'message', or 'text'")
+            elif missing == 'location_id':
                 suggestions.append("Try: 'Location ID', 'location_id', or 'locationId'")
         
         if suggestions:
