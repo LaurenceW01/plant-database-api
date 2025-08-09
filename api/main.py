@@ -99,7 +99,7 @@ def add_plant():
                 expiration_hours=24
             )
             
-            upload_url = f"https://{request.host}/upload/plant/{upload_token}"
+            upload_url = f"https://{request.host}/api/photos/upload-for-plant/{upload_token}"
             
             return jsonify({
                 **result,
@@ -246,7 +246,7 @@ def create_plant_log():
                 expiration_hours=24
             )
             
-            upload_url = f"https://{request.host}/upload/log/{upload_token}"
+            upload_url = f"https://{request.host}/api/photos/upload-for-log/{upload_token}"
             
             return jsonify({
                 **result,
@@ -302,7 +302,7 @@ def create_plant_log_simple():
                 expiration_hours=24
             )
             
-            upload_url = f"https://{request.host}/upload/log/{upload_token}"
+            upload_url = f"https://{request.host}/api/photos/upload-for-log/{upload_token}"
             
             return jsonify({
                 **result,
