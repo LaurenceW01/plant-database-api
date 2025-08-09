@@ -31,22 +31,30 @@ def normalize_request_fields(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     field_map = {
         # Plant name variations
         'Plant Name': 'plant_name',
+        'Plant___Name': 'plant_name',  # ChatGPT sometimes sends with underscores
+        'Plant_Name': 'plant_name',    # Single underscore variation
         'plantName': 'plant_name', 
         'name': 'plant_name',
         
         # Plant ID variations
         'Plant ID': 'plant_id',
+        'Plant___ID': 'plant_id',       # ChatGPT underscore variation
+        'Plant_ID': 'plant_id',         # Single underscore variation
         'plantId': 'plant_id',
         'id': 'plant_id',
         
         # Light variations
         'Light Requirements': 'light_requirements',
+        'Light___Requirements': 'light_requirements',  # ChatGPT underscore variation
+        'Light_Requirements': 'light_requirements',    # Single underscore variation
         'lightRequirements': 'light_requirements',
         'light': 'light_requirements',
         
         # Water variations  
         'Water Requirements': 'watering_needs',
         'Watering Needs': 'watering_needs',
+        'Watering___Needs': 'watering_needs',          # ChatGPT underscore variation
+        'Watering_Needs': 'watering_needs',            # Single underscore variation
         'waterRequirements': 'watering_needs',
         'water': 'watering_needs',
         'watering': 'watering_needs',
