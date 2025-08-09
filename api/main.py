@@ -521,8 +521,15 @@ def upload_photo_to_log(token):
                 'error': 'No file selected'
             }), 400
         
-        # Upload photo (use plant_photo function with log identifier)
-        result = upload_plant_photo(file, f"log_{token_data['log_id']}")
+        # Upload photo (use plant_photo function with appropriate identifier)
+        # Handle both log upload tokens and plant upload tokens
+        if token_data.get('token_type') == 'log_upload':
+            identifier = f"log_{token_data['log_id']}"
+        else:
+            # For plant upload tokens, use plant info
+            identifier = token_data.get('plant_name', 'unknown_plant')
+        
+        result = upload_plant_photo(file, identifier)
         
         # Mark token as used
         mark_token_used(token, request.remote_addr or '')
