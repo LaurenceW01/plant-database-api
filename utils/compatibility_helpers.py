@@ -14,6 +14,32 @@ from flask import request
 import logging
 
 
+def normalize_chatgpt_field_name(field_name: str) -> str:
+    """
+    Convert ChatGPT underscore variations to canonical format.
+    
+    Handles patterns like:
+    - "Plant___Name" -> "Plant Name" -> "plant_name"
+    - "Light___Requirements" -> "Light Requirements" -> "light_requirements"
+    - "Care___Notes" -> "Care Notes" -> "care_notes"
+    
+    Args:
+        field_name: Original field name from ChatGPT
+        
+    Returns:
+        Canonical underscore format field name
+    """
+    # First, convert multiple underscores to spaces
+    # "Plant___Name" -> "Plant Name"
+    normalized = field_name.replace('___', ' ').replace('_', ' ')
+    
+    # Then convert to canonical underscore format
+    # "Plant Name" -> "plant_name"
+    canonical = normalized.lower().replace(' ', '_')
+    
+    return canonical
+
+
 def normalize_request_fields(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Simple field normalization for common ChatGPT field variations.
@@ -95,13 +121,33 @@ def normalize_request_fields(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         
         # Care notes
         'Care Notes': 'care_notes',
+        'Care___Notes': 'care_notes',       # ChatGPT underscore variation
+        'Care_Notes': 'care_notes',         # Single underscore variation
         'careNotes': 'care_notes',
     }
     
     normalized = {}
     for key, value in data.items():
-        # Use mapped name if available, otherwise keep original
-        normalized_key = field_map.get(key, key)
+        # First, try the manual field mapping
+        normalized_key = field_map.get(key)
+        
+        # If not found in manual mapping, try automatic ChatGPT underscore normalization
+        if normalized_key is None:
+            # Check if this looks like a ChatGPT underscore pattern
+            if '___' in key or '_' in key:
+                candidate_key = normalize_chatgpt_field_name(key)
+                # Check if the normalized version exists in our known field mappings
+                if candidate_key in field_map.values():
+                    normalized_key = candidate_key
+                    logging.info(f"ChatGPT pattern detected: '{key}' -> '{normalized_key}'")
+                else:
+                    # Use the candidate key anyway for consistency
+                    normalized_key = candidate_key
+                    logging.debug(f"ChatGPT pattern applied: '{key}' -> '{normalized_key}'")
+            else:
+                # Keep original if no underscore patterns detected
+                normalized_key = key
+        
         normalized[normalized_key] = value
         
         # Log if transformation occurred
