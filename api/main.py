@@ -498,7 +498,7 @@ def upload_photo_to_log(token):
     """Core photo upload logic for logs"""
     try:
         from utils.upload_token_manager import validate_upload_token, mark_token_used
-        from utils.storage_client import upload_log_photo
+        from utils.storage_client import upload_plant_photo
         
         # Validate token
         is_valid, token_data, error_message = validate_upload_token(token)
@@ -521,8 +521,8 @@ def upload_photo_to_log(token):
                 'error': 'No file selected'
             }), 400
         
-        # Upload photo
-        result = upload_log_photo(file, token_data['log_id'])
+        # Upload photo (use plant_photo function with log identifier)
+        result = upload_plant_photo(file, f"log_{token_data['log_id']}")
         
         # Mark token as used
         mark_token_used(token, request.remote_addr or '')
