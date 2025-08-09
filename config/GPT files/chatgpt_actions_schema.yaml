@@ -1,23 +1,25 @@
 openapi: 3.1.0
 info:
-  title: Plant Database API with Photo Logging
+  title: Plant Database API with Photo Logging - Phase 1 AI-Friendly
   description: |
     Comprehensive plant database API with full CRUD operations for plant management PLUS plant health logging with photo storage.
-    Now includes two-step photo upload process for both adding new plants and updating existing plants.
-  version: 2.1.0
+    Phase 1: Action-based URLs for better ChatGPT semantic alignment - eliminates endpoint hallucinations.
+    URLs now match operation names (addPlant → /api/plants/add, searchPlants → /api/plants/search).
+  version: 2.3.0
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
 
 paths:
   # =============================================
-  # EXISTING PLANT MANAGEMENT OPERATIONS
+  # PHASE 1: ACTION-BASED PLANT MANAGEMENT 
   # =============================================
+  # URLs now match operation names for ChatGPT semantic alignment
   
-  /api/plants:
+  /api/plants/search:
     get:
-      operationId: searchPlants
-      summary: Search or list all plants
+      operationId: search_plants_new
+      summary: Search or list all plants (Phase 2 Direct Implementation)
       description: Search for plants by name, description, or location. If no query is provided, returns paginated plants.
       security: []
       parameters:
@@ -67,9 +69,10 @@ paths:
                     type: integer
                     description: Maximum plants per page
 
+  /api/plants/add:
     post:
-      operationId: addPlant
-      summary: Add a new plant to the database
+      operationId: add_plant_new
+      summary: Add a new plant to the database (Phase 2 Direct Implementation)
       description: |
         Add a new plant with comprehensive field support. Only Plant Name is required.
         
@@ -139,10 +142,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/plants/{id_or_name}:
+  /api/plants/get/{id_or_name}:
     get:
-      operationId: getPlant
-      summary: Get a specific plant by ID or name
+      operationId: get_plant_new
+      summary: Get a specific plant by ID or name (Phase 2 Direct Implementation)
       description: Retrieve detailed information about a specific plant using either its ID or exact name.
       security: []
       parameters:
@@ -170,8 +173,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/plants/update/{id_or_name}:
     put:
-      operationId: updatePlant
+      operationId: update_plant_new
       summary: Update an existing plant
       description: |
         Update specific fields of an existing plant. Only provided fields will be updated.
@@ -238,6 +242,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /api/plants/remove/{id_or_name}:
+    delete:
+      operationId: remove_plant_new
+      summary: Remove/delete a plant (not implemented)
+      description: |
+        Phase 1 action-based endpoint for plant deletion. Currently returns 501 Not Implemented.
+        Provides semantic alignment for ChatGPT (removePlant → /api/plants/remove).
+        DELETE functionality will be implemented in future phases.
+      parameters:
+        - name: id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Plant ID or exact name to remove
+          example: "123"
+      responses:
+        '501':
+          description: Not Implemented - DELETE functionality not yet available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Delete functionality not yet implemented"
+                  redirect_attempted:
+                    type: boolean
+                    example: true
+      security: []
 
   # =============================================
   # PLANT PHOTO UPLOAD OPERATIONS
@@ -600,9 +636,91 @@ paths:
                     example: "Failed to upload photo to storage"
       security: []
 
-  /api/enhance-analysis:
+  # =============================================
+  # PHASE 1: ACTION-BASED PHOTO UPLOAD REDIRECTS
+  # =============================================
+  
+  /api/photos/upload-for-plant/{token}:
     post:
-      operationId: enhanceAnalysis
+      operationId: upload_photo_for_plant_new
+      summary: Upload photo for plant (redirects to /upload/plant/{token})
+      description: |
+        Phase 1 action-based endpoint that redirects to /upload/plant/{token}.
+        Provides semantic alignment for ChatGPT (uploadPhotoForPlant → /api/photos/upload-for-plant).
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token for the plant
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Photo file to upload
+      responses:
+        '200':
+          description: Photo uploaded successfully (same as /upload/plant/{token})
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+      security: []
+
+  /api/photos/upload-for-log/{token}:
+    post:
+      operationId: upload_photo_for_log_new
+      summary: Upload photo for log (redirects to /upload/log/{token})
+      description: |
+        Phase 1 action-based endpoint that redirects to /upload/log/{token}.
+        Provides semantic alignment for ChatGPT (uploadPhotoForLog → /api/photos/upload-for-log).
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Upload token for the log entry
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Photo file to upload
+      responses:
+        '200':
+          description: Photo uploaded successfully (same as /upload/log/{token})
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+      security: []
+
+  /api/plants/enhance-analysis:
+    post:
+      operationId: enhance_plant_analysis
       summary: Enhance plant analysis with database knowledge
       description: Enhance ChatGPT's image analysis with personalized care instructions and database matches
       requestBody:
@@ -632,9 +750,9 @@ paths:
       security:
         - ApiKeyAuth: []
 
-  /api/analyze-plant:
+  /api/plants/diagnose:
     post:
-      operationId: analyzeAndLogPlant
+      operationId: diagnose_plant
       summary: Get plant advice or analyze photos (photos are always optional)
       description: |
         Get plant care advice, health assessment, or analyze photos. Photos are COMPLETELY OPTIONAL. 
@@ -815,9 +933,9 @@ paths:
       security:
         - ApiKeyAuth: []
 
-  /api/plants/log:
+  /api/logs/create:
     post:
-      operationId: createPlantLog
+      operationId: create_log
       summary: Create manual plant log entry with optional photo
       description: |
         Create a plant log entry manually. Useful for follow-up entries or 
@@ -880,9 +998,9 @@ paths:
       security:
         - ApiKeyAuth: []
 
-  /api/plants/log/simple:
+  /api/logs/create-simple:
     post:
-      operationId: createPlantLogSimple
+      operationId: create_log_simple
       summary: Create plant log entry with JSON (ChatGPT-friendly)
       description: |
         Create a plant log entry using simple JSON format instead of multipart form data.
@@ -1088,9 +1206,9 @@ paths:
                         confidence:
                           type: number
 
-  /api/plants/log/search:
+  /api/logs/search:
     get:
-      operationId: searchPlantLogs
+      operationId: search_logs
       summary: Search across all plant logs
       description: Search plant logs by various criteria
       parameters:
@@ -1159,8 +1277,141 @@ paths:
                         relevance_score:
                           type: number
 
+  /api/logs/create-for-plant/{plant_name}:
+    post:
+      operationId: create_log_for_plant
+      summary: Create log for specific plant (returns helpful error)
+      description: |
+        Phase 1 action-based endpoint that returns a helpful error message.
+        Provides semantic alignment for ChatGPT but guides users to use /api/logs/create instead.
+        This endpoint helps with ChatGPT's natural language expectations.
+      parameters:
+        - name: plant_name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Plant name for the log entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Entry:
+                  type: string
+                  description: Log entry text
+      responses:
+        '400':
+          description: Helpful redirect guidance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Please use /api/logs/create with 'Plant Name' in the request body"
+                  suggested_endpoint:
+                    type: string
+                    example: "/api/logs/create"
+                  plant_name_provided:
+                    type: string
+                    example: "Tomato Plant"
+                  redirect_attempted:
+                    type: boolean
+                    example: true
+      security: []
+
   # =============================================
   # PHASE 1: LOCATIONS & CONTAINERS INTEGRATION
+  # =============================================
+
+  # =============================================
+  # PHASE 1: ACTION-BASED LOCATION REDIRECTS
+  # =============================================
+  
+  /api/locations/get-context/{location_id}:
+    get:
+      operationId: get_location_context
+      summary: Get location care context (redirects to care-profile)
+      description: |
+        Phase 1 action-based endpoint that redirects to /api/locations/{location_id}/care-profile.
+        Provides semantic alignment for ChatGPT (getLocationContext → /api/locations/get-context).
+      parameters:
+        - name: location_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID to get context for
+      responses:
+        '200':
+          description: Location care context (same as care-profile endpoint)
+          content:
+            application/json:
+              schema:
+                type: object
+      security: []
+
+  /api/plants/get-context/{plant_id}:
+    get:
+      operationId: get_plant_context_new
+      summary: Get plant context (redirects to /plants/{id}/context)
+      description: |
+        Phase 1 action-based endpoint that redirects to /api/plants/{plant_id}/context.
+        Provides semantic alignment for ChatGPT (getPlantContext → /api/plants/get-context).
+      parameters:
+        - name: plant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Plant ID to get context for
+      responses:
+        '200':
+          description: Plant context (same as original context endpoint)
+          content:
+            application/json:
+              schema:
+                type: object
+      security: []
+
+  /api/garden/get-metadata:
+    get:
+      operationId: get_garden_metadata
+      summary: Get garden metadata (redirects to metadata/enhanced)
+      description: |
+        Phase 1 action-based endpoint that redirects to /api/garden/metadata/enhanced.
+        Provides semantic alignment for ChatGPT (getGardenMetadata → /api/garden/get-metadata).
+      responses:
+        '200':
+          description: Enhanced garden metadata (same as metadata/enhanced endpoint)
+          content:
+            application/json:
+              schema:
+                type: object
+      security: []
+
+  /api/garden/optimize-care:
+    get:
+      operationId: optimize_garden_care
+      summary: Get care optimization (redirects to care-optimization)
+      description: |
+        Phase 1 action-based endpoint that redirects to /api/garden/care-optimization.
+        Provides semantic alignment for ChatGPT (optimizeCare → /api/garden/optimize-care).
+      responses:
+        '200':
+          description: Care optimization data (same as care-optimization endpoint)
+          content:
+            application/json:
+              schema:
+                type: object
+      security: []
+
+  # =============================================
+  # EXISTING LOCATION ENDPOINTS (PRESERVED)
   # =============================================
 
   /api/plants/{plant_id}/location-context:
@@ -2101,4 +2352,24 @@ components:
         error:
           type: string
           description: Error message
-          example: "Plant Name is required" 
+          example: "Plant Name is required"
+
+# =============================================
+# PHASE 3: IMPROVED TAGS AND ORGANIZATION
+# =============================================
+
+tags:
+  - name: "PlantManagement"
+    description: "Add, search, update, and remove plants with action-based URLs"
+  - name: "PlantLogs"
+    description: "Plant health logging and tracking with comprehensive data"
+  - name: "PlantAnalysis"
+    description: "AI-powered plant diagnosis and analysis with photo support"
+  - name: "Locations"
+    description: "Garden location and context management for precise care"
+  - name: "Garden"
+    description: "Garden-wide intelligence and optimization recommendations"
+  - name: "Photos"
+    description: "Photo upload and management for plants and logs"
+  - name: "Weather"
+    description: "Weather data and forecasts for outdoor plant care" 
