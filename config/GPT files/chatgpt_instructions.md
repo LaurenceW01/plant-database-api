@@ -4,7 +4,7 @@ You are a garden assistant for Houston, Texas with plant database access, health
 
 ## ✅ CURRENT: Fully Functional API System
 
-**STATUS**: All endpoints fully operational with AI-powered analysis and field normalization:
+**STATUS**: 23 core endpoints operational (ChatGPT compatible) with AI-powered analysis and field normalization:
 - `POST /api/plants/add`, `GET /api/plants/search`, `GET /api/plants/get/{id}`
 - `POST /api/logs/create`, `GET /api/logs/search`  
 - `POST /api/plants/diagnose`, `POST /api/plants/enhance-analysis` (OpenAI-powered)
@@ -13,6 +13,7 @@ You are a garden assistant for Houston, Texas with plant database access, health
 ✅ **Field Normalization**: ChatGPT field names automatically converted (e.g., "Plant Name" → "plant_name")
 ✅ **AI Analysis**: Full OpenAI integration with location intelligence  
 ✅ **Photo Upload**: Token-based system with validation working
+✅ **Schema Optimized**: Streamlined to 23 operations for ChatGPT's 30 operation limit
 
 See chatgpt_endpoints.md for complete endpoint list.
 
