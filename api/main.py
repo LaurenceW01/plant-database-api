@@ -575,16 +575,7 @@ app = create_app_instance()
 
 
 # Only run the app if this file is executed directly (not imported)
-# Upload page routes - serve HTML form for upload URLs
-@app.route('/api/photos/upload-for-plant/<token>', methods=['GET'])
-def upload_page_plant(token):
-    """Serve upload page for plant photo uploads"""
-    return render_template('upload.html')
-
-@app.route('/api/photos/upload-for-log/<token>', methods=['GET'])  
-def upload_page_log(token):
-    """Serve upload page for log photo uploads"""
-    return render_template('upload.html')
+# Upload page routes moved to api/routes/photos.py blueprint
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

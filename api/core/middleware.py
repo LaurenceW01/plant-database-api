@@ -37,7 +37,9 @@ def setup_middleware(app):
             if hasattr(g, 'normalized_request_data'):
                 print(f"✅ Normalized data: {g.normalized_request_data}")  # Debug print
             else:
-                print(f"❌ No normalized data in g")  # Debug print
+                # This is expected for GET requests, file uploads, and requests without JSON
+                request_type = "GET request" if request.method == "GET" else f"{request.method} request without JSON data"
+                print(f"ℹ️  No field normalization needed for {request_type}: {request.path}")  # Debug print
         
         print("✅ FIELD NORMALIZATION MIDDLEWARE REGISTERED")  # Debug print
         logging.info("✅ Field normalization middleware registered")

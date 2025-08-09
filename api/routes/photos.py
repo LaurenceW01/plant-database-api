@@ -5,7 +5,7 @@ Handles photo upload functionality for plants and logs
 using token-based authentication.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from api.core.middleware import require_api_key
 import logging
 
@@ -83,4 +83,17 @@ def upload_photo_for_log_new(token):
             'token': token,
             'phase2_direct': True
         }), 500
+
+
+# Upload page routes - serve HTML form when users visit upload URLs
+@photos_bp.route('/upload-for-plant/<token>', methods=['GET'])
+def upload_page_plant(token):
+    """Serve upload page for plant photo uploads"""
+    return render_template('upload.html')
+
+
+@photos_bp.route('/upload-for-log/<token>', methods=['GET'])  
+def upload_page_log(token):
+    """Serve upload page for log photo uploads"""
+    return render_template('upload.html')
 
