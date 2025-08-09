@@ -29,7 +29,11 @@ def create_app(testing=False):
     Returns:
         Flask: Configured Flask application
     """
-    app = Flask(__name__)
+    # Get the project root directory (two levels up from this file)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    template_folder = os.path.join(project_root, 'templates')
+    
+    app = Flask(__name__, template_folder=template_folder)
     
     # CORS configuration
     CORS(app, resources={

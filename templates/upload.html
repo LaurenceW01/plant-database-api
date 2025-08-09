@@ -347,7 +347,7 @@
             formData.append('file', file);
             
             // Use the correct upload URL based on the upload type
-            const uploadUrl = uploadType === 'plant' ? `/upload/plant/${token}` : `/upload/log/${token}`;
+            const uploadUrl = uploadType === 'plant' ? `/api/photos/upload-for-plant/${token}` : `/api/photos/upload-for-log/${token}`;
             
             fetch(uploadUrl, {
                 method: 'POST',

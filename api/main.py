@@ -11,7 +11,7 @@ while routes have been extracted to api/routes/ modules.
 import os
 import logging
 from functools import wraps
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 # Import the app factory
 from api.core.app_factory import create_app
@@ -575,6 +575,17 @@ app = create_app_instance()
 
 
 # Only run the app if this file is executed directly (not imported)
+# Upload page routes - serve HTML form for upload URLs
+@app.route('/api/photos/upload-for-plant/<token>', methods=['GET'])
+def upload_page_plant(token):
+    """Serve upload page for plant photo uploads"""
+    return render_template('upload.html')
+
+@app.route('/api/photos/upload-for-log/<token>', methods=['GET'])  
+def upload_page_log(token):
+    """Serve upload page for log photo uploads"""
+    return render_template('upload.html')
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
