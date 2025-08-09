@@ -76,26 +76,8 @@ def update_plant(id_or_name):
 
 def list_or_search_plants():
     """Core plant search logic called by the plants route module"""
-    try:
-        from utils.plant_operations import search_plants, get_all_plants
-        
-        # Get search parameters
-        search_query = request.args.get('search', '').strip()
-        location = request.args.get('location', '').strip()
-        
-        # Search plants
-        if search_query:
-            plants = search_plants(search_query)
-            result = {'plants': plants, 'count': len(plants)}
-        else:
-            plants = get_all_plants()
-            result = {'plants': plants, 'count': len(plants)}
-        
-        return jsonify(result), 200
-        
-    except Exception as e:
-        logging.error(f"Error searching plants: {e}")
-        return jsonify({'error': str(e)}), 500
+    from utils.plant_operations import list_or_search_plants_api
+    return list_or_search_plants_api()
 
 
 def get_plant_details(id_or_name):
