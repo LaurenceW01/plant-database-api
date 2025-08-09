@@ -653,26 +653,73 @@ def add_plant_api():
 def update_plant_api(id_or_name):
     """Core plant update logic for API endpoints"""
     try:
-        from flask import request, jsonify
+        from flask import request, jsonify, g
         from .field_normalization_middleware import get_normalized_field
         
-        # Build update data from normalized fields
+        # Build update data from ALL normalized fields (not just hardcoded ones)
         update_data = {}
         
-        # Map common field variations to canonical names
-        field_mappings = {
-            'Description': get_normalized_field('Description'),
-            'Light Requirements': get_normalized_field('Light Requirements'), 
-            'Watering Needs': get_normalized_field('Watering Needs'),
-            'Soil Preferences': get_normalized_field('Soil Preferences'),
-            'Location': get_normalized_field('Location'),
-            'Care Notes': get_normalized_field('Care Notes')
-        }
+        # Get all normalized data from the request
+        if hasattr(g, 'normalized_request_data') and g.normalized_request_data:
+            normalized_data = g.normalized_request_data
+            
+            # Map normalized field names back to canonical format using centralized config
+            from models.field_config import FIELD_NAMES, LOG_FIELD_NAMES
+            
+            def underscore_to_canonical(underscore_name: str) -> str:
+                """Convert underscore format back to canonical field name"""
+                # Convert underscore to space and title case
+                spaced = underscore_name.replace('_', ' ').title()
+                
+                # Check if this matches any canonical field name
+                all_canonical_names = FIELD_NAMES + LOG_FIELD_NAMES
+                for canonical in all_canonical_names:
+                    if canonical.lower().replace(' ', '_').replace('-', '_') == underscore_name.lower():
+                        return canonical
+                
+                # If no exact match, return the spaced version
+                return spaced
+            
+            canonical_field_mappings = {}
+            # Build mapping dynamically from centralized config
+            for field_name in FIELD_NAMES + LOG_FIELD_NAMES:
+                underscore_version = field_name.lower().replace(' ', '_').replace('-', '_')
+                canonical_field_mappings[underscore_version] = field_name
+            
+            # Convert normalized fields back to canonical names for database update
+            for normalized_field, value in normalized_data.items():
+                # Skip 'id' field - it's for URL parameter, not for updating
+                if normalized_field.lower() in ['id', 'plant_id']:
+                    continue
+                    
+                # Map to canonical name if we know it, otherwise use as-is
+                canonical_name = canonical_field_mappings.get(normalized_field, normalized_field)
+                if value and str(value).strip():  # Only include non-empty values
+                    update_data[canonical_name] = str(value).strip()
         
-        # Only include fields that have values
-        for canonical_name, value in field_mappings.items():
-            if value:
-                update_data[canonical_name] = value
+        # If no normalized data, try direct field access using centralized config
+        if not update_data:
+            from models.field_config import FIELD_NAMES, get_aliases_for_field
+            
+            # Try all canonical field names and their aliases
+            for canonical_name in FIELD_NAMES:
+                # Get all known aliases for this field
+                aliases = get_aliases_for_field(canonical_name)
+                
+                # Also try ChatGPT underscore variations
+                chatgpt_variations = [
+                    canonical_name.replace(' ', '___'),  # "Light Requirements" -> "Light___Requirements"
+                    canonical_name.replace(' ', '_'),    # "Light Requirements" -> "Light_Requirements"
+                    canonical_name.lower().replace(' ', '_'),  # "Light Requirements" -> "light_requirements"
+                ]
+                
+                all_variations = [canonical_name] + aliases + chatgpt_variations
+                
+                for field_variation in all_variations:
+                    value = get_normalized_field(field_variation)
+                    if value and str(value).strip():
+                        update_data[canonical_name] = str(value).strip()
+                        break  # Found a value, move to next field
         
         if not update_data:
             return jsonify({'error': 'No valid fields provided for update'}), 400

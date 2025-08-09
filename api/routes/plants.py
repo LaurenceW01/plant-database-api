@@ -138,6 +138,38 @@ def update_plant_new(id_or_name):
     return response
 
 
+@plants_bp.route('/update', methods=['PUT'])
+def update_plant_flexible():
+    """
+    Flexible update endpoint that accepts plant ID in JSON body.
+    This provides ChatGPT-friendly alternative when ID is in request body instead of URL path.
+    """
+    from utils.field_normalization_middleware import get_normalized_field
+    from api.main import update_plant
+    
+    # Get plant ID from request body
+    plant_id = get_normalized_field('id') or get_normalized_field('plant_id') or get_normalized_field('Plant ID')
+    
+    if not plant_id:
+        return jsonify({'error': 'Plant ID is required in request body (use "id", "plant_id", or "Plant ID" field)'}), 400
+    
+    # Call the same update logic but extract ID from body
+    response = update_plant(plant_id)
+    
+    # Mark as flexible endpoint in response
+    if hasattr(response, 'get_json'):
+        try:
+            data = response.get_json()
+            if isinstance(data, dict):
+                data['endpoint_type'] = 'flexible_update'
+                data['note'] = 'Used plant ID from request body'
+                return jsonify(data), response.status_code
+        except:
+            pass
+    
+    return response
+
+
 @plants_bp.route('/remove/<id_or_name>', methods=['DELETE'])
 def remove_plant_new(id_or_name):
     """

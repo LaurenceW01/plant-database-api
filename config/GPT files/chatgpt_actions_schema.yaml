@@ -187,6 +187,54 @@ paths:
                   upload_url:
                     type: string
 
+  /api/plants/update:
+    put:
+      operationId: updatePlantFlexible
+      summary: Update plant with ID in body (ChatGPT-friendly)
+      description: Alternative update endpoint that accepts plant ID in request body instead of URL path
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Plant ID or name to update
+                  example: "Vinca"
+                Description:
+                  type: string
+                Location:
+                  type: string
+                Watering Needs:
+                  type: string
+                Care Notes:
+                  type: string
+                Light Requirements:
+                  type: string
+                Soil Preferences:
+                  type: string
+      responses:
+        '200':
+          description: Plant updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  endpoint_type:
+                    type: string
+                  note:
+                    type: string
+
   /api/plants/get-context/{plant_id}:
     get:
       operationId: getPlantContext

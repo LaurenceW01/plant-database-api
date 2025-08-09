@@ -42,96 +42,60 @@ def normalize_chatgpt_field_name(field_name: str) -> str:
 
 def normalize_request_fields(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Simple field normalization for common ChatGPT field variations.
+    Comprehensive field normalization using centralized field configuration.
+    
+    Uses centralized field configuration and automatic underscore pattern detection
+    for ChatGPT's unpredictable underscore usage.
     
     Args:
         data: Request data dictionary (can be None)
         
     Returns:
-        Dictionary with normalized field names
+        Dictionary with normalized field names (canonical format to underscore format)
     """
     if not data:
         return {}
     
-    # Simple mapping for most common variations - mapping TO canonical underscore format
-    field_map = {
-        # Plant name variations
-        'Plant Name': 'plant_name',
-        'Plant___Name': 'plant_name',  # ChatGPT sometimes sends with underscores
-        'Plant_Name': 'plant_name',    # Single underscore variation
-        'plantName': 'plant_name', 
-        'name': 'plant_name',
-        
-        # Plant ID variations
-        'Plant ID': 'plant_id',
-        'Plant___ID': 'plant_id',       # ChatGPT underscore variation
-        'Plant_ID': 'plant_id',         # Single underscore variation
-        'plantId': 'plant_id',
-        'id': 'plant_id',
-        
-        # Light variations
-        'Light Requirements': 'light_requirements',
-        'Light___Requirements': 'light_requirements',  # ChatGPT underscore variation
-        'Light_Requirements': 'light_requirements',    # Single underscore variation
-        'lightRequirements': 'light_requirements',
-        'light': 'light_requirements',
-        
-        # Water variations  
-        'Water Requirements': 'watering_needs',
-        'Watering Needs': 'watering_needs',
-        'Watering___Needs': 'watering_needs',          # ChatGPT underscore variation
-        'Watering_Needs': 'watering_needs',            # Single underscore variation
-        'waterRequirements': 'watering_needs',
-        'water': 'watering_needs',
-        'watering': 'watering_needs',
-        
-        # Soil variations
-        'Soil Preferences': 'soil_preferences',
-        'soilPreferences': 'soil_preferences',
-        'soil': 'soil_preferences',
-        
-        # Location variations
-        'Location ID': 'location_id',
-        'locationId': 'location_id',
-        'Location': 'location',
-        
-        # Container variations
-        'Container ID': 'container_id',
-        'containerId': 'container_id',
-        
-        # Log entry variations
-        'Entry': 'user_notes',
-        'entry': 'user_notes',
-        'log_entry': 'user_notes',
-        'logEntry': 'user_notes',
-        'message': 'user_notes',
-        'text': 'user_notes',
-        'User Notes': 'user_notes',
-        'user_notes': 'user_notes',
-        
-        # Date variations
-        'Date': 'date',
-        'timestamp': 'date',
-        'log_date': 'date',
-        
-        # Description variations
-        'Description': 'description',
-        'desc': 'description',
-        'notes': 'description',
-        
-        # Care notes
-        'Care Notes': 'care_notes',
-        'Care___Notes': 'care_notes',       # ChatGPT underscore variation
-        'Care_Notes': 'care_notes',         # Single underscore variation
-        'careNotes': 'care_notes',
-    }
+    # Import centralized field configuration
+    from models.field_config import FIELD_ALIASES, LOG_FIELD_ALIASES, FIELD_NAMES, LOG_FIELD_NAMES
+    
+    # Create function to convert canonical names to underscore format
+    def canonical_to_underscore(canonical_name: str) -> str:
+        """Convert canonical field name to underscore format"""
+        return canonical_name.lower().replace(' ', '_').replace('-', '_')
+    
+    # Build comprehensive field mapping using centralized config
+    field_map = {}
+    
+    # Add all field aliases from main plant fields
+    for alias, canonical in FIELD_ALIASES.items():
+        field_map[alias] = canonical_to_underscore(canonical)
+        # Also map the canonical name itself
+        field_map[canonical] = canonical_to_underscore(canonical)
+    
+    # Add all field aliases from log fields  
+    for alias, canonical in LOG_FIELD_ALIASES.items():
+        field_map[alias] = canonical_to_underscore(canonical)
+        # Also map the canonical name itself
+        field_map[canonical] = canonical_to_underscore(canonical)
+    
+    # Add direct canonical field names that might not have aliases
+    for field_name in FIELD_NAMES + LOG_FIELD_NAMES:
+        field_map[field_name] = canonical_to_underscore(field_name)
+        field_map[field_name.lower()] = canonical_to_underscore(field_name)
     
     normalized = {}
     for key, value in data.items():
-        # First, try the manual field mapping
+        # First, try the comprehensive field mapping from centralized config
         normalized_key = field_map.get(key)
         
-        # If not found in manual mapping, try automatic ChatGPT underscore normalization
+        # Special context-dependent mappings
+        if key.lower() == 'id':
+            # For plant operations, map 'id' to 'plant_id' 
+            # (will be overridden to 'log_id' in log contexts if needed)
+            normalized_key = 'plant_id'
+        
+        # If not found in mapping, try automatic ChatGPT underscore normalization
         if normalized_key is None:
             # Check if this looks like a ChatGPT underscore pattern
             if '___' in key or '_' in key:
