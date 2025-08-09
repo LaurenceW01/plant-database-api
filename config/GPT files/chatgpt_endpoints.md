@@ -1,5 +1,61 @@
 # Plant Database API Documentation
 
+## 🚀 PHASE 1: AI-FRIENDLY ACTION-BASED ENDPOINTS (NEW)
+
+**Important**: The API now supports action-based URLs that match ChatGPT's expectations! Use these endpoints for better semantic alignment:
+
+### New Action-Based Plant Management
+```javascript
+// Use these NEW action-based endpoints:
+POST   /api/plants/add              // Add a new plant  
+GET    /api/plants/search           // Search for plants
+GET    /api/plants/get/{id}         // Get specific plant  
+PUT    /api/plants/update/{id}      // Update plant
+DELETE /api/plants/remove/{id}      // Remove plant (returns 501 - not implemented)
+```
+
+### New Action-Based Logging  
+```javascript
+// Use these NEW logging endpoints:
+POST   /api/logs/create             // Create plant log
+POST   /api/logs/create-simple      // Create simple log  
+GET    /api/logs/search             // Search logs
+POST   /api/logs/create-for-plant/{name}  // Returns helpful error with guidance
+```
+
+### New Action-Based Analysis
+```javascript  
+// Use these NEW analysis endpoints:
+POST   /api/plants/diagnose         // Diagnose plant issues
+POST   /api/plants/enhance-analysis // Enhance existing analysis
+```
+
+### New Action-Based Locations & Garden
+```javascript
+// Use these NEW location/garden endpoints:
+GET    /api/locations/get-context/{id}    // Get location context
+GET    /api/plants/get-context/{id}       // Get plant context  
+GET    /api/garden/get-metadata           // Get garden metadata
+GET    /api/garden/optimize-care          // Get care optimization
+```
+
+### New Action-Based Photo Upload
+```javascript
+// Use these NEW photo upload endpoints:
+POST   /api/photos/upload-for-plant/{token}  // Upload photo for plant
+POST   /api/photos/upload-for-log/{token}    // Upload photo for log
+```
+
+**✅ Backward Compatibility**: All original endpoints continue to work. These new endpoints redirect to the same functionality with better URL semantics.
+
+**🎯 Benefits**:
+- URLs now match operation names (addPlant → `/api/plants/add`)  
+- Eliminates ChatGPT endpoint hallucinations
+- Consistent action-based patterns
+- Better API discoverability
+
+---
+
 ## Core API Guidelines
 
 ### Weather Integration
