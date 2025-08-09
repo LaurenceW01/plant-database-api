@@ -124,18 +124,31 @@ def add_plant():
     if data is None:
         return jsonify({"error": "Missing JSON payload."}), 400
     
-    # Convert underscore field names to canonical format for ChatGPT compatibility
-    canonical_data = map_underscore_fields_to_canonical(data)
+    # Phase 1: Use centralized field normalization (Clean Implementation)
+    from utils.field_normalization_middleware import (
+        get_plant_name, create_error_response_with_field_suggestions
+    )
+    from flask import g
+    
+    # Get normalized data from middleware (already processed by before_request)
+    normalized_data = getattr(g, 'normalized_request_data', data)
+    
+    # Fallback to existing underscore conversion for backward compatibility
+    canonical_data = map_underscore_fields_to_canonical(normalized_data)
     
     # Validate all fields in the payload
     invalid_fields = [k for k in canonical_data.keys() if not is_valid_field(k)]
     if invalid_fields:
         return jsonify({"error": f"Invalid field(s): {', '.join(invalid_fields)}"}), 400
-    # Validate required fields (at least Plant Name)
-    plant_name_field = get_canonical_field_name('Plant Name')
-    plant_name = canonical_data.get(plant_name_field) or canonical_data.get('Plant Name') or canonical_data.get('name')
+    
+    # Use centralized plant name extraction
+    plant_name = get_plant_name()
     if not plant_name:
-        return jsonify({"error": "'Plant Name' is required."}), 400
+        error_response = create_error_response_with_field_suggestions(
+            "Plant Name is required", 
+            ['Plant Name']
+        )
+        return jsonify(error_response), 400
     
     # Log the request for debugging
     logging.info(f"Adding plant: {plant_name} with {len(canonical_data)} fields")
@@ -278,6 +291,18 @@ def register_routes(app, limiter, require_api_key):
     """
     Register all API routes after app config is set. Rate limiting is only applied if not in testing mode.
     """
+    
+    # ========================================
+    # PHASE 1: FIELD NORMALIZATION MIDDLEWARE
+    # ========================================
+    # Register centralized field normalization middleware
+    from utils.field_normalization_middleware import normalize_request_middleware
+    
+    @app.before_request
+    def apply_field_normalization():
+        """Apply field normalization to all incoming requests"""
+        normalize_request_middleware()
+    
     # Health check route
     @app.route('/', methods=['GET'])
     def health_check():
@@ -287,11 +312,115 @@ def register_routes(app, limiter, require_api_key):
         """
         return jsonify({"status": "ok", "message": "Plant Database API is running."}), 200
 
+    # ========================================
+    # PHASE 1: CHATGPT HALLUCINATION REDIRECTS (SAFETY NET)
+    # ========================================
+    # These endpoints handle common ChatGPT hallucinations by redirecting to correct endpoints
+    
     # Redirect for ChatGPT's incorrect /add endpoint (safety net)
     @app.route('/api/plants/add', methods=['POST'])
     def add_plant_redirect():
         """Redirect ChatGPT's incorrect /api/plants/add to correct /api/plants"""
         return add_plant()
+    
+    # Plant Management Redirects
+    @app.route('/api/plants/search', methods=['GET'])
+    def search_plants_redirect():
+        """Redirect ChatGPT's /api/plants/search to correct /api/plants"""
+        return list_or_search_plants()
+    
+    @app.route('/api/plants/get/<id_or_name>', methods=['GET'])
+    def get_plant_redirect(id_or_name):
+        """Redirect ChatGPT's /api/plants/get/{id} to correct /api/plants/{id}"""
+        return get_plant_by_id_or_name(id_or_name)
+    
+    @app.route('/api/plants/update/<id_or_name>', methods=['PUT'])
+    def update_plant_redirect(id_or_name):
+        """Redirect ChatGPT's /api/plants/update/{id} to correct /api/plants/{id}"""
+        return update_plant(id_or_name)
+    
+    @app.route('/api/plants/remove/<id_or_name>', methods=['DELETE'])
+    def remove_plant_redirect(id_or_name):
+        """Redirect ChatGPT's /api/plants/remove/{id} to correct delete endpoint"""
+        # Note: DELETE functionality needs to be implemented
+        return jsonify({"error": "Delete functionality not yet implemented", "redirect_attempted": True}), 501
+    
+    # Logging Redirects  
+    @app.route('/api/logs/create', methods=['POST'])
+    def create_log_redirect():
+        """Redirect ChatGPT's /api/logs/create to correct /api/plants/log"""
+        return create_plant_log()
+    
+    @app.route('/api/logs/create-simple', methods=['POST'])
+    def create_log_simple_redirect():
+        """Redirect ChatGPT's /api/logs/create-simple to correct /api/plants/log/simple"""
+        return create_plant_log_simple()
+    
+    @app.route('/api/logs/search', methods=['GET'])
+    def search_logs_redirect():
+        """Redirect ChatGPT's /api/logs/search to correct /api/plants/log/search"""
+        return search_plant_logs()
+    
+    @app.route('/api/logs/create-for-plant/<plant_name>', methods=['POST'])
+    def create_log_for_plant_redirect(plant_name):
+        """Redirect ChatGPT's /api/logs/create-for-plant/{name} to plant-specific log endpoint"""
+        # Modify request to include plant name and redirect to standard log creation
+        from flask import request
+        request_data = request.get_json() or {}
+        request_data['Plant Name'] = plant_name
+        
+        # We need to modify the request context, but this is complex
+        # For now, return a helpful error message
+        return jsonify({
+            "error": "Please use /api/plants/log with 'Plant Name' in the request body", 
+            "suggested_endpoint": "/api/plants/log",
+            "plant_name_provided": plant_name,
+            "redirect_attempted": True
+        }), 400
+    
+    # Analysis Redirects
+    @app.route('/api/plants/diagnose', methods=['POST'])
+    def diagnose_plant_redirect():
+        """Redirect ChatGPT's /api/plants/diagnose to correct /api/analyze-plant"""
+        return analyze_plant()
+    
+    @app.route('/api/plants/enhance-analysis', methods=['POST'])
+    def enhance_analysis_redirect():
+        """Redirect ChatGPT's /api/plants/enhance-analysis to correct /api/enhance-analysis"""
+        return enhance_analysis()
+    
+    # Location Context Redirects
+    @app.route('/api/locations/get-context/<location_id>', methods=['GET'])
+    def get_location_context_redirect(location_id):
+        """Redirect ChatGPT's /api/locations/get-context/{id} to existing location endpoint"""
+        # Map to existing location care profile endpoint
+        return get_location_care_profile(location_id)
+    
+    @app.route('/api/plants/get-context/<plant_id>', methods=['GET'])
+    def get_plant_context_redirect(plant_id):
+        """Redirect ChatGPT's /api/plants/get-context/{id} to correct /api/plants/{id}/context"""
+        return get_plant_context(plant_id)
+    
+    @app.route('/api/garden/get-metadata', methods=['GET'])
+    def get_garden_metadata_redirect():
+        """Redirect ChatGPT's /api/garden/get-metadata to correct /api/garden/metadata/enhanced"""
+        return get_enhanced_metadata()
+    
+    @app.route('/api/garden/optimize-care', methods=['GET'])
+    def optimize_care_redirect():
+        """Redirect ChatGPT's /api/garden/optimize-care to correct /api/garden/care-optimization"""
+        return get_care_optimization()
+    
+    # Photo Upload Redirects
+    @app.route('/api/photos/upload-for-plant/<token>', methods=['POST'])
+    def upload_photo_for_plant_redirect(token):
+        """Redirect ChatGPT's /api/photos/upload-for-plant/{token} to correct /upload/plant/{token}"""
+        return upload_photo_to_plant(token)
+    
+    @app.route('/api/photos/upload-for-log/<token>', methods=['POST'])
+    def upload_photo_for_log_redirect(token):
+        """Redirect ChatGPT's /api/photos/upload-for-log/{token} to correct /upload/log/{token}"""
+        return upload_photo_to_log(token)
 
     # Test logging endpoint (temporary for debugging)
     @app.route('/test-logging', methods=['GET'])
@@ -2069,21 +2198,33 @@ def create_plant_log_simple():
         if data is None:
             return jsonify({'success': False, 'error': 'Missing JSON payload'}), 400
         
-        # Get required and optional fields
-        plant_name = data.get('plant_name', '').strip()
-        user_notes = data.get('user_notes', '').strip()
-        diagnosis = data.get('diagnosis', '').strip()
-        treatment = data.get('treatment', '').strip()
-        symptoms = data.get('symptoms', '').strip()
-        analysis_type = data.get('analysis_type', 'health_assessment').strip()
-        confidence_score = float(data.get('confidence_score', 0.8))
-        follow_up_required = data.get('follow_up_required', False)
-        follow_up_date = data.get('follow_up_date', '').strip()
-        log_title = data.get('log_title', '').strip()
-        location = data.get('location', '').strip()
+        # Use centralized field normalization (Phase 1 - Clean Implementation)
+        from utils.field_normalization_middleware import (
+            get_plant_name, get_location, get_entry, get_diagnosis, 
+            get_treatment, get_symptoms, get_normalized_field,
+            validate_required_fields, create_error_response_with_field_suggestions
+        )
         
+        # Get fields using centralized helper functions
+        plant_name = get_plant_name()
+        user_notes = get_normalized_field('User Notes') or get_normalized_field('user_notes', '')
+        diagnosis = get_diagnosis() or ''
+        treatment = get_treatment() or ''
+        symptoms = get_symptoms() or ''
+        analysis_type = get_normalized_field('Analysis Type') or get_normalized_field('analysis_type', 'health_assessment')
+        confidence_score = float(get_normalized_field('confidence_score', 0.8))
+        follow_up_required = get_normalized_field('follow_up_required', False)
+        follow_up_date = get_normalized_field('Follow-up Date') or get_normalized_field('follow_up_date', '')
+        log_title = get_normalized_field('Log Title') or get_normalized_field('log_title', '')
+        location = get_location() or ''
+        
+        # Validate required fields using centralized validation
         if not plant_name:
-            return jsonify({'success': False, 'error': 'plant_name is required'}), 400
+            error_response = create_error_response_with_field_suggestions(
+                "Plant name is required", 
+                ['Plant Name']
+            )
+            return jsonify(error_response), 400
         
         # Create log entry without file upload
         result = create_log_entry(
