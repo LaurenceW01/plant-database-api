@@ -4,10 +4,12 @@
 
 Phase 2 adds **comprehensive garden analysis and optimization capabilities** to the existing location-aware plant care system. This enables ChatGPT to provide garden-wide intelligence, optimization recommendations, and advanced planning support.
 
+**⚠️ Note**: This guide has been updated to align with the streamlined 23-operation ChatGPT schema. Some advanced endpoints have been simplified while preserving core functionality.
+
 ## Core Phase 2 Capabilities
 
-### 1. Comprehensive Location Analysis
-**Endpoint**: `GET /api/garden/location-analysis/{location_id}`
+### 1. Enhanced Location Context (Available)
+**Endpoint**: `GET /api/locations/get-context/{id}`
 
 **When to Use**:
 - User asks for complete analysis of a specific location
@@ -16,27 +18,28 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 - "Give me a full analysis of my arboretum right location"
 
 **What it Provides**:
-- Complete location profile with container statistics
-- **Plant names and detailed container information** for each plant at location
-- Care complexity assessment  
-- Optimization opportunities
-- Container compatibility analysis
-- Cross-reference intelligence recommendations
+- Location care profile and context
+- Environmental factors and microclimate data
+- Watering strategies and timing recommendations
+- Container placement guidance
 
-### 2. Enhanced Plant Context  
-**Endpoint**: `GET /api/plants/{plant_id}/context`
+**Note**: This is a streamlined version focusing on core location intelligence.
+
+### 2. Enhanced Plant Context (Available)
+**Endpoint**: `GET /api/plants/get-context/{plant_id}`
 
 **When to Use**:
 - User asks about a specific plant across all its locations
-- Optimization questions for individual plants
 - Multi-container plant analysis
 - "Give me complete context for my hibiscus"
 
 **What it Provides**:
-- Full environmental analysis across all plant containers
-- Location-specific care plans for each container
-- Optimization tips for each plant placement
-- Container upgrade recommendations
+- Plant context with location and container details
+- Environmental analysis for each plant container
+- Location-specific care considerations
+- Container and microclimate context
+
+**Note**: This provides comprehensive plant context within our streamlined schema.
 
 ### 3. Garden-Wide Intelligence
 **Endpoint**: `GET /api/garden/metadata/enhanced`
@@ -69,46 +72,48 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 - Care efficiency improvements
 - Risk assessments and mitigation
 
-### 5. Location Profiles Overview
-**Endpoint**: `GET /api/garden/location-profiles`
+### 5. All Locations Overview (Available)
+**Endpoint**: `GET /api/locations/all`
 
 **When to Use**:
 - Questions about all locations
 - Location comparison discussions
 - Understanding location usage patterns
-- "Show me all my locations and their usage"
+- "Show me all my locations"
 
 **What it Provides**:
-- All location profiles with container statistics
-- Usage distribution across the garden
-- Quick overview of all 36 locations
+- All locations with basic metadata
+- Location characteristics and sun patterns
+- Overview of all 36 locations
+
+**Note**: Provides essential location overview within our streamlined schema.
 
 ## Integration Workflow for Phase 2
 
 ### For Individual Plant Questions (Enhanced)
 1. **Start with Phase 1**: `/api/plants/{id}/location-context`
-2. **Enhance with Phase 2**: `/api/plants/{id}/context` (if optimization needed)
+2. **Enhance with available data**: `/api/plants/get-context/{id}` (for comprehensive context)
 3. **Add weather**: Current conditions
-4. **Provide comprehensive advice**: Specific + optimization recommendations
+4. **Provide comprehensive advice**: Specific + available optimization recommendations
 
 ### For Location-Specific Questions (Enhanced)
 1. **Start with Phase 1**: `/api/locations/{id}/care-profile`
-2. **Enhance with Phase 2**: `/api/garden/location-analysis/{id}` (for comprehensive analysis)
+2. **Enhance with available data**: `/api/locations/get-context/{id}` (for detailed context)
 3. **Add weather**: Current conditions
-4. **Provide detailed insights**: Care + optimization + container compatibility
+4. **Provide detailed insights**: Care recommendations with available context
 
-### For Garden Planning & Optimization (New)
+### For Garden Planning & Optimization (Available)
 1. **Garden Overview**: `/api/garden/metadata/enhanced`
 2. **Optimization Opportunities**: `/api/garden/care-optimization`
-3. **Specific Location Analysis**: `/api/garden/location-analysis/{id}` as needed
+3. **All Locations**: `/api/locations/all` as needed
 4. **Weather Context**: Multi-day forecast for planning
-5. **Provide strategic recommendations**: Comprehensive planning advice
+5. **Provide strategic recommendations**: Based on available data
 
-### For Multi-Location Plant Analysis (New)
-1. **Enhanced Plant Context**: `/api/plants/{id}/context`
-2. **Location Profiles**: `/api/garden/location-profiles` if needed
+### For Multi-Location Plant Analysis (Available)
+1. **Enhanced Plant Context**: `/api/plants/get-context/{id}`
+2. **All Locations**: `/api/locations/all` if needed
 3. **Weather**: Current conditions
-4. **Provide optimization strategy**: Across all plant locations
+4. **Provide care strategy**: Across all available plant locations
 
 ## Response Enhancement Patterns
 
@@ -131,14 +136,14 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
    - Location utilization improvements
    - Care routing efficiency suggestions
 
-### Location Optimization Analysis
+### Location Context Analysis
 **Use Case**: "Should I add more plants to my patio area?"
 
 **Response Pattern**:
-1. Call `/api/garden/location-analysis/{patio_id}`
-2. Analyze current utilization and capacity
-3. Check container compatibility and care complexity
-4. Provide specific recommendations with optimization insights
+1. Call `/api/locations/get-context/{patio_id}`
+2. Analyze current care requirements and conditions
+3. Check available space and environmental factors
+4. Provide specific recommendations based on available context
 
 ## Key Intelligence Features
 
