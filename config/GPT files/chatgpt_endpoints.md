@@ -16,7 +16,7 @@ GET    /api/plants/search           // ✅ Search plants with field normalizatio
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
 PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
 PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
-GET    /api/plants/get-context/{id} // ✅ Get plant context with containers
+GET    /api/plants/get-context/{plant_id} // ✅ Get plant context with containers
 ```
 
 ### AI-Powered Analysis (2 operations)
