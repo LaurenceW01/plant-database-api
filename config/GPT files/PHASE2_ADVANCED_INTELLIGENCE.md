@@ -4,7 +4,7 @@
 
 Phase 2 adds **comprehensive garden analysis and optimization capabilities** to the existing location-aware plant care system. This enables ChatGPT to provide garden-wide intelligence, optimization recommendations, and advanced planning support.
 
-**⚠️ Note**: This guide has been updated to align with the streamlined 23-operation ChatGPT schema. Some advanced endpoints have been simplified while preserving core functionality.
+**⚠️ Note**: This guide has been updated to align with the streamlined 24-operation ChatGPT schema. Some advanced endpoints have been simplified while preserving core functionality.
 
 ## Core Phase 2 Capabilities
 

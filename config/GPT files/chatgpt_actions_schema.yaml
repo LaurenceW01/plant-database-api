@@ -18,16 +18,16 @@ paths:
     get:
       operationId: searchPlants
       summary: Search or list plants
-      description: Search for plants by name, description, or location
+      description: Search for plants by name, description, or location. IMPORTANT: Use GET with query parameters, NOT POST with JSON body.
       security: []
       parameters:
         - name: q
           in: query
-          description: Search query to find plants
+          description: Search query to find plants (use query parameter, NOT JSON body)
           required: false
           schema:
             type: string
-            example: "tomato"
+            example: "vinca"
         - name: limit
           in: query
           description: Maximum number of plants to return (default 20)

@@ -12,11 +12,20 @@ All endpoints include AI-powered analysis, field normalization, and location int
 ### Plant Management (6 operations)
 ```javascript
 POST   /api/plants/add              // ✅ Add new plant with upload token
-GET    /api/plants/search           // ✅ Search plants (supports both query params and JSON body)
+GET    /api/plants/search           // ✅ Search plants (use query parameters: ?q=vinca&limit=5)
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
 PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
 PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
 GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
+```
+
+**⚠️ CRITICAL: Plant Search Method**
+```javascript
+// CORRECT: Use GET with query parameters
+GET /api/plants/search?q=vinca&limit=5
+
+// WRONG: Do NOT use POST with JSON body  
+// POST /api/plants/search with {"q": "vinca"} ❌
 ```
 
 ### AI-Powered Analysis (2 operations)
@@ -222,25 +231,27 @@ GET /api/plants/get-context/Vinca
 
 // Both methods return the same response format with container and location context
 {
-  "plant_id": "1",
+  "plant_id": "134",
   "contexts": [
     {
       "container": {
-        "container_id": "1",
-        "container_type": "Pot in ground",
-        "container_size": "Medium",
-        "container_material": "Plastic"
+        "container_id": "107",
+        "container_type": "Pot buried in ground",
+        "container_size": "small",
+        "container_material": "plastic"
       },
       "location": {
-        "location_name": "arboretum right",
-        "total_sun_hours": 6,
-        "shade_pattern": "Afternoon Sun"
+        "location_name": "middle ",
+        "total_sun_hours": 12,
+        "shade_pattern": "Full Sun"
       },
       "context": {
-        "placement_description": "Pot in ground (Medium, Plastic) in arboretum right",
-        "sun_exposure_summary": "6 total hours (Afternoon Sun)",
+        "placement_description": "Pot buried in ground (small, plastic) in middle ",
+        "sun_exposure_summary": "12 total hours (Full Sun)",
         "priority_considerations": [
-          "Water early morning to prepare for evening heat stress"
+          "Morning watering preferred to prevent root heating",
+          "Daily watering checks during hot weather",
+          "Frequent moisture monitoring due to small container size"
         ]
       }
     }

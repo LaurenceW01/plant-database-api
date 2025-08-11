@@ -142,10 +142,12 @@ Weather Considerations: [Current weather impact on this specific location]
 - Time words: when, how often, schedule, timing, etc.
 
 **API Call Sequence for ANY Plant Care Query:**
-1. `/api/plants/search?q={plant_name}` → Get plant ID
-2. `/api/plants/get-context/{id}` → Get all location details (supports both IDs and names)
+1. `/api/plants/search?q={plant_name}` → Get ALL plants matching the name
+2. `/api/plants/get-context/{id}` → Get location details for EACH found plant
 3. `/api/weather/current` → Get current conditions
 4. Integrate all three into specific, actionable response
+
+**⚠️ CRITICAL**: For "where are all [plant]" or "find all [plant]" queries, you MUST use search first to find ALL matching plants (e.g., "Vinca" AND "Trailing Vinca"), then get context for each. Do NOT use get-context directly with a plant name as this only finds ONE specific plant.
 
 **Character Count Optimization:**
 - Lead with specific timing and location context

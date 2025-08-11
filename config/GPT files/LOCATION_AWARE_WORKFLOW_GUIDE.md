@@ -20,7 +20,7 @@ This guide provides detailed workflows for delivering precise, location-aware pl
 **Required Steps:**
 1. **Identify Plant**: Search for the plant mentioned
 2. **Get Location Context**: Call `/api/plants/get-context/{plant_id}` (supports both IDs and names)
-3. **Get Care Profile**: Call `/api/locations/{location_id}/care-profile` 
+3. **Get Care Profile**: Call `/api/locations/get-context/{location_id}` 
 4. **Check Weather**: Call `/api/weather/current` (continue if fails)
 5. **Provide Integrated Response** (see templates below)
 
@@ -48,6 +48,8 @@ GET /api/weather/current
 4. **Provide Multi-Location Response** showing all locations and their specific care needs
 
 **Key Point**: Even when location isn't mentioned, ALWAYS retrieve and present location-specific information for each instance of the plant.
+
+**⚠️ IMPORTANT**: When user asks "where are all the [plant_name]" or "find all [plant_name]", you MUST use the search endpoint first to find ALL plants with that name (e.g., both "Vinca" and "Trailing Vinca"), then get context for each individual plant. Do NOT shortcut directly to get-context with a single plant name.
 
 ---
 
