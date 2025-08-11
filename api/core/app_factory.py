@@ -84,6 +84,16 @@ def create_app(testing=False):
     # Register remaining non-modularized routes and components
     register_legacy_components(app, limiter)
     
+    # Add cache-busting headers to prevent CloudFlare caching issues
+    @app.after_request
+    def add_cache_headers(response):
+        """Add headers to prevent aggressive caching of API responses"""
+        if request.path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
+    
     logging.info("✅ Flask app created and configured successfully")
     logging.info(f"✅ Testing mode: {testing}")
     logging.info(f"✅ Rate limiting: {'disabled' if testing else 'enabled'}")
