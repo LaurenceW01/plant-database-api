@@ -57,7 +57,7 @@ def add_plant_new():
     return response
 
 
-@plants_bp.route('/search', methods=['GET'])
+@plants_bp.route('/search', methods=['GET', 'POST'])
 def search_plants_new():
     """
     Phase 2 direct implementation: Search for plants with action-based URL.
