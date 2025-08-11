@@ -766,7 +766,12 @@ def list_or_search_plants_api():
             if json_data:
                 search_query = json_data.get('q', '').strip()
                 if limit is None:
-                    limit = json_data.get('limit', type=int)
+                    limit_value = json_data.get('limit')
+                    if limit_value is not None:
+                        try:
+                            limit = int(limit_value)
+                        except (ValueError, TypeError):
+                            limit = None
         
         if search_query:
             # Search for plants by name
