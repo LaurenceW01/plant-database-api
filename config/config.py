@@ -26,7 +26,7 @@ SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '1zmKVuDTbgColGuoHJDF0ZJxXB6N2WfwLk
 # Use environment variable for sheet GID, fallback to current production GID
 SHEET_GID = os.getenv('SHEET_GID', '828349954')
 # Use environment variable for range name, allows different sheet names for dev/prod
-RANGE_NAME = os.getenv('RANGE_NAME', 'Plants!A:Q')
+RANGE_NAME = os.getenv('RANGE_NAME', 'Plants!A:S')
 
 # Plant Log Sheet Setup (extends existing spreadsheet) - Now configurable
 # Use environment variable for log sheet name, allows different log sheets for dev/prod
