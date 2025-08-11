@@ -193,30 +193,51 @@ def get_plant_context_new(plant_id):
     Phase 2 direct implementation: Get comprehensive plant context with location/container intelligence.
     Provides semantic alignment: getPlantContext operationId → /api/plants/get-context/{id} URL
     This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    
+    Supports both plant IDs (numeric) and plant names for ChatGPT compatibility.
     """
     try:
         from utils.locations_operations import get_plant_location_context
+        from utils.plant_operations import find_plant_by_id_or_name
         
-        # Generate comprehensive context
-        context_result = get_plant_location_context(plant_id)
+        # Convert plant name to ID if necessary (ChatGPT often sends plant names)
+        actual_plant_id = plant_id
+        if not plant_id.isdigit():
+            # Try to find plant by name and get its ID
+            plant_row, plant_data = find_plant_by_id_or_name(plant_id)
+            if plant_row is not None:
+                actual_plant_id = str(plant_row + 1)  # Convert to 1-based ID
+                logging.info(f"Converted plant name '{plant_id}' to ID '{actual_plant_id}'")
+            else:
+                return jsonify({
+                    "error": f"Plant '{plant_id}' not found in database",
+                    "message": "Please check the plant name and try again",
+                    "plant_id": plant_id,
+                    "phase2_direct": True
+                }), 404
+        
+        # Generate comprehensive context using numeric ID
+        context_result = get_plant_location_context(actual_plant_id)
         
         if context_result:
             return jsonify({
                 'contexts': context_result,
-                'plant_id': plant_id,
+                'plant_id': actual_plant_id,
+                'original_query': plant_id,
                 'phase2_direct': True,
                 'endpoint_type': 'direct_implementation'
             }), 200
         else:
             return jsonify({
                 "error": f"No containers found for plant {plant_id}",
-                "message": "This plant may not have any containers assigned",
-                "plant_id": plant_id,
+                "message": "This plant may not have any containers assigned in the locations database",
+                "plant_id": actual_plant_id,
+                "original_query": plant_id,
                 "phase2_direct": True
             }), 404
             
     except Exception as e:
-        logging.error(f"Error getting plant context: {e}")
+        logging.error(f"Error getting plant context for '{plant_id}': {e}")
         return jsonify({
             "error": "Failed to get plant context",
             "details": str(e),

@@ -18,7 +18,7 @@ paths:
     get:
       operationId: searchPlants
       summary: Search or list plants
-      description: Search for plants by name, description, or location. Supports both query parameters and JSON body.
+      description: Search for plants by name, description, or location
       security: []
       parameters:
         - name: q
@@ -35,21 +35,6 @@ paths:
           schema:
             type: integer
             default: 20
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                q:
-                  type: string
-                  description: Search query to find plants
-                  example: "tomato"
-                limit:
-                  type: integer
-                  default: 20
-                  description: Maximum number of plants to return
       responses:
         '200':
           description: List of plants matching search criteria
@@ -240,7 +225,7 @@ paths:
         - name: plant_id
           in: path
           required: true
-          description: Plant ID
+          description: Plant ID or plant name (e.g., "1" or "Vinca")
           schema:
             type: string
             example: "1"
@@ -820,7 +805,7 @@ paths:
     get:
       operationId: getDailyWeatherForecast
       summary: Get daily weather forecast
-      description: Get daily weather forecast for up to 7 days. Supports both query parameters and JSON body.
+      description: Get daily weather forecast for up to 7 days
       security: []
       parameters:
         - name: days
@@ -831,18 +816,6 @@ paths:
             type: integer
             default: 7
             maximum: 7
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                days:
-                  type: integer
-                  default: 7
-                  maximum: 7
-                  description: Number of days to forecast
       responses:
         '200':
           description: Daily weather forecast
