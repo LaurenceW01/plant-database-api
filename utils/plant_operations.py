@@ -231,31 +231,42 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
                 if row and row[0] == plant_id:
                     return i, row
         except ValueError:
-            search_name = identifier.lower()
+            search_name = identifier.lower().strip()
             
-            # First try exact match
+            # First try exact match (case-insensitive)
             for i, row in enumerate(values[1:], start=1):
-                if row and len(row) > name_idx and row[name_idx].lower() == search_name:
+                if row and len(row) > name_idx and row[name_idx].lower().strip() == search_name:
+                    logger.info(f"Exact match found: '{identifier}' -> row {i}, plant_name='{row[name_idx]}'")
                     return i, row
             
-            # If no exact match, try partial matching
-            # Split the search name into words and look for plants that contain all words
+            # If no exact match, try partial matching with stricter criteria
             search_words = search_name.split()
             best_match = None
             best_score = 0
             
             for i, row in enumerate(values[1:], start=1):
                 if row and len(row) > name_idx and row[name_idx]:
-                    plant_name = row[name_idx].lower()
-                    plant_words = plant_name.split()
+                    plant_name = row[name_idx].lower().strip()
                     
-                    # Count how many search words are found in the plant name
-                    matches = sum(1 for word in search_words if any(word in plant_word for plant_word in plant_words))
-                    score = matches / len(search_words) if search_words else 0
-                    
-                    if score > best_score and score >= 0.5:  # At least 50% of words must match
-                        best_score = score
-                        best_match = (i, row)
+                    # For single word searches like "vinca", require exact word match
+                    if len(search_words) == 1:
+                        plant_words = plant_name.split()
+                        if search_name in plant_words:  # Exact word match
+                            score = 1.0
+                            if score > best_score:
+                                best_score = score
+                                best_match = (i, row)
+                                logger.info(f"Single word match: '{identifier}' -> row {i}, plant_name='{row[name_idx]}'")
+                    else:
+                        # Multi-word matching logic (existing)
+                        plant_words = plant_name.split()
+                        matches = sum(1 for word in search_words if any(word in plant_word for plant_word in plant_words))
+                        score = matches / len(search_words) if search_words else 0
+                        
+                        if score > best_score and score >= 0.8:  # Increased threshold for multi-word
+                            best_score = score
+                            best_match = (i, row)
+                            logger.info(f"Multi-word match: '{identifier}' -> row {i}, plant_name='{row[name_idx]}', score={score}")
             
             if best_match:
                 return best_match
