@@ -236,6 +236,7 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
             # First try exact match
             for i, row in enumerate(values[1:], start=1):
                 if row and len(row) > name_idx and row[name_idx].lower() == search_name:
+                    logger.info(f"Exact match found: '{identifier}' -> row {i}, plant_name='{row[name_idx]}'")
                     return i, row
             
             # If no exact match, try partial matching
@@ -258,6 +259,7 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
                         best_match = (i, row)
             
             if best_match:
+                logger.info(f"Partial match found: '{identifier}' -> row {best_match[0]}, plant_name='{best_match[1][name_idx] if len(best_match[1]) > name_idx else 'N/A'}', score={best_score}")
                 return best_match
         
         return None, None
