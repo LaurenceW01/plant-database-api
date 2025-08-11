@@ -440,9 +440,9 @@ def analyze_plant_with_ai(plant_name: str = '', user_notes: str = '', analysis_t
                 from utils.locations_operations import get_plant_location_context
                 # Find plant ID if we have a plant name
                 from utils.plant_operations import find_plant_by_id_or_name
-                plant_row, plant_data = find_plant_by_id_or_name(plant_name)
-                if plant_row is not None:
-                    plant_id = str(plant_row + 1)  # Convert to 1-based ID
+                plant_id_or_row, plant_data = find_plant_by_id_or_name(plant_name)
+                if plant_id_or_row is not None:
+                    plant_id = str(plant_id_or_row)  # Use ID field value directly (already correct)
                     context_data = get_plant_location_context(plant_id)
                     if context_data:
                         location_context = f"\n\nENVIRONMENTAL CONTEXT:\nThis plant is located in {location}. Container and microclimate details: {context_data[0].get('context', {}) if context_data else 'No specific container data available'}."

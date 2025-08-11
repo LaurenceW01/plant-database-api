@@ -229,15 +229,16 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
             plant_id = str(int(identifier))
             for i, row in enumerate(values[1:], start=1):
                 if row and row[0] == plant_id:
-                    return i, row
+                    return int(row[0]), row  # Return ID field value, not row number
         except ValueError:
             search_name = identifier.lower().strip()
             
             # First try exact match (case-insensitive)
             for i, row in enumerate(values[1:], start=1):
                 if row and len(row) > name_idx and row[name_idx].lower().strip() == search_name:
-                    logger.info(f"Exact match found: '{identifier}' -> row {i}, plant_name='{row[name_idx]}'")
-                    return i, row
+                    plant_id_from_sheet = row[0] if row else str(i)  # Use ID field value, fallback to row number
+                    logger.info(f"Exact match found: '{identifier}' -> sheet_id={plant_id_from_sheet}, row {i}, plant_name='{row[name_idx]}'")
+                    return int(plant_id_from_sheet), row
             
             # If no exact match, try partial matching with stricter criteria
             search_words = search_name.split()
@@ -255,8 +256,9 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
                             score = 1.0
                             if score > best_score:
                                 best_score = score
-                                best_match = (i, row)
-                                logger.info(f"Single word match: '{identifier}' -> row {i}, plant_name='{row[name_idx]}'")
+                                plant_id_from_sheet = int(row[0]) if row and row[0] else i
+                                best_match = (plant_id_from_sheet, row)
+                                logger.info(f"Single word match: '{identifier}' -> sheet_id={plant_id_from_sheet}, row {i}, plant_name='{row[name_idx]}'")
                     else:
                         # Multi-word matching logic (existing)
                         plant_words = plant_name.split()
@@ -265,8 +267,9 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
                         
                         if score > best_score and score >= 0.8:  # Increased threshold for multi-word
                             best_score = score
-                            best_match = (i, row)
-                            logger.info(f"Multi-word match: '{identifier}' -> row {i}, plant_name='{row[name_idx]}', score={score}")
+                            plant_id_from_sheet = int(row[0]) if row and row[0] else i
+                            best_match = (plant_id_from_sheet, row)
+                            logger.info(f"Multi-word match: '{identifier}' -> sheet_id={plant_id_from_sheet}, row {i}, plant_name='{row[name_idx]}', score={score}")
             
             if best_match:
                 return best_match
