@@ -19,14 +19,19 @@ PUT    /api/plants/update           // ✅ Update plant with ID in request body 
 GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
 ```
 
-**⚠️ CRITICAL: Plant Search Method**
+**🚨 CRITICAL: ChatGPT Must Use GET Method**
 ```javascript
-// CORRECT: Use GET with query parameters
+// ✅ CORRECT: Use GET with query parameters  
 GET /api/plants/search?q=vinca&limit=5
 
-// WRONG: Do NOT use POST with JSON body  
+// ❌ WRONG: Do NOT use POST with JSON body
 // POST /api/plants/search with {"q": "vinca"} ❌
+
+// ❌ WRONG: Do NOT send JSON body at all
+// The searchPlants operation MUST use query parameters only
 ```
+
+**Important for ChatGPT:** When calling `searchPlants`, ensure your client sends a GET request with query parameters, not POST with JSON body. If your tool wrapper defaults to POST, you must override it to use GET method.
 
 ### AI-Powered Analysis (2 operations)
 ```javascript
