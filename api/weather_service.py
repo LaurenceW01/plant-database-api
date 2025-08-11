@@ -122,8 +122,8 @@ def register_weather_routes(app, limiter):
     def weather_forecast():
         return get_weather_forecast()
         
-    # Daily forecast endpoint (supports both GET and POST)
-    @app.route('/api/weather/forecast/daily', methods=['GET', 'POST'])
+    # Daily forecast endpoint (supports both query params and JSON body)
+    @app.route('/api/weather/forecast/daily', methods=['GET'])
     @limiter.limit('60 per minute')
     def daily_forecast():
         return get_daily_forecast() 

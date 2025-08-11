@@ -18,7 +18,7 @@ paths:
     get:
       operationId: searchPlants
       summary: Search or list plants
-      description: Search for plants by name, description, or location
+      description: Search for plants by name, description, or location. Supports both query parameters and JSON body.
       security: []
       parameters:
         - name: q
@@ -35,29 +35,24 @@ paths:
           schema:
             type: integer
             default: 20
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                q:
+                  type: string
+                  description: Search query to find plants
+                  example: "tomato"
+                limit:
+                  type: integer
+                  default: 20
+                  description: Maximum number of plants to return
       responses:
         '200':
           description: List of plants matching search criteria
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  plants:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        Plant Name:
-                          type: string
-                        Description:
-                          type: string
-                        Location:
-                          type: string
-                  total:
-                    type: integer
-                  count:
-                    type: integer
 
   /api/plants/add:
     post:
@@ -825,7 +820,7 @@ paths:
     get:
       operationId: getDailyWeatherForecast
       summary: Get daily weather forecast
-      description: Get daily weather forecast for up to 7 days
+      description: Get daily weather forecast for up to 7 days. Supports both query parameters and JSON body.
       security: []
       parameters:
         - name: days
@@ -836,14 +831,6 @@ paths:
             type: integer
             default: 7
             maximum: 7
-      responses:
-        '200':
-          description: Daily weather forecast
-    post:
-      operationId: getDailyWeatherForecastPost
-      summary: Get daily weather forecast (JSON body)
-      description: Get daily weather forecast for up to 7 days using JSON body parameters
-      security: []
       requestBody:
         required: false
         content:
@@ -855,6 +842,7 @@ paths:
                   type: integer
                   default: 7
                   maximum: 7
+                  description: Number of days to forecast
       responses:
         '200':
           description: Daily weather forecast

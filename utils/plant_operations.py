@@ -742,8 +742,17 @@ def list_or_search_plants_api():
     try:
         from flask import request, jsonify
         
+        # Handle both query parameters and JSON body parameters (ChatGPT-friendly)
         search_query = request.args.get('q', '').strip()
         limit = request.args.get('limit', type=int)
+        
+        # If not in query params, check JSON body
+        if not search_query and request.is_json:
+            json_data = request.get_json()
+            if json_data:
+                search_query = json_data.get('q', '').strip()
+                if limit is None:
+                    limit = json_data.get('limit', type=int)
         
         if search_query:
             # Search for plants by name
