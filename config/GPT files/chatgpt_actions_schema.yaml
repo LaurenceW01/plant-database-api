@@ -801,24 +801,6 @@ paths:
       responses:
         '200':
           description: Current weather information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  temperature:
-                    type: number
-                    description: Temperature in Fahrenheit
-                  humidity:
-                    type: integer
-                    description: Humidity percentage
-                  wind_speed:
-                    type: number
-                    description: Wind speed in MPH
-                  description:
-                    type: string
-                  precipitation_chance:
-                    type: integer
 
   /api/weather/forecast:
     get:
@@ -838,24 +820,6 @@ paths:
       responses:
         '200':
           description: Hourly weather forecast
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  forecast:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        time:
-                          type: string
-                        temperature:
-                          type: number
-                        description:
-                          type: string
-                        precipitation_chance:
-                          type: integer
 
   /api/weather/forecast/daily:
     get:
@@ -875,27 +839,25 @@ paths:
       responses:
         '200':
           description: Daily weather forecast
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  forecast:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        date:
-                          type: string
-                          format: date
-                        high_temp:
-                          type: number
-                        low_temp:
-                          type: number
-                        precipitation_chance:
-                          type: integer
-                        description:
-                          type: string
+    post:
+      operationId: getDailyWeatherForecastPost
+      summary: Get daily weather forecast (JSON body)
+      description: Get daily weather forecast for up to 7 days using JSON body parameters
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                days:
+                  type: integer
+                  default: 7
+                  maximum: 7
+      responses:
+        '200':
+          description: Daily weather forecast
 
 components:
   schemas:

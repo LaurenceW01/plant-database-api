@@ -34,7 +34,20 @@ def get_current_weather():
 def get_weather_forecast():
     """Get hourly weather forecast for Houston"""
     try:
-        hours = request.args.get('hours', default=24, type=int)
+        # Handle both query parameters and JSON body parameters
+        # Check query parameters first
+        hours = request.args.get('hours', type=int)
+        
+        # If not in query params, check JSON body
+        if hours is None and request.is_json:
+            json_data = request.get_json()
+            if json_data:
+                hours = json_data.get('hours', type=int)
+        
+        # Set default if still None
+        if hours is None:
+            hours = 24
+            
         if hours < 1 or hours > 48:
             return jsonify({
                 'error': 'Hours parameter must be between 1 and 48'
@@ -59,7 +72,20 @@ def get_weather_forecast():
 def get_daily_forecast():
     """Get 10-day weather forecast for Houston"""
     try:
-        days = request.args.get('days', default=10, type=int)
+        # Handle both query parameters and JSON body parameters
+        # Check query parameters first
+        days = request.args.get('days', type=int)
+        
+        # If not in query params, check JSON body
+        if days is None and request.is_json:
+            json_data = request.get_json()
+            if json_data:
+                days = json_data.get('days', type=int)
+        
+        # Set default if still None
+        if days is None:
+            days = 7  # Changed default to 7 to match ChatGPT schema
+            
         if days < 1 or days > 10:
             return jsonify({
                 'error': 'Days parameter must be between 1 and 10'
@@ -96,8 +122,8 @@ def register_weather_routes(app, limiter):
     def weather_forecast():
         return get_weather_forecast()
         
-    # Daily forecast endpoint
-    @app.route('/api/weather/forecast/daily', methods=['GET'])
+    # Daily forecast endpoint (supports both GET and POST)
+    @app.route('/api/weather/forecast/daily', methods=['GET', 'POST'])
     @limiter.limit('60 per minute')
     def daily_forecast():
         return get_daily_forecast() 

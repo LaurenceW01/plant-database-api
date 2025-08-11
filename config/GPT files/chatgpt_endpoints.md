@@ -2,12 +2,12 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 24 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
+**Status**: 25 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 ---
 
-## Quick Reference - All 24 Operations
+## Quick Reference - All 25 Operations
 
 ### Plant Management (6 operations)
 ```javascript
@@ -50,11 +50,12 @@ GET    /api/garden/metadata/enhanced         // ✅ Enhanced garden metadata
 GET    /api/garden/care-optimization         // ✅ Care optimization analysis
 ```
 
-### Weather Integration (3 operations)
+### Weather Integration (4 operations)
 ```javascript
 GET    /api/weather/current           // ✅ Current weather conditions
 GET    /api/weather/forecast          // ✅ Hourly weather forecast  
-GET    /api/weather/forecast/daily    // ✅ Daily weather forecast
+GET    /api/weather/forecast/daily    // ✅ Daily weather forecast (query params)
+POST   /api/weather/forecast/daily    // ✅ Daily weather forecast (JSON body)
 ```
 
 ---
@@ -283,9 +284,17 @@ GET /api/weather/current
   "precipitation_chance": 30
 }
 
+// Daily forecast - Method 1: Query parameters
 GET /api/weather/forecast/daily?days=7
 
-// Daily forecast
+// Daily forecast - Method 2: JSON body (ChatGPT-friendly)
+POST /api/weather/forecast/daily
+Content-Type: application/json
+{
+  "days": 7
+}
+
+// Both methods return the same response:
 {
   "forecast": [
     {
@@ -327,7 +336,7 @@ in that evening sun location."
 
 ## Important Notes
 
-🔴 **ChatGPT Limitations**: This schema contains exactly 23 operations (under the 30 limit)
+🔴 **ChatGPT Limitations**: This schema contains exactly 25 operations (under the 30 limit)
 🔴 **Field Compatibility**: Always use exact field names as shown in examples
 🔴 **Token Expiration**: All upload tokens expire in 24 hours
 🔴 **Location Intelligence**: Use context endpoints for precise, location-aware advice
