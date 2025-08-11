@@ -31,6 +31,12 @@ def setup_middleware(app):
         def apply_field_normalization():
             """Apply field normalization to all incoming requests"""
             print(f"🔄 MIDDLEWARE CALLED: {request.method} {request.path}")  # Debug print
+            
+            # Skip field normalization for weather endpoints and other system endpoints
+            if request.path.startswith('/api/weather/') or request.path.startswith('/health') or request.path.startswith('/favicon'):
+                print(f"⏭️  Skipping field normalization for: {request.path}")  # Debug print
+                return
+            
             if request.is_json:
                 print(f"📝 Original JSON: {request.get_json()}")  # Debug print
             normalize_request_middleware()
