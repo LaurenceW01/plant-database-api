@@ -19,16 +19,16 @@ This guide provides detailed workflows for delivering precise, location-aware pl
 
 **Required Steps:**
 1. **Identify Plant**: Search for the plant mentioned
-2. **Get Location Context**: Call `/api/plants/{plant_id}/location-context`
+2. **Get Location Context**: Call `/api/plants/get-context/{plant_id}` (supports both IDs and names)
 3. **Get Care Profile**: Call `/api/locations/{location_id}/care-profile` 
 4. **Check Weather**: Call `/api/weather/current` (continue if fails)
 5. **Provide Integrated Response** (see templates below)
 
 **Example API Sequence:**
 ```javascript
-GET /api/plants?q=tropical hibiscus
-GET /api/plants/1/location-context  
-GET /api/locations/1/care-profile
+GET /api/plants/search?q=tropical hibiscus
+GET /api/plants/get-context/1  // or GET /api/plants/get-context/tropical hibiscus
+GET /api/locations/get-context/1
 GET /api/weather/current
 ```
 
@@ -42,8 +42,8 @@ GET /api/weather/current
 - "When to prune azaleas?"
 
 **Required Steps:**
-1. **Find All Plant Instances**: Call `/api/plants?q={plant_name}`
-2. **Get All Location Contexts**: Call `/api/plants/{plant_id}/location-context`
+1. **Find All Plant Instances**: Call `/api/plants/search?q={plant_name}`
+2. **Get All Location Contexts**: Call `/api/plants/get-context/{plant_id}` (supports both IDs and names)
 3. **Check Weather**: Call `/api/weather/current` (continue if fails)
 4. **Provide Multi-Location Response** showing all locations and their specific care needs
 

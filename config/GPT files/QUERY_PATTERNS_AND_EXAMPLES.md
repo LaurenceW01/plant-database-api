@@ -142,8 +142,8 @@ Weather Considerations: [Current weather impact on this specific location]
 - Time words: when, how often, schedule, timing, etc.
 
 **API Call Sequence for ANY Plant Care Query:**
-1. `/api/plants?q={plant_name}` → Get plant ID
-2. `/api/plants/{id}/location-context` → Get all location details
+1. `/api/plants/search?q={plant_name}` → Get plant ID
+2. `/api/plants/get-context/{id}` → Get all location details (supports both IDs and names)
 3. `/api/weather/current` → Get current conditions
 4. Integrate all three into specific, actionable response
 

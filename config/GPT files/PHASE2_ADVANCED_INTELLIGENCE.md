@@ -91,14 +91,14 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 ## Integration Workflow for Phase 2
 
 ### For Individual Plant Questions (Enhanced)
-1. **Start with Phase 1**: `/api/plants/{id}/location-context`
+1. **Start with Phase 1**: `/api/plants/get-context/{id}` (supports both IDs and names)
 2. **Enhance with available data**: `/api/plants/get-context/{id}` (for comprehensive context)
 3. **Add weather**: Current conditions
 4. **Provide comprehensive advice**: Specific + available optimization recommendations
 
 ### For Location-Specific Questions (Enhanced)
-1. **Start with Phase 1**: `/api/locations/{id}/care-profile`
-2. **Enhance with available data**: `/api/locations/get-context/{id}` (for detailed context)
+1. **Start with Phase 1**: `/api/locations/get-context/{id}`
+2. **Enhanced location data**: Available through streamlined endpoints
 3. **Add weather**: Current conditions
 4. **Provide detailed insights**: Care recommendations with available context
 
