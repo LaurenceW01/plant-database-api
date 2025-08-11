@@ -7,7 +7,7 @@ components including rate limiting, CORS, and blueprint registration.
 
 import os
 import logging
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
