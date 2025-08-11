@@ -16,7 +16,7 @@ GET    /api/plants/search           // ✅ Search plants (supports both query pa
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
 PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
 PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
-GET    /api/plants/get-context/{plant_id} // ✅ Get plant context with containers
+GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
 ```
 
 ### AI-Powered Analysis (2 operations)
@@ -214,9 +214,13 @@ Content-Type: application/json
 
 ### Plant Context with Location Intelligence
 ```javascript
+// Method 1: Using plant ID
 GET /api/plants/get-context/1
 
-// Response with container and location context
+// Method 2: Using plant name (ChatGPT-friendly)
+GET /api/plants/get-context/Vinca
+
+// Both methods return the same response format with container and location context
 {
   "plant_id": "1",
   "contexts": [
