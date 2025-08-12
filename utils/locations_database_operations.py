@@ -36,30 +36,39 @@ def get_all_locations() -> List[Dict]:
         ).execute()
         
         values = result.get('values', [])
-        
-        if not values:
-            logger.warning("No location data found")
+        if not values or len(values) < 2:  # Need header + at least one data row
+            logger.warning("No location data found in sheet")
             return []
         
-        # First row contains headers
-        headers = values[0]
+        # headers = values[0]  # First row contains headers (unused in current implementation)
         locations = []
         
-        # Process each location row
+        # Process each data row (skip header row)
         for row in values[1:]:
-            # Pad row with empty strings if needed
-            padded_row = row + [''] * (len(headers) - len(row))
-            
-            # Create location dictionary
-            location = {}
-            for i, header in enumerate(headers):
-                location[header] = padded_row[i] if i < len(padded_row) else ''
-            
-            # Only add locations with valid ID
-            if location.get('Location ID', '').strip():
-                locations.append(location)
+            if len(row) >= 6:  # Ensure we have all required columns
+                try:
+                    # Parse sun exposure hours as integers, default to 0 if invalid
+                    morning_hours = int(row[2]) if len(row) > 2 and row[2].isdigit() else 0
+                    afternoon_hours = int(row[3]) if len(row) > 3 and row[3].isdigit() else 0
+                    evening_hours = int(row[4]) if len(row) > 4 and row[4].isdigit() else 0
+                    
+                    location = {
+                        'location_id': row[0],  # Location ID
+                        'location_name': row[1],  # Location name
+                        'morning_sun_hours': morning_hours,  # Morning sun exposure
+                        'afternoon_sun_hours': afternoon_hours,  # Afternoon sun exposure
+                        'evening_sun_hours': evening_hours,  # Evening sun exposure
+                        'shade_pattern': row[5] if len(row) > 5 else '',  # Shade pattern description
+                        'microclimate_conditions': row[6] if len(row) > 6 else '',  # Microclimate details
+                        'total_sun_hours': morning_hours + afternoon_hours + evening_hours  # Calculated total
+                    }
+                    locations.append(location)
+                    
+                except (ValueError, IndexError) as e:
+                    logger.warning(f"Error parsing location row {row}: {e}")
+                    continue
         
-        logger.info(f"Retrieved {len(locations)} locations from database")
+        logger.info(f"Retrieved {len(locations)} locations from sheet")
         return locations
         
     except Exception as e:
@@ -80,7 +89,7 @@ def get_location_by_id(location_id: str) -> Optional[Dict]:
         all_locations = get_all_locations()
         
         for location in all_locations:
-            if location.get('Location ID', '').strip() == location_id.strip():
+            if location.get('location_id', '').strip() == location_id.strip():
                 logger.debug(f"Found location: {location_id}")
                 return location
         
@@ -108,30 +117,27 @@ def get_all_containers() -> List[Dict]:
         ).execute()
         
         values = result.get('values', [])
-        
-        if not values:
-            logger.warning("No container data found")
+        if not values or len(values) < 2:  # Need header + at least one data row
+            logger.warning("No container data found in sheet")
             return []
         
-        # First row contains headers
-        headers = values[0]
+        # headers = values[0]  # First row contains headers (unused in current implementation)
         containers = []
         
-        # Process each container row
+        # Process each data row (skip header row)
         for row in values[1:]:
-            # Pad row with empty strings if needed
-            padded_row = row + [''] * (len(headers) - len(row))
-            
-            # Create container dictionary
-            container = {}
-            for i, header in enumerate(headers):
-                container[header] = padded_row[i] if i < len(padded_row) else ''
-            
-            # Only add containers with valid ID
-            if container.get('Container ID', '').strip():
+            if len(row) >= 6:  # Ensure we have all required columns
+                container = {
+                    'container_id': row[0],  # Container ID
+                    'plant_id': row[1],  # Plant ID this container holds
+                    'location_id': row[2],  # Location where container is placed
+                    'container_type': row[3],  # Type of container (pot, planter, etc.)
+                    'container_size': row[4],  # Size designation (small, medium, large)
+                    'container_material': row[5]  # Material (plastic, ceramic, etc.)
+                }
                 containers.append(container)
         
-        logger.info(f"Retrieved {len(containers)} containers from database")
+        logger.info(f"Retrieved {len(containers)} containers from sheet")
         return containers
         
     except Exception as e:
@@ -154,7 +160,7 @@ def get_containers_by_location_id(location_id: str) -> List[Dict]:
         # Filter containers by location ID
         location_containers = [
             container for container in all_containers
-            if container.get('Location ID', '').strip() == location_id.strip()
+            if container.get('location_id', '').strip() == location_id.strip()
         ]
         
         logger.debug(f"Found {len(location_containers)} containers for location {location_id}")
@@ -180,7 +186,7 @@ def get_containers_by_plant_id(plant_id: str) -> List[Dict]:
         # Filter containers by plant ID
         plant_containers = [
             container for container in all_containers
-            if container.get('Plant ID', '').strip() == plant_id.strip()
+            if container.get('plant_id', '').strip() == plant_id.strip()
         ]
         
         logger.debug(f"Found {len(plant_containers)} containers for plant {plant_id}")
@@ -204,7 +210,7 @@ def get_container_by_id(container_id: str) -> Optional[Dict]:
         all_containers = get_all_containers()
         
         for container in all_containers:
-            if container.get('Container ID', '').strip() == container_id.strip():
+            if container.get('container_id', '').strip() == container_id.strip():
                 logger.debug(f"Found container: {container_id}")
                 return container
         

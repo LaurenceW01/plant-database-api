@@ -203,7 +203,7 @@ def get_enhanced_garden_metadata():
         if enhanced_metadata:
             return jsonify({
                 "enhanced_metadata": enhanced_metadata,
-                "api_version": "v2.3.1 - AI-Friendly API Design Complete",
+                "api_version": "v2.3.7 - Field Naming Bug Fix",
                 "message": "Enhanced garden metadata generated successfully",
                 "phase2_direct": True
             }), 200

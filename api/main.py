@@ -1,5 +1,5 @@
 """
-Plant Database API - Main Application Entry Point (v2.3.5)
+Plant Database API - Main Application Entry Point (v2.3.7)
 
 Modularized architecture with clean separation of concerns.
 Routes are organized into blueprints by functional area.
@@ -504,7 +504,7 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
     
-    logging.info(f"🚀 Starting Plant Database API v2.3.5 (Modularized)")
+    logging.info(f"🚀 Starting Plant Database API v2.3.7 (Field Naming Fix)")
     logging.info(f"🌐 Server will run on port {port}")
     logging.info(f"🔧 Debug mode: {debug}")
     

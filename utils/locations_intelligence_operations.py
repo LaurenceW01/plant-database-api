@@ -43,7 +43,7 @@ def get_plant_location_context(plant_id: str) -> List[Dict]:
         
         # For each container, get location details and create context
         for container in plant_containers:
-            location = get_location_by_id(container['Location ID'])
+            location = get_location_by_id(container['location_id'])
             
             if location:
                 # Create combined context for this plant-container-location combination
@@ -51,15 +51,15 @@ def get_plant_location_context(plant_id: str) -> List[Dict]:
                     'container': container,
                     'location': location,
                     'context': {
-                        'placement_description': f"{container['Container Type']} ({container['Container Size']}, {container['Container Material']}) in {location['Location Name']}",
-                        'sun_exposure_summary': f"{location['Total Sun Hours']} total hours ({location['Shade Pattern']})",
+                        'placement_description': f"{container['container_type']} ({container['container_size']}, {container['container_material']}) in {location['location_name']}",
+                        'sun_exposure_summary': f"{location['total_sun_hours']} total hours ({location['shade_pattern']})",
                         'care_complexity': _assess_care_complexity(container, location),
                         'priority_considerations': _get_priority_considerations(container, location)
                     }
                 }
                 contexts.append(context)
             else:
-                logger.warning(f"Location {container['Location ID']} not found for container {container['Container ID']}")
+                logger.warning(f"Location {container['location_id']} not found for container {container['container_id']}")
         
         logger.info(f"Generated {len(contexts)} location contexts for plant {plant_id}")
         return contexts
@@ -82,26 +82,22 @@ def _assess_care_complexity(container: Dict, location: Dict) -> str:
     complexity_factors = 0
     
     # Sun exposure complexity
-    total_sun_hours = float(location.get('Total Sun Hours', '0') or '0')
-    afternoon_sun_hours = float(location.get('Afternoon Sun Hours', '0') or '0')
-    
-    if total_sun_hours > 8:  # Very high sun
+    if location['total_sun_hours'] > 8:  # Very high sun
         complexity_factors += 2
-    elif total_sun_hours > 6:  # High sun
+    elif location['total_sun_hours'] > 6:  # High sun
         complexity_factors += 1
     
     # Container material considerations  
-    if container.get('Container Material', '').lower() == 'plastic':
-        if afternoon_sun_hours > 2:  # Plastic in afternoon sun
+    if container['container_material'].lower() == 'plastic':
+        if location['afternoon_sun_hours'] > 2:  # Plastic in afternoon sun
             complexity_factors += 1
     
     # Container size considerations
-    if container.get('Container Size', '').lower() == 'small':
+    if container['container_size'].lower() == 'small':
         complexity_factors += 1  # Small containers need more frequent attention
     
     # Microclimate complexity
-    microclimate = location.get('Microclimate Conditions', '').lower()
-    if 'facing' in microclimate:
+    if 'facing' in location['microclimate_conditions'].lower():
         complexity_factors += 1  # Directional microclimates need special consideration
     
     # Determine overall complexity
@@ -125,30 +121,25 @@ def _get_priority_considerations(container: Dict, location: Dict) -> List[str]:
     """
     considerations = []
     
-    afternoon_sun_hours = float(location.get('Afternoon Sun Hours', '0') or '0')
-    total_sun_hours = float(location.get('Total Sun Hours', '0') or '0')
-    evening_sun_hours = float(location.get('Evening Sun Hours', '0') or '0')
-    
     # Plastic container in high sun
-    if (container.get('Container Material', '').lower() == 'plastic' and 
-        afternoon_sun_hours > 2):
+    if (container['container_material'].lower() == 'plastic' and 
+        location['afternoon_sun_hours'] > 2):
         considerations.append('Morning watering preferred to prevent root heating')
     
     # High sun exposure
-    if total_sun_hours > 7:
+    if location['total_sun_hours'] > 7:
         considerations.append('Daily watering checks during hot weather')
     
     # Small containers
-    if container.get('Container Size', '').lower() == 'small':
+    if container['container_size'].lower() == 'small':
         considerations.append('Frequent moisture monitoring due to small container size')
     
     # Evening sun locations
-    if evening_sun_hours > 2:
+    if location['evening_sun_hours'] > 2:
         considerations.append('Water early morning to prepare for evening heat stress')
     
     # North facing locations
-    microclimate = location.get('Microclimate Conditions', '').lower()
-    if 'north' in microclimate:
+    if 'north' in location['microclimate_conditions'].lower():
         considerations.append('Cooler microclimate - adjust watering frequency accordingly')
     
     return considerations

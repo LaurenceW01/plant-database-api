@@ -1,5 +1,5 @@
 """
-API Routes for Plant Database API v2.2.0+
+API Routes for Plant Database API v2.3.6+
 
 This package contains all the modularized route blueprints
 organized by functional area.
