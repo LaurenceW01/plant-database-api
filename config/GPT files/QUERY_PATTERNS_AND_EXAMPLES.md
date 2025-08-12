@@ -143,7 +143,7 @@ Weather Considerations: [Current weather impact on this specific location]
 
 **API Call Sequence for ANY Plant Care Query:**
 1. `POST /api/plants/search` with `{"q": "{plant_name}"}` → Get ALL plants matching the name
-2. `/api/plants/get-context/{id}` → Get location details for EACH found plant
+2. `POST /api/plants/get-context/{id}` → Get location details for EACH found plant
 3. `/api/weather/current` → Get current conditions
 4. Integrate all three into specific, actionable response
 

@@ -26,7 +26,7 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 **Note**: This is a streamlined version focusing on core location intelligence.
 
 ### 2. Enhanced Plant Context (Available)
-**Endpoint**: `GET /api/plants/get-context/{plant_id}`
+**Endpoint**: `POST /api/plants/get-context/{plant_id}`
 
 **When to Use**:
 - User asks about a specific plant across all its locations
@@ -91,8 +91,8 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 ## Integration Workflow for Phase 2
 
 ### For Individual Plant Questions (Enhanced)
-1. **Start with Phase 1**: `/api/plants/get-context/{id}` (supports both IDs and names)
-2. **Enhance with available data**: `/api/plants/get-context/{id}` (for comprehensive context)
+1. **Start with Phase 1**: `POST /api/plants/get-context/{id}` (supports both IDs and names)
+2. **Enhance with available data**: `POST /api/plants/get-context/{id}` (for comprehensive context)
 3. **Add weather**: Current conditions
 4. **Provide comprehensive advice**: Specific + available optimization recommendations
 
@@ -110,7 +110,7 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 5. **Provide strategic recommendations**: Based on available data
 
 ### For Multi-Location Plant Analysis (Available)
-1. **Enhanced Plant Context**: `/api/plants/get-context/{id}`
+1. **Enhanced Plant Context**: `POST /api/plants/get-context/{id}`
 2. **All Locations**: `/api/locations/all` if needed
 3. **Weather**: Current conditions
 4. **Provide care strategy**: Across all available plant locations
@@ -140,7 +140,7 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 **Use Case**: "Should I add more plants to my patio area?"
 
 **Response Pattern**:
-1. Call `/api/locations/get-context/{patio_id}`
+1. Call `GET /api/locations/get-context/{patio_id}`
 2. Analyze current care requirements and conditions
 3. Check available space and environmental factors
 4. Provide specific recommendations based on available context

@@ -19,7 +19,7 @@ This guide provides detailed workflows for delivering precise, location-aware pl
 
 **Required Steps:**
 1. **Identify Plant**: Search for the plant mentioned
-2. **Get Location Context**: Call `/api/plants/get-context/{plant_id}` (supports both IDs and names)
+2. **Get Location Context**: Call `POST /api/plants/get-context/{plant_id}` (supports both IDs and names)
 3. **Get Care Profile**: Call `/api/locations/get-context/{location_id}` 
 4. **Check Weather**: Call `/api/weather/current` (continue if fails)
 5. **Provide Integrated Response** (see templates below)
@@ -27,7 +27,7 @@ This guide provides detailed workflows for delivering precise, location-aware pl
 **Example API Sequence:**
 ```javascript
 POST /api/plants/search (body: {"q": "tropical hibiscus"})
-GET /api/plants/get-context/1  // or GET /api/plants/get-context/tropical hibiscus
+POST /api/plants/get-context/1  // or POST /api/plants/get-context/tropical hibiscus
 GET /api/locations/get-context/1
 GET /api/weather/current
 ```
@@ -43,7 +43,7 @@ GET /api/weather/current
 
 **Required Steps:**
 1. **Find All Plant Instances**: Call `POST /api/plants/search` with `{"q": "{plant_name}"}`
-2. **Get All Location Contexts**: Call `/api/plants/get-context/{plant_id}` (supports both IDs and names)
+2. **Get All Location Contexts**: Call `POST /api/plants/get-context/{plant_id}` (supports both IDs and names)
 3. **Check Weather**: Call `/api/weather/current` (continue if fails)
 4. **Provide Multi-Location Response** showing all locations and their specific care needs
 

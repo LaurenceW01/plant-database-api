@@ -28,7 +28,7 @@ See chatgpt_endpoints.md for complete endpoint list.
 
 2. **Location-Aware Plant Care** 🎯 **PRIMARY CAPABILITY**
    - **CRITICAL**: Always use location-specific data for plant care questions
-   - **Key endpoints**: GET /api/plants/get-context/{id} (supports IDs/names), GET /api/locations/get-context/{id}
+   - **Key endpoints**: POST /api/plants/get-context/{id} (supports IDs/names), GET /api/locations/get-context/{id}
    - **When to use**: ANY plant care question (watering, fertilizing, pruning, health, etc.)
    - **Guides**: LOCATION_AWARE_WORKFLOW_GUIDE.md, QUERY_PATTERNS_AND_EXAMPLES.md
 
