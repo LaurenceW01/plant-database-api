@@ -95,6 +95,8 @@ FIELD_ALIASES = {
     'name': 'Plant Name',
     'plant': 'Plant Name',
     'plant name': 'Plant Name',
+    'plant___name': 'Plant Name',  # ChatGPT triple underscore pattern
+    'plant_name': 'Plant Name',    # Single underscore pattern
     # Description field aliases
     'desc': 'Description',
     'description': 'Description',
@@ -105,20 +107,28 @@ FIELD_ALIASES = {
     # Light Requirements field aliases
     'light': 'Light Requirements',
     'light requirements': 'Light Requirements',
+    'light___requirements': 'Light Requirements',  # ChatGPT triple underscore pattern
+    'light_requirements': 'Light Requirements',    # Single underscore pattern
     'sun': 'Light Requirements',
     'sunlight': 'Light Requirements',
     # Frost Tolerance field aliases
     'frost': 'Frost Tolerance',
     'frost tolerance': 'Frost Tolerance',
+    'frost___tolerance': 'Frost Tolerance',  # ChatGPT triple underscore pattern
+    'frost_tolerance': 'Frost Tolerance',    # Single underscore pattern
     'cold': 'Frost Tolerance',
     'temperature': 'Frost Tolerance',
     # Watering Needs field aliases
     'water': 'Watering Needs',
     'watering': 'Watering Needs',
     'watering needs': 'Watering Needs',
+    'watering___needs': 'Watering Needs',  # ChatGPT triple underscore pattern
+    'watering_needs': 'Watering Needs',    # Single underscore pattern
     # Soil Preferences field aliases
     'soil': 'Soil Preferences',
     'soil preferences': 'Soil Preferences',
+    'soil___preferences': 'Soil Preferences',  # ChatGPT triple underscore pattern
+    'soil_preferences': 'Soil Preferences',    # Single underscore pattern
     # Soil pH Type field aliases
     'soil ph type': 'Soil pH Type',
     'soil_ph_type': 'Soil pH Type',
@@ -137,6 +147,8 @@ FIELD_ALIASES = {
     'prune': 'Pruning Instructions',
     'pruning': 'Pruning Instructions',
     'pruning instructions': 'Pruning Instructions',
+    'pruning___instructions': 'Pruning Instructions',  # ChatGPT triple underscore pattern
+    'pruning_instructions': 'Pruning Instructions',    # Single underscore pattern
     # Mulching Needs field aliases
     'mulch': 'Mulching Needs',
     'mulching': 'Mulching Needs',
@@ -145,6 +157,8 @@ FIELD_ALIASES = {
     'fertilize': 'Fertilizing Schedule',
     'fertilizing': 'Fertilizing Schedule',
     'fertilizing schedule': 'Fertilizing Schedule',
+    'fertilizing___schedule': 'Fertilizing Schedule',  # ChatGPT triple underscore pattern
+    'fertilizing_schedule': 'Fertilizing Schedule',    # Single underscore pattern
     # Winterizing Instructions field aliases
     'winter': 'Winterizing Instructions',
     'winterizing': 'Winterizing Instructions',
@@ -153,9 +167,13 @@ FIELD_ALIASES = {
     # Spacing Requirements field aliases
     'spacing': 'Spacing Requirements',
     'spacing requirements': 'Spacing Requirements',
+    'spacing___requirements': 'Spacing Requirements',  # ChatGPT triple underscore pattern
+    'spacing_requirements': 'Spacing Requirements',    # Single underscore pattern
     # Care Notes field aliases
     'notes': 'Care Notes',
     'care notes': 'Care Notes',
+    'care___notes': 'Care Notes',  # ChatGPT triple underscore pattern
+    'care_notes': 'Care Notes',    # Single underscore pattern
     'care instructions': 'Care Notes',
     'instructions': 'Care Notes',
     # Photo URL field aliases
