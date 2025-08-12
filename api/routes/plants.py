@@ -187,7 +187,7 @@ def remove_plant_new(id_or_name):
     }), 501
 
 
-@plants_bp.route('/get-context/<plant_id>', methods=['GET'])
+@plants_bp.route('/get-context/<plant_id>', methods=['GET', 'POST'])
 def get_plant_context_new(plant_id):
     """
     Phase 2 direct implementation: Get comprehensive plant context with location/container intelligence.

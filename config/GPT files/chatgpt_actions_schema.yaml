@@ -235,9 +235,9 @@ paths:
                     type: string
 
   /api/plants/get-context/{plant_id}:
-    get:
+    post:
       operationId: getPlantContext
-      summary: Get plant context with location intelligence
+      summary: Get plant context with location intelligence  
       description: Get comprehensive location and container context for a plant
       security: []
       parameters:
