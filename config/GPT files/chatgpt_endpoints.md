@@ -12,26 +12,25 @@ All endpoints include AI-powered analysis, field normalization, and location int
 ### Plant Management (6 operations)
 ```javascript
 POST   /api/plants/add              // ✅ Add new plant with upload token
-GET    /api/plants/search           // ✅ Search plants (use query parameters: ?q=vinca&limit=5)
+POST   /api/plants/search           // ✅ Search plants (use JSON body: {"q": "vinca", "limit": 5})
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
 PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
 PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
 GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
 ```
 
-**🚨 CRITICAL: ChatGPT Must Use GET Method**
+**✅ CORRECT: Plant Search Method**
 ```javascript
-// ✅ CORRECT: Use GET with query parameters  
-GET /api/plants/search?q=vinca&limit=5
+// ✅ CORRECT: Use POST with JSON body
+POST /api/plants/search
+Content-Type: application/json
+{"q": "vinca", "limit": 5}
 
-// ❌ WRONG: Do NOT use POST with JSON body
-// POST /api/plants/search with {"q": "vinca"} ❌
-
-// ❌ WRONG: Do NOT send JSON body at all
-// The searchPlants operation MUST use query parameters only
+// Also supported: POST with query parameters
+POST /api/plants/search?q=vinca&limit=5
 ```
 
-**Important for ChatGPT:** When calling `searchPlants`, ensure your client sends a GET request with query parameters, not POST with JSON body. If your tool wrapper defaults to POST, you must override it to use GET method.
+**For ChatGPT:** The `searchPlants` operation uses POST method with JSON body, which is the natural behavior for OpenAPI clients. Send parameters in the request body as JSON.
 
 ### AI-Powered Analysis (2 operations)
 ```javascript
