@@ -87,10 +87,10 @@ def optimize_garden_care():
     This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
     """
     try:
-        from utils.locations_operations import get_garden_care_optimization
+        from utils.locations_operations import get_garden_care_optimization as get_care_optimization_util
         
         # Get care optimization recommendations
-        optimization = get_garden_care_optimization()
+        optimization = get_care_optimization_util()
         
         return jsonify({
             **optimization,
@@ -196,9 +196,9 @@ def get_location_analysis(location_id):
 def get_enhanced_garden_metadata():
     """Get enhanced garden metadata with advanced analytics"""
     try:
-        from utils.locations_operations import get_enhanced_garden_metadata
+        from utils.locations_operations import get_enhanced_garden_metadata as get_enhanced_metadata_util
         
-        enhanced_metadata = get_enhanced_garden_metadata()
+        enhanced_metadata = get_enhanced_metadata_util()
         
         if enhanced_metadata:
             return jsonify({
@@ -250,10 +250,10 @@ def get_location_profiles():
 def get_garden_care_optimization_route():
     """Get comprehensive garden care optimization"""
     try:
-        from utils.locations_operations import get_garden_care_optimization
+        from utils.locations_operations import get_garden_care_optimization as get_care_optimization_util
         
         # Get care optimization recommendations
-        optimization = get_garden_care_optimization()
+        optimization = get_care_optimization_util()
         
         return jsonify({
             **optimization,
