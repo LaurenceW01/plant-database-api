@@ -195,6 +195,10 @@ def get_location_analysis(location_id):
 @locations_bp.route('/garden/metadata/enhanced', methods=['GET'])
 def get_enhanced_garden_metadata():
     """Get enhanced garden metadata with advanced analytics"""
+    
+    print("🔧 DEBUG: Enhanced metadata route function called!")
+    logging.info("🔧 DEBUG: Enhanced metadata route function called!")
+    
     try:
         from utils.locations_operations import get_enhanced_garden_metadata as get_enhanced_metadata_util
         
@@ -249,6 +253,10 @@ def get_location_profiles():
 @locations_bp.route('/garden/care-optimization', methods=['GET'])
 def get_garden_care_optimization_route():
     """Get comprehensive garden care optimization"""
+    
+    print("🔧 DEBUG: Route function called!")
+    logging.info("🔧 DEBUG: Route function called!")
+
     try:
         from utils.locations_operations import get_garden_care_optimization as get_care_optimization_util
         
