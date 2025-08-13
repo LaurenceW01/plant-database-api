@@ -118,6 +118,63 @@ def search_logs():
         }), 500
 
 
+@logs_bp.route('/create-simple', methods=['POST'])
+def create_simple_log():
+    """
+    Phase 2 direct implementation: Create simple plant log entry.
+    Provides semantic alignment: createSimpleLog operationId → /api/logs/create-simple URL
+    This endpoint provides a simplified interface for basic log creation.
+    """
+    # Apply field normalization middleware (already handled by @app.before_request)
+    from utils.field_normalization_middleware import (
+        get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
+        validate_required_fields
+    )
+    
+    # Get normalized field values
+    plant_name = get_plant_name()
+    
+    # Validate required fields
+    if not plant_name:
+        error_response = create_error_response_with_field_suggestions(
+            "Plant name is required for creating a simple log entry",
+            ['Plant Name']
+        )
+        return jsonify(error_response), 400
+    
+    # Import the original create_plant_log_simple function
+    from api.main import create_plant_log_simple
+    
+    # Call the underlying function and add Phase 2 markers
+    response_tuple = create_plant_log_simple()
+    
+    # Handle both tuple and direct response formats
+    if isinstance(response_tuple, tuple):
+        response_data, status_code = response_tuple
+    else:
+        response_data = response_tuple
+        status_code = 200
+    
+    # Add Phase 2 markers to successful responses
+    if hasattr(response_data, 'get_json'):
+        try:
+            data = response_data.get_json()
+            if isinstance(data, dict) and data.get('success'):
+                # Add Phase 2 markers
+                data['phase2_direct'] = True
+                data['endpoint_type'] = 'direct_implementation'
+                data['simple_log_creation'] = True
+                return jsonify(data), status_code
+        except Exception as e:
+            logging.warning(f"Failed to add Phase 2 markers to simple log: {e}")
+    
+    # Return original response if marking failed
+    if isinstance(response_tuple, tuple):
+        return response_tuple
+    else:
+        return response_data
+
+
 @logs_bp.route('/create-for-plant/<plant_name>', methods=['POST'])
 def create_log_for_plant(plant_name):
     """

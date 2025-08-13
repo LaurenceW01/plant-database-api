@@ -61,6 +61,125 @@ from .locations_metadata_operations import (
     _identify_improvement_areas
 )
 
+# Alias functions for backward compatibility
+def get_garden_overview_metadata():
+    """Alias for get_garden_metadata_enhanced for backward compatibility"""
+    return get_garden_metadata_enhanced()
+
+def get_all_locations_metadata():
+    """Alias for get_all_location_profiles for backward compatibility"""
+    return get_all_location_profiles()
+
+def get_enhanced_garden_metadata():
+    """Alias for get_garden_metadata_enhanced for backward compatibility"""
+    return get_garden_metadata_enhanced()
+
+def get_location_care_profile(location_id):
+    """Generate care profile for a specific location"""
+    try:
+        from .care_intelligence import generate_care_profile_for_location
+        return generate_care_profile_for_location(location_id)
+    except ImportError:
+        # Fallback implementation
+        location = get_location_by_id(location_id)
+        if not location:
+            return None
+        
+        return {
+            'location_info': location,
+            'watering_strategy': {
+                'primary_time': 'Early morning (6-8 AM)',
+                'secondary_time': 'Early evening (6-7 PM)',
+                'reasoning': 'Based on sun exposure patterns'
+            },
+            'environmental_factors': {
+                'sun_exposure': {
+                    'total_hours': location.get('total_sun_hours', 0),
+                    'morning_hours': location.get('morning_sun_hours', 0),
+                    'afternoon_hours': location.get('afternoon_sun_hours', 0),
+                    'evening_hours': location.get('evening_sun_hours', 0)
+                }
+            },
+            'general_recommendations': [
+                'Monitor plants regularly for changes',
+                'Adjust watering based on weather conditions',
+                'Consider plant grouping by care requirements'
+            ]
+        }
+
+def get_container_care_requirements(container_id):
+    """Generate care requirements for a specific container"""
+    try:
+        from .care_intelligence import generate_container_care_requirements
+        return generate_container_care_requirements(container_id)
+    except ImportError:
+        # Fallback implementation
+        container = get_container_by_id(container_id)
+        if not container:
+            return None
+        
+        location = get_location_by_id(container.get('location_id', ''))
+        
+        return {
+            'container_info': container,
+            'location_context': location,
+            'care_adjustments': {
+                'watering_frequency': 'Adjust based on container material and size',
+                'drainage_considerations': 'Ensure proper drainage for container type',
+                'material_factors': f"Container material: {container.get('material', 'Unknown')}"
+            },
+            'integrated_recommendations': [
+                'Check soil moisture regularly',
+                'Ensure adequate drainage',
+                'Monitor for container-specific issues'
+            ]
+        }
+
+def analyze_location_performance(location_id):
+    """Analyze performance metrics for a specific location"""
+    try:
+        location = get_location_by_id(location_id)
+        containers = get_containers_by_location_id(location_id)
+        
+        if not location:
+            return None
+        
+        # Calculate basic performance metrics
+        total_containers = len(containers)
+        unique_plants = len(set(c.get('Plant ID', '') for c in containers if c.get('Plant ID', '')))
+        
+        # Calculate utilization score
+        max_sun_hours = 12  # Theoretical maximum
+        actual_sun_hours = location.get('total_sun_hours', 0)
+        sun_utilization = (actual_sun_hours / max_sun_hours) * 100 if max_sun_hours > 0 else 0
+        
+        return {
+            'location_id': location_id,
+            'location_name': location.get('location_name', 'Unknown'),
+            'performance_metrics': {
+                'container_count': total_containers,
+                'plant_diversity': unique_plants,
+                'sun_utilization_percentage': round(sun_utilization, 1),
+                'care_complexity': 'Low' if total_containers <= 5 else 'Medium' if total_containers <= 15 else 'High'
+            },
+            'optimization_opportunities': [
+                'Consider adding more containers if space allows' if total_containers < 10 else 'Location at good capacity',
+                'Diversify plant types' if unique_plants < 3 else 'Good plant diversity',
+                'Optimize sun exposure usage' if sun_utilization < 50 else 'Good sun utilization'
+            ],
+            'recommendations': [
+                'Monitor container distribution',
+                'Track plant health trends',
+                'Optimize watering schedules'
+            ]
+        }
+        
+    except Exception as e:
+        return {
+            'error': f'Failed to analyze location performance: {str(e)}',
+            'location_id': location_id
+        }
+
 # Re-export cache variables for backward compatibility
 from .locations_cache_operations import (
     _locations_cache,

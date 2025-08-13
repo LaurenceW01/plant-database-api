@@ -601,7 +601,7 @@ def search_log_entries(
             return {
                 "success": True,
                 "search_results": [],
-                "total_matches": 0
+                "total_results": 0
             }
         
         headers = values[0]
@@ -646,7 +646,7 @@ def search_log_entries(
         return {
             "success": True,
             "search_results": limited_results,
-            "total_matches": len(matching_entries),
+            "total_results": len(matching_entries),
             "query": query,
             "plant_name": plant_name
         }

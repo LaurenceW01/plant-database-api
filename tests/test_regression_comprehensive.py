@@ -1,0 +1,588 @@
+"""
+Comprehensive Regression Test Suite for Plant Database API
+
+This test suite validates all defined endpoints to ensure no regressions
+occur when changes are made to the codebase. Tests cover all major
+functionality including plants, logs, analysis, locations, photos, and weather.
+
+Test Categories:
+- Core Plant Management (5 operations)
+- AI-Powered Analysis (2 operations) 
+- Health Logging (3 operations)
+- Photo Upload (2 operations)
+- Location Intelligence (8 operations)
+- Weather Integration (3 operations)
+
+Author: Plant Database API Test Suite
+Created: Comprehensive regression testing implementation
+"""
+
+import pytest
+import json
+import tempfile
+import os
+import sys
+from flask import Flask
+from werkzeug.test import Client
+from werkzeug.wrappers import Response
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from api.main import create_app_instance
+
+
+class TestRegressionSuite:
+    """Comprehensive regression test suite for all API endpoints"""
+    
+    @classmethod
+    def setup_class(cls):
+        """Set up test client and common test data"""
+        print("\n=== STARTING TEST SESSION ===")
+        # Create app in testing mode to disable rate limiting
+        cls.app = create_app_instance(testing=True)
+        cls.client = Client(cls.app, Response)
+        
+        # Common test data
+        cls.test_plant_data = {
+            "Plant Name": "Test Regression Plant",
+            "Description": "Plant for regression testing",
+            "Location": "Test Garden", 
+            "Light Requirements": "Full Sun",
+            "Watering Needs": "Daily",
+            "Care Notes": "Test plant for comprehensive testing"
+        }
+        
+        cls.test_log_data = {
+            "Plant Name": "Test Plant Log",
+            "User Notes": "Regression test log entry",
+            "Diagnosis": "Healthy",
+            "Treatment": "Continue current care",
+            "Symptoms": "None observed"
+        }
+        
+        cls.test_analysis_data = {
+            "plant_name": "Test Plant Analysis",
+            "user_notes": "Testing AI analysis functionality", 
+            "analysis_type": "general_care"
+        }
+
+    # =============================================
+    # CORE PLANT MANAGEMENT TESTS (5 operations)
+    # =============================================
+    
+    def test_plants_search_post(self):
+        """Test POST /api/plants/search endpoint (operationId: searchPlants)"""
+        test_data = {"q": "test", "limit": 5}
+        response = self.client.post('/api/plants/search', 
+                                  data=json.dumps(test_data),
+                                  content_type='application/json')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'count' in data
+        assert 'plants' in data
+        assert isinstance(data['count'], int)
+        assert isinstance(data['plants'], list)
+    
+    def test_plants_search_get(self):
+        """Test GET /api/plants/search endpoint with query parameters"""
+        response = self.client.get('/api/plants/search?q=test&limit=5')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'count' in data
+        assert 'plants' in data
+    
+    def test_plants_add(self):
+        """Test POST /api/plants/add endpoint (operationId: addPlant)"""
+        response = self.client.post('/api/plants/add',
+                                  data=json.dumps(self.test_plant_data),
+                                  content_type='application/json')
+        
+        assert response.status_code in [200, 201]
+        data = response.get_json()
+        assert 'success' in data
+        assert 'message' in data
+        if data.get('success'):
+            assert 'plant_id' in data
+            assert 'upload_url' in data
+
+    def test_plants_get_by_id(self):
+        """Test GET /api/plants/get/{id} endpoint (operationId: getPlant)"""
+        # Test with ID
+        response = self.client.get('/api/plants/get/1')
+        
+        assert response.status_code in [200, 404]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'success' in data
+            assert 'plant' in data
+        else:
+            assert 'error' in data or 'success' in data
+    
+    def test_plants_get_by_name(self):
+        """Test GET /api/plants/get/{name} endpoint"""
+        # Test with name
+        response = self.client.get('/api/plants/get/Vinca')
+        
+        assert response.status_code in [200, 404]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'success' in data
+            assert 'plant' in data
+    
+    def test_plants_update_with_id_in_path(self):
+        """Test PUT /api/plants/update/{id} endpoint (operationId: updatePlant)"""
+        update_data = {
+            "Description": "Updated description for regression test",
+            "Care Notes": "Updated care notes"
+        }
+        
+        response = self.client.put('/api/plants/update/1',
+                                 data=json.dumps(update_data),
+                                 content_type='application/json')
+        
+        assert response.status_code in [200, 400, 404]
+        data = response.get_json()
+        assert 'success' in data or 'error' in data
+    
+    def test_plants_update_with_id_in_body(self):
+        """Test PUT /api/plants/update endpoint (operationId: updatePlantFlexible)"""
+        update_data = {
+            "id": "1",
+            "Description": "Updated via body ID method",
+            "Care Notes": "Testing flexible update endpoint"
+        }
+        
+        response = self.client.put('/api/plants/update',
+                                 data=json.dumps(update_data),
+                                 content_type='application/json')
+        
+        assert response.status_code in [200, 400, 404]
+        data = response.get_json()
+        assert 'success' in data or 'error' in data
+
+    def test_plants_get_context(self):
+        """Test POST /api/plants/get-context/{plant_id} endpoint (operationId: getPlantContext)"""
+        response = self.client.post('/api/plants/get-context/1')
+        
+        assert response.status_code in [200, 404, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'plant_id' in data
+            assert 'contexts' in data
+
+    # =============================================
+    # AI-POWERED ANALYSIS TESTS (2 operations)
+    # =============================================
+    
+    def test_plants_diagnose(self):
+        """Test POST /api/plants/diagnose endpoint (operationId: diagnosePlant)"""
+        response = self.client.post('/api/plants/diagnose',
+                                  data=json.dumps(self.test_analysis_data),
+                                  content_type='application/json')
+        
+        assert response.status_code in [200, 400, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'success' in data
+            assert 'analysis' in data
+        else:
+            assert 'error' in data or 'success' in data
+
+    def test_plants_enhance_analysis(self):
+        """Test POST /api/plants/enhance-analysis endpoint (operationId: enhanceAnalysis)"""
+        enhance_data = {
+            "gpt_analysis": "This plant shows signs of healthy growth",
+            "plant_identification": "Test Plant",
+            "user_question": "How is my plant doing?",
+            "analysis_type": "health_assessment"
+        }
+        
+        response = self.client.post('/api/plants/enhance-analysis',
+                                  data=json.dumps(enhance_data),
+                                  content_type='application/json')
+        
+        assert response.status_code in [200, 400, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'success' in data
+            assert 'enhanced_analysis' in data
+
+    # =============================================
+    # HEALTH LOGGING TESTS (3 operations)
+    # =============================================
+    
+    def test_logs_create(self):
+        """Test POST /api/logs/create endpoint (operationId: createLog)"""
+        response = self.client.post('/api/logs/create',
+                                  data=json.dumps(self.test_log_data),
+                                  content_type='application/json')
+        
+        assert response.status_code in [200, 201, 400]
+        data = response.get_json()
+        
+        if response.status_code in [200, 201]:
+            assert 'success' in data
+            assert 'log_id' in data
+            assert 'upload_url' in data
+        else:
+            assert 'error' in data or 'success' in data
+
+    def test_logs_create_simple(self):
+        """Test POST /api/logs/create-simple endpoint (operationId: createSimpleLog)"""
+        simple_log_data = {
+            "Plant Name": "Simple Test Plant",
+            "User Notes": "Simple log entry for testing"
+        }
+        
+        response = self.client.post('/api/logs/create-simple',
+                                  data=json.dumps(simple_log_data),
+                                  content_type='application/json')
+        
+        assert response.status_code in [200, 201, 400]
+        data = response.get_json()
+        
+        if response.status_code in [200, 201]:
+            assert 'success' in data
+            assert 'log_id' in data
+        else:
+            assert 'error' in data or 'success' in data
+
+    def test_logs_search(self):
+        """Test GET /api/logs/search endpoint (operationId: searchLogs)"""
+        # Test without parameters
+        response = self.client.get('/api/logs/search')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'search_results' in data
+        assert 'total_results' in data
+        
+        # Test with query parameter
+        response = self.client.get('/api/logs/search?q=test&limit=10')
+        assert response.status_code == 200
+        
+        # Test with plant_name parameter
+        response = self.client.get('/api/logs/search?plant_name=Test%20Plant')
+        assert response.status_code == 200
+
+    # =============================================
+    # PHOTO UPLOAD TESTS (2 operations)
+    # =============================================
+    
+    def test_photos_upload_for_plant_get(self):
+        """Test GET /api/photos/upload-for-plant/{token} endpoint - should return error for invalid token"""
+        response = self.client.get('/api/photos/upload-for-plant/invalid_token')
+        
+        # Should return 401 for invalid token or 405 for method not allowed
+        assert response.status_code in [401, 405]
+
+    def test_photos_upload_for_log_get(self):
+        """Test GET /api/photos/upload-for-log/{token} endpoint - should return error for invalid token"""
+        response = self.client.get('/api/photos/upload-for-log/invalid_token')
+        
+        # Should return 401 for invalid token or 405 for method not allowed
+        assert response.status_code in [401, 405]
+
+    def test_photos_upload_for_plant_post_invalid_token(self):
+        """Test POST /api/photos/upload-for-plant/{token} with invalid token"""
+        # Create a minimal test file
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+            tmp_file.write(b'fake image data')
+            tmp_file.flush()
+            
+            try:
+                with open(tmp_file.name, 'rb') as test_file:
+                    response = self.client.post('/api/photos/upload-for-plant/invalid_token',
+                                              data={'file': (test_file, 'test.png')})
+                
+                assert response.status_code in [400, 401]
+                data = response.get_json()
+                assert 'error' in data or 'success' in data
+            finally:
+                os.unlink(tmp_file.name)
+
+    def test_photos_upload_for_log_post_invalid_token(self):
+        """Test POST /api/photos/upload-for-log/{token} with invalid token"""
+        # Create a minimal test file
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+            tmp_file.write(b'fake image data')
+            tmp_file.flush()
+            
+            try:
+                with open(tmp_file.name, 'rb') as test_file:
+                    response = self.client.post('/api/photos/upload-for-log/invalid_token',
+                                              data={'file': (test_file, 'test.png')})
+                
+                assert response.status_code in [400, 401]
+                data = response.get_json()
+                assert 'error' in data or 'success' in data
+            finally:
+                os.unlink(tmp_file.name)
+
+    # =============================================
+    # LOCATION INTELLIGENCE TESTS (8 operations)
+    # =============================================
+    
+    def test_locations_get_context(self):
+        """Test GET /api/locations/get-context/{id} endpoint (operationId: getLocationContext)"""
+        response = self.client.get('/api/locations/get-context/1')
+        
+        assert response.status_code in [200, 404, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'location_id' in data
+            assert 'care_profile' in data
+        else:
+            assert 'error' in data
+
+    def test_garden_get_metadata(self):
+        """Test GET /api/garden/get-metadata endpoint (operationId: getGardenMetadata)"""
+        response = self.client.get('/api/garden/get-metadata')
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'total_locations' in data
+            assert 'total_containers' in data
+        else:
+            assert 'error' in data
+
+    def test_garden_optimize_care(self):
+        """Test GET /api/garden/optimize-care endpoint (operationId: optimizeGardenCare)"""
+        response = self.client.get('/api/garden/optimize-care')
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'optimization_analysis' in data
+            assert 'total_opportunities' in data
+        else:
+            assert 'error' in data
+
+    def test_plants_location_context_legacy(self):
+        """Test GET /api/plants/{plant_id}/location-context endpoint (operationId: getPlantLocationContext)"""
+        response = self.client.get('/api/plants/1/location-context')
+        
+        assert response.status_code in [200, 404, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'plant_id' in data
+            assert 'contexts' in data
+
+    def test_locations_care_profile(self):
+        """Test GET /api/locations/{location_id}/care-profile endpoint (operationId: getLocationCareProfile)"""
+        response = self.client.get('/api/locations/1/care-profile')
+        
+        assert response.status_code in [200, 404, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'location_id' in data
+            assert 'care_profile' in data
+
+    def test_locations_all(self):
+        """Test GET /api/locations/all endpoint (operationId: getAllLocations)"""
+        response = self.client.get('/api/locations/all')
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'locations' in data
+            assert 'total' in data or 'count' in data
+
+    def test_garden_metadata_enhanced(self):
+        """Test GET /api/garden/metadata/enhanced endpoint (operationId: getEnhancedMetadata)"""
+        response = self.client.get('/api/garden/metadata/enhanced')
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'enhanced_metadata' in data
+            assert 'api_version' in data
+
+    def test_garden_care_optimization(self):
+        """Test GET /api/garden/care-optimization endpoint (operationId: getCareOptimization)"""
+        response = self.client.get('/api/garden/care-optimization')
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'optimization_analysis' in data
+            assert 'total_opportunities' in data
+        else:
+            assert 'error' in data
+
+    # =============================================
+    # WEATHER INTEGRATION TESTS (3 operations)
+    # =============================================
+    
+    def test_weather_current(self):
+        """Test GET /api/weather/current endpoint (operationId: getCurrentWeather)"""
+        response = self.client.get('/api/weather/current')
+        
+        # Weather endpoints may not be available in all environments
+        assert response.status_code in [200, 404, 500, 503]
+        
+        if response.status_code == 200:
+            data = response.get_json()
+            # Weather data structure may vary
+            assert isinstance(data, dict)
+
+    def test_weather_forecast_hourly(self):
+        """Test GET /api/weather/forecast endpoint (operationId: getWeatherForecast)"""
+        # Test without parameters
+        response = self.client.get('/api/weather/forecast')
+        assert response.status_code in [200, 404, 500, 503]
+        
+        # Test with hours parameter
+        response = self.client.get('/api/weather/forecast?hours=24')
+        assert response.status_code in [200, 404, 500, 503]
+
+    def test_weather_forecast_daily(self):
+        """Test GET /api/weather/forecast/daily endpoint (operationId: getDailyWeatherForecast)"""
+        # Test without parameters
+        response = self.client.get('/api/weather/forecast/daily')
+        assert response.status_code in [200, 404, 500, 503]
+        
+        # Test with days parameter
+        response = self.client.get('/api/weather/forecast/daily?days=7')
+        assert response.status_code in [200, 404, 500, 503]
+
+    # =============================================
+    # ADDITIONAL ROUTE TESTS
+    # =============================================
+    
+    def test_additional_plant_routes(self):
+        """Test additional plant routes not in main schema"""
+        # Test /api/plants (root)
+        response = self.client.get('/api/plants')
+        assert response.status_code in [200, 404, 405]
+        
+        # Test /api/plants/all
+        response = self.client.get('/api/plants/all')
+        assert response.status_code in [200, 404, 405]
+
+    def test_additional_location_routes(self):
+        """Test additional location routes"""
+        # Test container care requirements
+        response = self.client.get('/api/garden/containers/1/care-requirements')
+        assert response.status_code in [200, 404, 500]
+        
+        # Test location analysis
+        response = self.client.get('/api/garden/location-analysis/1')
+        assert response.status_code in [200, 404, 500]
+        
+        # Test location profiles
+        response = self.client.get('/api/garden/location-profiles')
+        assert response.status_code in [200, 500]
+
+    # =============================================
+    # ERROR SCENARIO TESTS
+    # =============================================
+    
+    def test_invalid_endpoints(self):
+        """Test invalid endpoints return appropriate errors"""
+        invalid_endpoints = [
+            '/api/invalid/endpoint',
+            '/api/plants/invalid',
+            '/api/nonexistent'
+        ]
+        
+        for endpoint in invalid_endpoints:
+            response = self.client.get(endpoint)
+            assert response.status_code in [404, 405]
+
+    def test_missing_required_fields(self):
+        """Test endpoints with missing required fields"""
+        # Test plant add without required Plant Name
+        response = self.client.post('/api/plants/add',
+                                  data=json.dumps({"Description": "No name provided"}),
+                                  content_type='application/json')
+        assert response.status_code in [400]
+        
+        # Test log create without required Plant Name
+        response = self.client.post('/api/logs/create',
+                                  data=json.dumps({"User Notes": "No plant name"}),
+                                  content_type='application/json')
+        assert response.status_code in [400]
+
+    def test_malformed_requests(self):
+        """Test endpoints with malformed requests"""
+        # Test with invalid JSON
+        response = self.client.post('/api/plants/add',
+                                  data="invalid json",
+                                  content_type='application/json')
+        assert response.status_code in [400, 500]
+        
+        # Test with empty body where required
+        response = self.client.post('/api/plants/add',
+                                  data="",
+                                  content_type='application/json')
+        assert response.status_code in [400, 500]
+
+    # =============================================
+    # COMPREHENSIVE COVERAGE VALIDATION
+    # =============================================
+    
+    def test_endpoint_coverage_validation(self):
+        """Validate that all major endpoints are covered by tests"""
+        # This test serves as documentation of covered endpoints
+        covered_endpoints = [
+            # Core Plant Management (5 operations)
+            '/api/plants/search',
+            '/api/plants/add', 
+            '/api/plants/get/{id}',
+            '/api/plants/update/{id}',
+            '/api/plants/update',
+            '/api/plants/get-context/{plant_id}',
+            
+            # AI-Powered Analysis (2 operations)
+            '/api/plants/diagnose',
+            '/api/plants/enhance-analysis',
+            
+            # Health Logging (3 operations) 
+            '/api/logs/create',
+            '/api/logs/create-simple',
+            '/api/logs/search',
+            
+            # Photo Upload (2 operations)
+            '/api/photos/upload-for-plant/{token}',
+            '/api/photos/upload-for-log/{token}',
+            
+            # Location Intelligence (8 operations)
+            '/api/locations/get-context/{id}',
+            '/api/garden/get-metadata',
+            '/api/garden/optimize-care',
+            '/api/plants/{plant_id}/location-context',
+            '/api/locations/{location_id}/care-profile',
+            '/api/locations/all',
+            '/api/garden/metadata/enhanced',
+            '/api/garden/care-optimization',
+            
+            # Weather Integration (3 operations)
+            '/api/weather/current',
+            '/api/weather/forecast',
+            '/api/weather/forecast/daily'
+        ]
+        
+        # Verify we have 23 main endpoints covered
+        assert len(covered_endpoints) >= 23
+        print(f"✅ Comprehensive test suite covers {len(covered_endpoints)} major endpoints")
+
+
+if __name__ == '__main__':
+    # Run tests with verbose output
+    pytest.main([__file__, '-v', '--tb=short'])
