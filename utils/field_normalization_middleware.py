@@ -27,6 +27,12 @@ def normalize_request_middleware():
         
         try:
             original_data = request.get_json()
+            
+            # DEBUG: Log the raw request data size and keys
+            logging.info(f"🔍 RAW REQUEST DEBUG: Content-Length: {request.content_length}")
+            logging.info(f"🔍 RAW REQUEST DEBUG: Content-Type: {request.content_type}")
+            logging.info(f"🔍 RAW REQUEST DEBUG: request.get_json() returned {len(original_data)} fields: {list(original_data.keys())}")
+            
             normalized_data = normalize_request_fields(original_data)
             
             # Store both original and normalized data in Flask's g object

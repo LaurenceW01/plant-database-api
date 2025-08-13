@@ -162,15 +162,8 @@ paths:
           application/json:
             schema:
               type: object
-              properties:
-                Description:
-                  type: string
-                Location:
-                  type: string
-                Watering Needs:
-                  type: string
-                Care Notes:
-                  type: string
+              properties: {}
+              additionalProperties: true
       responses:
         '200':
           description: Plant updated successfully
@@ -198,16 +191,14 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - id
               properties:
                 id:
                   type: string
                   description: Plant ID or name to update
                   example: "Vinca"
-              additionalProperties:
-                type: string
-                description: Any plant field - the API handles normalization of field names automatically (supports spaces, underscores, camelCase)
+              additionalProperties: true
+              required:
+                - id
       responses:
         '200':
           description: Plant updated successfully
