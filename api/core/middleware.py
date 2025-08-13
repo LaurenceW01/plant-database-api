@@ -46,9 +46,28 @@ def setup_middleware(app):
                 # This is expected for GET requests, file uploads, and requests without JSON
                 request_type = "GET request" if request.method == "GET" else f"{request.method} request without JSON data"
                 print(f"ℹ️  No field normalization needed for {request_type}: {request.path}")  # Debug print
+            
+            # Debug: Track middleware completion
+            print(f"🏁 MIDDLEWARE COMPLETED for {request.method} {request.path}")  # Debug print
         
         print("✅ FIELD NORMALIZATION MIDDLEWARE REGISTERED")  # Debug print
         logging.info("✅ Field normalization middleware registered")
+        
+        # Debug: Track request completion
+        @app.after_request
+        def debug_after_request(response):
+            """Debug logging after request processing"""
+            print(f"🎯 AFTER_REQUEST: {request.method} {request.path} → Status {response.status_code}")  # Debug print
+            return response
+        
+        # Debug: Track request teardown
+        @app.teardown_request
+        def debug_teardown_request(exception=None):
+            """Debug logging on request teardown"""
+            if exception:
+                print(f"💥 REQUEST_TEARDOWN: {request.method} {request.path} → Exception: {exception}")  # Debug print
+            else:
+                print(f"✅ REQUEST_TEARDOWN: {request.method} {request.path} → Clean")  # Debug print
         
     except Exception as e:
         print(f"❌ MIDDLEWARE SETUP ERROR: {e}")  # Debug print
