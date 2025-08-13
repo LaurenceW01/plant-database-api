@@ -175,6 +175,43 @@ class TestRegressionSuite:
             assert 'plant_id' in data
             assert 'contexts' in data
 
+    def test_plants_by_location(self):
+        """Test GET /api/plants/by-location/{location_name} endpoint (operationId: getPlantsByLocation)"""
+        # Test with a known location that should have plants
+        response = self.client.get('/api/plants/by-location/middle')
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'location_identifier' in data
+            assert 'resolved_location_name' in data
+            assert 'count' in data
+            assert 'plants' in data
+            assert isinstance(data['count'], int)
+            assert isinstance(data['plants'], list)
+            assert data['location_identifier'] == 'middle'
+        else:
+            assert 'error' in data
+
+    def test_plants_by_location_with_location_id(self):
+        """Test GET /api/plants/by-location/{location_name} endpoint with location ID"""
+        # Test with location ID (should convert to name internally)
+        response = self.client.get('/api/plants/by-location/23')  # ID for 'middle'
+        
+        assert response.status_code in [200, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'location_identifier' in data
+            assert 'resolved_location_name' in data
+            assert 'count' in data
+            assert 'plants' in data
+            assert data['location_identifier'] == '23'
+            # Should resolve ID 23 to location name 'middle'
+        else:
+            assert 'error' in data
+
     # =============================================
     # AI-POWERED ANALYSIS TESTS (2 operations)
     # =============================================
@@ -562,13 +599,14 @@ class TestRegressionSuite:
         """Validate that all major endpoints are covered by tests"""
         # This test serves as documentation of covered endpoints
         covered_endpoints = [
-            # Core Plant Management (5 operations)
+            # Core Plant Management (6 operations)
             '/api/plants/search',
             '/api/plants/add', 
             '/api/plants/get/{id}',
             '/api/plants/update/{id}',
             '/api/plants/update',
             '/api/plants/get-context/{plant_id}',
+            '/api/plants/by-location/{location_name}',
             
             # AI-Powered Analysis (2 operations)
             '/api/plants/diagnose',
@@ -600,7 +638,7 @@ class TestRegressionSuite:
         ]
         
         # Verify we have 23 main endpoints covered
-        assert len(covered_endpoints) >= 23
+        assert len(covered_endpoints) >= 24
         print(f"✅ Comprehensive test suite covers {len(covered_endpoints)} major endpoints")
 
     # =================================================================

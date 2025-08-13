@@ -296,6 +296,46 @@ paths:
                         context:
                           type: object
 
+  /api/plants/by-location/{location_name}:
+    get:
+      operationId: getPlantsByLocation
+      summary: Get plants by location
+      description: Get all plants in a specific location (supports both location IDs and location names)
+      security: []
+      parameters:
+        - name: location_name
+          in: path
+          required: true
+          description: Location name or location ID (e.g., "arboretum" or "middle" or "23")
+          schema:
+            type: string
+            example: "arboretum"
+      responses:
+        '200':
+          description: List of plants in the specified location
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location_identifier:
+                    type: string
+                  resolved_location_name:
+                    type: string
+                  count:
+                    type: integer
+                  plants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Plant Name:
+                          type: string
+                        Location:
+                          type: string
+                        Description:
+                          type: string
+
   # =============================================
   # AI-POWERED ANALYSIS (2 operations)
   # =============================================

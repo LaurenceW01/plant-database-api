@@ -75,6 +75,11 @@ See chatgpt_endpoints.md for complete endpoint list.
    - **NEVER** give generic advice when location data exists
    - Review plant history and provide Houston-specific tips
 
+3a. **Location Plant Queries:** For "what plants are in [location]" questions:
+   - **USE**: GET /api/plants/by-location/{location_name} (supports both location names and IDs)
+   - **EXAMPLES**: "arboretum", "middle", "front patio", etc.
+   - **DO NOT** use search endpoint for location-based queries
+
 4. **Advanced Planning:** Use /api/plants/get-context/{id} and /api/garden/metadata/enhanced for garden optimization. Reference: PHASE2_ADVANCED_INTELLIGENCE.md
 
 
