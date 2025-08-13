@@ -10,10 +10,10 @@ from api.core.middleware import require_api_key
 import logging
 
 # Create the locations blueprint
-locations_bp = Blueprint('locations', __name__)
+locations_bp = Blueprint('locations', __name__, url_prefix='/api')
 
 
-@locations_bp.route('/api/locations/get-context/<location_id>', methods=['GET'])
+@locations_bp.route('/locations/get-context/<location_id>', methods=['GET'])
 def get_location_context(location_id):
     """
     Phase 2 direct implementation: Get location context and care profile.
@@ -51,7 +51,7 @@ def get_location_context(location_id):
         }), 500
 
 
-@locations_bp.route('/api/garden/get-metadata', methods=['GET'])
+@locations_bp.route('/garden/get-metadata', methods=['GET'])
 def get_garden_metadata():
     """
     Phase 2 direct implementation: Get comprehensive garden metadata.
@@ -79,7 +79,7 @@ def get_garden_metadata():
         }), 500
 
 
-@locations_bp.route('/api/garden/optimize-care', methods=['GET'])
+@locations_bp.route('/garden/optimize-care', methods=['GET'])
 def optimize_garden_care():
     """
     Phase 2 direct implementation: Get garden care optimization recommendations.
@@ -114,7 +114,7 @@ def get_location_care_profile_endpoint(location_id):
     return get_location_context(location_id)
 
 
-@locations_bp.route('/api/garden/containers/<container_id>/care-requirements', methods=['GET'])
+@locations_bp.route('/garden/containers/<container_id>/care-requirements', methods=['GET'])
 def get_container_care_requirements(container_id):
     """Get care requirements for a specific container"""
     try:
@@ -145,7 +145,7 @@ def get_container_care_requirements(container_id):
         }), 500
 
 
-@locations_bp.route('/api/locations/all', methods=['GET'])
+@locations_bp.route('/locations/all', methods=['GET'])
 def get_all_locations():
     """Get all available locations"""
     try:
@@ -168,7 +168,7 @@ def get_all_locations():
         }), 500
 
 
-@locations_bp.route('/api/garden/location-analysis/<location_id>', methods=['GET'])
+@locations_bp.route('/garden/location-analysis/<location_id>', methods=['GET'])
 def get_location_analysis(location_id):
     """Get detailed analysis for a specific location"""
     try:
@@ -192,7 +192,7 @@ def get_location_analysis(location_id):
         }), 500
 
 
-@locations_bp.route('/api/garden/metadata/enhanced', methods=['GET'])
+@locations_bp.route('/garden/metadata/enhanced', methods=['GET'])
 def get_enhanced_garden_metadata():
     """Get enhanced garden metadata with advanced analytics"""
     try:
@@ -223,7 +223,7 @@ def get_enhanced_garden_metadata():
         }), 500
 
 
-@locations_bp.route('/api/garden/location-profiles', methods=['GET'])
+@locations_bp.route('/garden/location-profiles', methods=['GET'])
 def get_location_profiles():
     """Get profiles for all garden locations"""
     try:
@@ -246,7 +246,7 @@ def get_location_profiles():
         }), 500
 
 
-@locations_bp.route('/api/garden/care-optimization', methods=['GET'])
+@locations_bp.route('/garden/care-optimization', methods=['GET'])
 def get_garden_care_optimization_route():
     """Get comprehensive garden care optimization"""
     try:
