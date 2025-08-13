@@ -4,7 +4,7 @@ info:
   description: |
     Essential plant database operations with AI-powered analysis and location intelligence.
     Streamlined to 30 operations for ChatGPT compatibility.
-  version: 2.4.4
+  version: 2.4.5
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
@@ -162,7 +162,29 @@ paths:
           application/json:
             schema:
               type: object
-              properties: {}
+              properties:
+                Description:
+                  type: string
+                Location:
+                  type: string
+                "Light Requirements":
+                  type: string
+                "Watering Needs":
+                  type: string
+                "Soil Preferences":
+                  type: string
+                "Frost Tolerance":
+                  type: string
+                "Fertilizing Schedule":
+                  type: string
+                "Pruning Instructions":
+                  type: string
+                "Mulching Needs":
+                  type: string
+                "Winterizing Instructions":
+                  type: string
+                "Care Notes":
+                  type: string
               additionalProperties: true
       responses:
         '200':
@@ -196,6 +218,28 @@ paths:
                   type: string
                   description: Plant ID or name to update
                   example: "Vinca"
+                Description:
+                  type: string
+                Location:
+                  type: string
+                "Light Requirements":
+                  type: string
+                "Watering Needs":
+                  type: string
+                "Soil Preferences":
+                  type: string
+                "Frost Tolerance":
+                  type: string
+                "Fertilizing Schedule":
+                  type: string
+                "Pruning Instructions":
+                  type: string
+                "Mulching Needs":
+                  type: string
+                "Winterizing Instructions":
+                  type: string
+                "Care Notes":
+                  type: string
               additionalProperties: true
               required:
                 - id
@@ -836,8 +880,21 @@ components:
           type: string
         Watering Needs:
           type: string
+        Soil Preferences:
+          type: string
+        Frost Tolerance:
+          type: string
+        Fertilizing Schedule:
+          type: string
+        Pruning Instructions:
+          type: string
+        Mulching Needs:
+          type: string
+        Winterizing Instructions:
+          type: string
         Care Notes:
           type: string
+      additionalProperties: true
 
     LogEntry:
       type: object
