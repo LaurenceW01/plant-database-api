@@ -247,7 +247,25 @@ def get_location_profiles():
 
 
 @locations_bp.route('/api/garden/care-optimization', methods=['GET'])
-def get_garden_care_optimization():
+def get_garden_care_optimization_route():
     """Get comprehensive garden care optimization"""
-    return optimize_garden_care()
+    try:
+        from utils.locations_operations import get_garden_care_optimization
+        
+        # Get care optimization recommendations
+        optimization = get_garden_care_optimization()
+        
+        return jsonify({
+            **optimization,
+            "phase2_direct": True,
+            "endpoint_type": "direct_implementation"
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error getting garden care optimization: {e}")
+        return jsonify({
+            "error": "Failed to get care optimization",
+            "details": str(e),
+            "phase2_direct": True
+        }), 500
 
