@@ -37,8 +37,20 @@ def setup_middleware(app):
                 print(f"⏭️  Skipping field normalization for: {request.path}")  # Debug print
                 return
             
-            if request.is_json:
-                print(f"📝 Original JSON: {request.get_json()}")  # Debug print
+            # Debug: Check request properties that might cause issues
+            try:
+                print(f"🔧 Checking request.is_json...")  # Debug print
+                is_json = request.is_json
+                print(f"🔧 request.is_json = {is_json}")  # Debug print
+                
+                if is_json:
+                    print(f"🔧 Getting JSON data...")  # Debug print
+                    json_data = request.get_json()
+                    print(f"📝 Original JSON: {json_data}")  # Debug print
+            except Exception as e:
+                print(f"💥 EXCEPTION in request.is_json or get_json(): {e}")  # Debug print
+                logging.error(f"💥 EXCEPTION in request.is_json or get_json(): {e}")
+                # Don't re-raise, continue processing
             
             # Debug: Wrap normalize_request_middleware with exception handling
             try:
