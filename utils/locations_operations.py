@@ -53,6 +53,7 @@ from .locations_recommendation_operations import (
 from .locations_metadata_operations import (
     get_all_location_profiles,
     get_garden_metadata_enhanced,
+    get_garden_care_optimization,
     _calculate_garden_statistics,
     _analyze_location_usage,
     _analyze_container_distribution,

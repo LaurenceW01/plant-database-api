@@ -47,7 +47,7 @@ def get_all_location_profiles() -> List[Dict]:
         # Generate profiles for each location
         location_profiles = []
         for location in all_locations:
-            location_id = location.get('Location ID', '')
+            location_id = location.get('location_id', '')
             location_containers = containers_by_location.get(location_id, [])
             
             # Calculate aggregated statistics
@@ -61,13 +61,13 @@ def get_all_location_profiles() -> List[Dict]:
             # Create profile combining location and container data
             profile = {
                 'location_id': location_id,
-                'location_name': location.get('Location Name', 'Unknown'),
-                'morning_sun_hours': float(location.get('Morning Sun Hours', '0') or '0'),
-                'afternoon_sun_hours': float(location.get('Afternoon Sun Hours', '0') or '0'),
-                'evening_sun_hours': float(location.get('Evening Sun Hours', '0') or '0'),
-                'total_sun_hours': float(location.get('Total Sun Hours', '0') or '0'),
-                'shade_pattern': location.get('Shade Pattern', ''),
-                'microclimate_conditions': location.get('Microclimate Conditions', ''),
+                'location_name': location.get('location_name', 'Unknown'),
+                'morning_sun_hours': float(location.get('morning_sun_hours', 0) or 0),
+                'afternoon_sun_hours': float(location.get('afternoon_sun_hours', 0) or 0),
+                'evening_sun_hours': float(location.get('evening_sun_hours', 0) or 0),
+                'total_sun_hours': float(location.get('total_sun_hours', 0) or 0),
+                'shade_pattern': location.get('shade_pattern', ''),
+                'microclimate_conditions': location.get('microclimate_conditions', ''),
                 'total_containers': len(location_containers),
                 'unique_plants': unique_plants,
                 'container_types': container_types,
@@ -141,6 +141,159 @@ def get_garden_metadata_enhanced() -> Dict:
     except Exception as e:
         logger.error(f"Error generating enhanced garden metadata: {e}")
         return {}
+
+
+def get_garden_care_optimization() -> Dict:
+    """
+    Get garden care optimization analysis.
+    
+    This function provides care optimization recommendations and efficiency
+    improvements based on cross-analysis of locations and containers.
+    
+    Returns:
+        Dict: Care optimization analysis with recommendations
+    """
+    try:
+        # Get enhanced metadata which includes optimization data
+        enhanced_metadata = get_garden_metadata_enhanced()
+        
+        if not enhanced_metadata:
+            return {
+                "error": "Unable to generate care optimization",
+                "message": "No data available for optimization analysis"
+            }
+        
+        # Extract optimization-focused data
+        optimization_data = {
+            "optimization_analysis": {
+                "garden_wide_opportunities": enhanced_metadata.get('optimization_opportunities', []),
+                "care_complexity_summary": enhanced_metadata.get('care_complexity_analysis', {}),
+                "location_efficiency": enhanced_metadata.get('location_distribution', {}),
+                "container_insights": enhanced_metadata.get('container_intelligence', {})
+            },
+            "total_opportunities": len(enhanced_metadata.get('optimization_opportunities', [])),
+            "priority_improvements": _extract_priority_improvements(enhanced_metadata),
+            "efficiency_score": _calculate_efficiency_score(enhanced_metadata),
+            "recommendations": _generate_optimization_recommendations(enhanced_metadata),
+            "generated_at": enhanced_metadata.get('generated_at', ''),
+            "api_version": "2.4.5"
+        }
+        
+        logger.info("Generated garden care optimization analysis successfully")
+        return optimization_data
+        
+    except Exception as e:
+        logger.error(f"Error generating garden care optimization: {e}")
+        return {
+            "error": "Failed to generate care optimization",
+            "details": str(e)
+        }
+
+
+def _extract_priority_improvements(metadata: Dict) -> List[Dict]:
+    """Extract high-priority improvement recommendations."""
+    try:
+        opportunities = metadata.get('optimization_opportunities', [])
+        priority_items = []
+        
+        for opportunity in opportunities[:3]:  # Top 3 priorities
+            if isinstance(opportunity, str):
+                priority_items.append({
+                    "description": opportunity,
+                    "priority": "high",
+                    "category": "general"
+                })
+            elif isinstance(opportunity, dict):
+                priority_items.append({
+                    "description": opportunity.get('description', ''),
+                    "priority": opportunity.get('priority', 'medium'),
+                    "category": opportunity.get('category', 'general')
+                })
+        
+        return priority_items
+    except Exception:
+        return []
+
+
+def _calculate_efficiency_score(metadata: Dict) -> Dict:
+    """Calculate overall garden efficiency score."""
+    try:
+        garden_overview = metadata.get('garden_overview', {})
+        care_complexity = metadata.get('care_complexity_analysis', {})
+        
+        # Basic efficiency metrics
+        total_locations = garden_overview.get('total_locations', 0)
+        total_containers = garden_overview.get('total_containers', 0)
+        
+        if total_locations == 0:
+            return {"score": 0, "description": "No data available"}
+        
+        # Calculate utilization efficiency (containers per location)
+        utilization_score = min(100, (total_containers / total_locations) * 20) if total_locations > 0 else 0
+        
+        # Calculate care complexity efficiency (lower complexity = higher score)
+        complexity_factors = care_complexity.get('high_complexity_count', 0)
+        complexity_score = max(0, 100 - (complexity_factors * 10))
+        
+        # Overall efficiency score (weighted average)
+        overall_score = round((utilization_score * 0.6 + complexity_score * 0.4), 1)
+        
+        return {
+            "score": overall_score,
+            "breakdown": {
+                "utilization": round(utilization_score, 1),
+                "complexity_management": round(complexity_score, 1)
+            },
+            "description": _get_efficiency_description(overall_score)
+        }
+    except Exception:
+        return {"score": 0, "description": "Unable to calculate efficiency"}
+
+
+def _get_efficiency_description(score: float) -> str:
+    """Get description for efficiency score."""
+    if score >= 80:
+        return "Excellent - Garden is well-optimized"
+    elif score >= 60:
+        return "Good - Some optimization opportunities exist"
+    elif score >= 40:
+        return "Fair - Moderate improvements recommended"
+    else:
+        return "Needs attention - Significant optimization potential"
+
+
+def _generate_optimization_recommendations(metadata: Dict) -> List[str]:
+    """Generate specific optimization recommendations."""
+    try:
+        recommendations = []
+        
+        garden_overview = metadata.get('garden_overview', {})
+        care_complexity = metadata.get('care_complexity_analysis', {})
+        opportunities = metadata.get('optimization_opportunities', [])
+        
+        # Add general recommendations based on data
+        if garden_overview.get('total_containers', 0) == 0:
+            recommendations.append("Consider adding containers to increase garden productivity")
+        
+        if care_complexity.get('high_complexity_count', 0) > 0:
+            recommendations.append("Focus on simplifying care routines for high-complexity locations")
+        
+        # Add opportunity-based recommendations
+        for opportunity in opportunities[:3]:
+            if isinstance(opportunity, str) and opportunity not in recommendations:
+                recommendations.append(opportunity)
+        
+        # Add default recommendations if none found
+        if not recommendations:
+            recommendations.extend([
+                "Monitor plant health regularly using the logging system",
+                "Consider grouping plants with similar care requirements",
+                "Review watering schedules based on location sun exposure"
+            ])
+        
+        return recommendations[:5]  # Limit to 5 recommendations
+    except Exception:
+        return ["Review garden setup for optimization opportunities"]
 
 def _calculate_garden_statistics(location_profiles: List[Dict], all_containers: List[Dict]) -> Dict:
     """
