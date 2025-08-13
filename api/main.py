@@ -369,6 +369,13 @@ def upload_photo_to_plant(token):
                 'error': error_message or 'Invalid or expired token'
             }), 401
         
+        # Ensure this is a plant upload token
+        if token_data.get('token_type') != 'plant_upload':
+            return jsonify({
+                'success': False,
+                'error': 'This token is not valid for plant photo uploads'
+            }), 401
+        
         if 'file' not in request.files:
             return jsonify({
                 'success': False,
@@ -385,7 +392,7 @@ def upload_photo_to_plant(token):
         # Upload photo and link to plant record
         if token_data.get('plant_id'):
             # Use the comprehensive upload and link function
-            from utils.plant_operations import upload_and_link_plant_photo
+            from utils.plant_photo_operations import upload_and_link_plant_photo
             result = upload_and_link_plant_photo(file, token_data['plant_id'], token_data['plant_name'])
         else:
             # Fallback to simple upload if no plant_id
@@ -415,6 +422,7 @@ def upload_photo_to_log(token):
     try:
         from utils.upload_token_manager import validate_upload_token, mark_token_used
         from utils.storage_client import upload_plant_photo
+        from utils.plant_log_operations import update_log_entry_photo
         
         # Validate token
         is_valid, token_data, error_message = validate_upload_token(token)
@@ -422,6 +430,13 @@ def upload_photo_to_log(token):
             return jsonify({
                 'success': False,
                 'error': error_message or 'Invalid or expired token'
+            }), 401
+        
+        # Ensure this is a log upload token
+        if token_data.get('token_type') != 'log_upload':
+            return jsonify({
+                'success': False,
+                'error': 'This token is not valid for log photo uploads'
             }), 401
         
         if 'file' not in request.files:
@@ -437,22 +452,38 @@ def upload_photo_to_log(token):
                 'error': 'No file selected'
             }), 400
         
-        # Upload photo (use plant_photo function with appropriate identifier)
-        # Handle both log upload tokens and plant upload tokens
-        if token_data.get('token_type') == 'log_upload':
-            identifier = f"log_{token_data['log_id']}"
-        else:
-            # For plant upload tokens, use plant info
-            identifier = token_data.get('plant_name', 'unknown_plant')
+        # Get log ID from token
+        log_id = token_data.get('log_id')
+        if not log_id:
+            return jsonify({
+                'success': False,
+                'error': 'No log ID found in token'
+            }), 400
         
+        # Upload photo to cloud storage
+        identifier = f"log_{log_id}"
         result = upload_plant_photo(file, identifier)
+        
+        # Update log entry with photo URLs
+        photo_url = result.get('photo_url', '')
+        raw_photo_url = result.get('raw_photo_url', '')
+        
+        if photo_url and raw_photo_url:
+            update_result = update_log_entry_photo(log_id, photo_url, raw_photo_url)
+            if not update_result.get('success'):
+                logging.error(f"Failed to update log entry {log_id} with photo URLs: {update_result.get('error')}")
+                return jsonify({
+                    'success': False,
+                    'error': f"Photo uploaded but failed to update log record: {update_result.get('error')}"
+                }), 500
         
         # Mark token as used
         mark_token_used(token, request.remote_addr or '')
         
         return jsonify({
             'success': True,
-            'message': 'Photo uploaded successfully',
+            'message': 'Photo uploaded successfully and log entry updated',
+            'log_id': log_id,
             **result
         }), 200
         

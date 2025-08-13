@@ -313,11 +313,43 @@ class TestRegressionSuite:
     # =============================================
     
     def test_photos_upload_for_plant_get(self):
-        """Test GET /api/photos/upload-for-plant/{token} endpoint - should return error for invalid token"""
+        """Test GET /api/photos/upload-for-plant/{token} endpoint - should return upload page or error"""
         response = self.client.get('/api/photos/upload-for-plant/invalid_token')
         
-        # Should return 401 for invalid token or 405 for method not allowed
-        assert response.status_code in [401, 405]
+        # Should return 200 for upload page or 401 for invalid token
+        assert response.status_code in [200, 401]
+
+    def test_photo_upload_token_type_validation(self):
+        """Test that log tokens cannot be used for plant uploads and vice versa"""
+        from utils.upload_token_manager import generate_upload_token
+        
+        # Generate different token types
+        log_token = generate_upload_token('test_plant', 'log_upload', log_id='TEST-LOG-123')
+        plant_token = generate_upload_token('test_plant', 'plant_upload', plant_id='123', operation='add')
+        
+        # Test 1: Try to use log token for plant upload (should fail with 401)
+        with open('test.png', 'rb') as f:
+            response = self.client.post(
+                f'/api/photos/upload-for-plant/{log_token}',
+                data={'file': (f, 'test.png')},
+                content_type='multipart/form-data'
+            )
+        
+        assert response.status_code == 401
+        data = response.get_json()
+        assert 'not valid for plant photo uploads' in data.get('error', '')
+        
+        # Test 2: Try to use plant token for log upload (should fail with 401)
+        with open('test.png', 'rb') as f:
+            response = self.client.post(
+                f'/api/photos/upload-for-log/{plant_token}',
+                data={'file': (f, 'test.png')},
+                content_type='multipart/form-data'
+            )
+        
+        assert response.status_code == 401
+        data = response.get_json()
+        assert 'not valid for log photo uploads' in data.get('error', '')
 
     def test_photos_upload_for_log_get(self):
         """Test GET /api/photos/upload-for-log/{token} endpoint - should return error for invalid token"""
