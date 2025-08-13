@@ -40,7 +40,11 @@ def normalize_request_middleware():
                     if k != v
                 }
                 if transformed_fields:
-                    logging.debug(f"Field normalization applied: {transformed_fields}")
+                    logging.info(f"🔄 MIDDLEWARE: Field normalization applied: {transformed_fields}")
+                else:
+                    logging.info(f"🔄 MIDDLEWARE: No field transformations needed")
+            else:
+                logging.info(f"🔄 MIDDLEWARE: No field normalization applied")
                     
         except Exception as e:
             logging.warning(f"Field normalization failed: {e}")

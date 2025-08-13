@@ -42,9 +42,10 @@ See chatgpt_endpoints.md for complete endpoint list.
 
 ## Database Fields
 
-### Plants (Use EXACT names)
-- Required: `Plant Name`
+### Plants (Flexible field names supported)
+- Required: `Plant Name` (or `plant_name`, `Plant___Name`)
 - Optional: `Description`, `Location`, `Light Requirements`, `Soil Preferences`, `Soil pH Type`, `Soil pH Range`, `Frost Tolerance`, `Spacing Requirements`, `Watering Needs`, `Fertilizing Schedule`, `Pruning Instructions`, `Mulching Needs`, `Winterizing Instructions`, `Care Notes`, `Photo URL`
+- **Note**: Field names are automatically normalized - you can use spaces, underscores, or camelCase
 
 ### Logs (Use EXACT names)
 - Required: `Plant Name`, `Log Title`

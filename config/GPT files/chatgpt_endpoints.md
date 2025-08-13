@@ -97,7 +97,8 @@ The API now accepts **ANY** reasonable field name variation:
 - **CamelCase**: `plantName`, `careNotes`, `lightRequirements`
 - **Aliases**: `name`, `notes`, `light`, `water`
 
-**Key Plant Fields**: Plant Name (required), Description, Location, Light Requirements, Watering Needs, Care Notes
+**Key Plant Fields**: Plant Name (required), Description, Location, Light Requirements, Watering Needs, Care Notes  
+**Field Format**: Flexible - use spaces, underscores, or camelCase (e.g., `Light Requirements`, `light_requirements`, `Light___Requirements`)
 
 ### Field Names for Log Operations  
 Use these EXACT field names for best compatibility:
@@ -355,7 +356,7 @@ in that evening sun location."
 ## Important Notes
 
 🔴 **ChatGPT Limitations**: This schema contains exactly 24 operations (under the 30 limit)
-🔴 **Field Compatibility**: Always use exact field names as shown in examples
+🔴 **Field Compatibility**: Field names are flexible - use any format (spaces, underscores, camelCase)
 🔴 **Token Expiration**: All upload tokens expire in 24 hours
 🔴 **Location Intelligence**: Use context endpoints for precise, location-aware advice
 🔴 **Error Handling**: All endpoints provide comprehensive error messages with guidance

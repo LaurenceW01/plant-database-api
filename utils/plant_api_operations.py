@@ -60,9 +60,14 @@ def add_plant_api():
 
 def update_plant_api(id_or_name):
     """Core plant update logic for API endpoints"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         from .field_normalization_middleware import get_normalized_field
         from .plant_database_operations import update_plant
+        
+        logger.info(f"🔧 UPDATE_PLANT_API called for plant: {id_or_name}")
         
         # Build update data from ALL normalized fields (not just hardcoded ones)
         update_data = {}
@@ -70,6 +75,7 @@ def update_plant_api(id_or_name):
         # Get all normalized data from the request
         if hasattr(g, 'normalized_request_data') and g.normalized_request_data:
             normalized_data = g.normalized_request_data
+            logger.info(f"📊 Processing {len(normalized_data)} normalized fields")
             
             # Map normalized field names back to canonical format using centralized config
             from models.field_config import FIELD_NAMES, LOG_FIELD_NAMES
@@ -104,9 +110,13 @@ def update_plant_api(id_or_name):
                 canonical_name = canonical_field_mappings.get(normalized_field, normalized_field)
                 if value and str(value).strip():  # Only include non-empty values
                     update_data[canonical_name] = str(value).strip()
+                    logger.info(f"   🔄 {normalized_field} -> {canonical_name}")
+                else:
+                    logger.debug(f"   ⏭️  Skipping empty field: {normalized_field}")
         
         # If no normalized data, try direct field access using centralized config
         if not update_data:
+            logger.warning("⚠️  No normalized data found, trying direct field access")
             from models.field_config import FIELD_NAMES, get_aliases_for_field
             
             # Try all canonical field names and their aliases
@@ -130,10 +140,15 @@ def update_plant_api(id_or_name):
                         break  # Found a value, move to next field
         
         if not update_data:
+            logger.error("❌ No valid fields provided for update")
             return jsonify({'error': 'No valid fields provided for update'}), 400
+        
+        logger.info(f"📋 Final update data: {list(update_data.keys())}")
+        logger.info(f"🔧 Calling database update for plant {id_or_name}")
         
         # Update the plant
         result = update_plant(id_or_name, update_data)
+        logger.info(f"✅ Database update result: {result.get('success', False)}")
         
         if result.get('success'):
             return jsonify(result), 200

@@ -144,14 +144,42 @@ def update_plant_flexible():
     Flexible update endpoint that accepts plant ID in JSON body.
     This provides ChatGPT-friendly alternative when ID is in request body instead of URL path.
     """
+    import logging
     from utils.field_normalization_middleware import get_normalized_field
     from api.main import update_plant
+    from flask import request, g
+    
+    logger = logging.getLogger(__name__)
+    
+    # Log the incoming request
+    original_data = request.get_json() if request.is_json else {}
+    logger.info(f"🔄 UPDATE_PLANT_FLEXIBLE called with {len(original_data)} fields")
+    logger.info(f"📝 Original request fields: {list(original_data.keys())}")
+    
+    # Log normalized data if available
+    if hasattr(g, 'normalized_request_data') and g.normalized_request_data:
+        logger.info(f"✅ Normalized fields: {list(g.normalized_request_data.keys())}")
+        
+        # Show field transformations
+        if hasattr(g, 'original_request_data'):
+            orig_fields = set(g.original_request_data.keys())
+            norm_fields = set(g.normalized_request_data.keys())
+            if orig_fields != norm_fields:
+                logger.info(f"🔄 Field transformations applied")
+                for orig_field in g.original_request_data.keys():
+                    if orig_field.lower() != 'id':  # Skip ID field
+                        norm_field = orig_field.lower().replace('___', '_').replace(' ', '_')
+                        if norm_field in g.normalized_request_data:
+                            logger.info(f"   {orig_field} -> {norm_field}")
     
     # Get plant ID from request body
     plant_id = get_normalized_field('id') or get_normalized_field('plant_id') or get_normalized_field('Plant ID')
     
     if not plant_id:
+        logger.error("❌ No plant ID found in request body")
         return jsonify({'error': 'Plant ID is required in request body (use "id", "plant_id", or "Plant ID" field)'}), 400
+    
+    logger.info(f"🎯 Plant ID identified: {plant_id}")
     
     # Call the same update logic but extract ID from body
     response = update_plant(plant_id)
