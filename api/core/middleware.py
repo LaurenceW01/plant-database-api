@@ -37,20 +37,20 @@ def setup_middleware(app):
                 print(f"⏭️  Skipping field normalization for: {request.path}")  # Debug print
                 return
             
-            # Debug: Check request properties that might cause issues
-            try:
-                print(f"🔧 Checking request.is_json...")  # Debug print
-                is_json = request.is_json
-                print(f"🔧 request.is_json = {is_json}")  # Debug print
-                
-                if is_json:
-                    print(f"🔧 Getting JSON data...")  # Debug print
-                    json_data = request.get_json()
-                    print(f"📝 Original JSON: {json_data}")  # Debug print
-            except Exception as e:
-                print(f"💥 EXCEPTION in request.is_json or get_json(): {e}")  # Debug print
-                logging.error(f"💥 EXCEPTION in request.is_json or get_json(): {e}")
-                # Don't re-raise, continue processing
+            # Handle ChatGPT requests that have Content-Type: application/json but no body
+            if request.is_json:
+                try:
+                    # Check if there's actually JSON data (ChatGPT sends Content-Type but no body for GET)
+                    json_data = request.get_json(silent=True)  # silent=True prevents 400 errors
+                    if json_data:
+                        print(f"📝 Original JSON: {json_data}")  # Debug print
+                    else:
+                        print(f"ℹ️  Request has JSON Content-Type but no body (normal for GET requests)")  # Debug print
+                except Exception as e:
+                    print(f"💥 EXCEPTION in request.get_json(): {e}")  # Debug print
+                    logging.error(f"💥 EXCEPTION in request.get_json(): {e}")
+            else:
+                print(f"ℹ️  Request is not JSON")  # Debug print
             
             # Debug: Wrap normalize_request_middleware with exception handling
             try:

@@ -24,13 +24,14 @@ def normalize_request_middleware():
     """
     print(f"🔧 normalize_request_middleware() START for {request.method} {request.path}")  # Debug print
     
-    if request.is_json and request.get_json():
+    # Use silent=True to handle ChatGPT requests with Content-Type: application/json but no body
+    if request.is_json and request.get_json(silent=True):
         print(f"🔧 Request has JSON data, proceeding with normalization...")  # Debug print
         from utils.compatibility_helpers import normalize_request_fields
         
         try:
             print(f"🔧 Getting JSON data...")  # Debug print
-            original_data = request.get_json()
+            original_data = request.get_json(silent=True)
             print(f"🔧 Got JSON data: {len(original_data)} fields")  # Debug print
             
             # DEBUG: Log the raw request data size and keys
@@ -63,8 +64,8 @@ def normalize_request_middleware():
             print(f"💥 EXCEPTION in field normalization: {e}")  # Debug print
             logging.warning(f"Field normalization failed: {e}")
             # Store original data as fallback
-            g.original_request_data = request.get_json()
-            g.normalized_request_data = request.get_json()
+            g.original_request_data = request.get_json(silent=True)
+            g.normalized_request_data = request.get_json(silent=True)
     else:
         print(f"🔧 No JSON data in request, skipping normalization")  # Debug print
     
