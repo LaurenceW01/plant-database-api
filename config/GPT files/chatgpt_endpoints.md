@@ -53,11 +53,11 @@ POST   /api/photos/upload-for-log/{token}    // ✅ Upload photo for log entry
 
 ### Location Intelligence (8 operations)
 ```javascript
-GET    /api/locations/get-context/{id}       // ✅ Get location context
+GET    /api/locations/get-context/{id}       // ✅ Get location context (supports IDs and names)
 GET    /api/garden/get-metadata              // ✅ Get garden metadata
 GET    /api/garden/optimize-care             // ✅ Get care optimization
 GET    /api/plants/{plant_id}/location-context  // ✅ Legacy plant location context
-GET    /api/locations/{location_id}/care-profile  // ✅ Location care profile
+GET    /api/locations/{location_id}/care-profile  // ✅ Location care profile (supports IDs and names)
 GET    /api/locations/all                    // ✅ All locations
 GET    /api/garden/metadata/enhanced         // ✅ Enhanced garden metadata
 GET    /api/garden/care-optimization         // ✅ Care optimization analysis

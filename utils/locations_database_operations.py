@@ -100,6 +100,47 @@ def get_location_by_id(location_id: str) -> Optional[Dict]:
         logger.error(f"Error getting location by ID {location_id}: {e}")
         return None
 
+def find_location_by_id_or_name(identifier: str) -> Optional[Dict]:
+    """
+    Find a location by ID or name, similar to find_plant_by_id_or_name.
+    
+    Args:
+        identifier (str): Location ID or location name to search for
+        
+    Returns:
+        Optional[Dict]: Location data dictionary if found, None otherwise
+    """
+    try:
+        all_locations = get_all_locations()
+        
+        # First try to find by ID (exact match)
+        for location in all_locations:
+            if location.get('location_id', '').strip() == identifier.strip():
+                logger.debug(f"Found location by ID: {identifier}")
+                return location
+        
+        # If not found by ID, try to find by name (case-insensitive)
+        identifier_lower = identifier.lower().strip()
+        for location in all_locations:
+            location_name = location.get('location_name', '').lower().strip()
+            if location_name == identifier_lower:
+                logger.debug(f"Found location by name: {identifier}")
+                return location
+        
+        # If still not found, try partial matching on name
+        for location in all_locations:
+            location_name = location.get('location_name', '').lower().strip()
+            if identifier_lower in location_name:
+                logger.debug(f"Found location by partial name match: {identifier}")
+                return location
+        
+        logger.warning(f"Location not found by ID or name: {identifier}")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error finding location by ID or name {identifier}: {e}")
+        return None
+
 def get_all_containers() -> List[Dict]:
     """
     Fetch all containers from the Containers sheet.

@@ -342,6 +342,27 @@ class TestRegressionSuite:
         else:
             assert 'error' in data
 
+    def test_locations_get_context_by_name(self):
+        """Test GET /api/locations/get-context/{name} endpoint with location name"""
+        # Test with "middle" location name 
+        response = self.client.get('/api/locations/get-context/middle')
+        
+        assert response.status_code in [200, 404, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            # Should convert name to ID and return location data
+            assert 'location_id' in data
+            assert 'original_identifier' in data
+            assert 'care_profile' in data
+            assert data['original_identifier'] == 'middle'
+        elif response.status_code == 404:
+            # If location doesn't exist, should have helpful error message
+            assert 'error' in data
+            assert 'not found' in data['error'].lower()
+        else:
+            assert 'error' in data
+
     def test_garden_get_metadata(self):
         """Test GET /api/garden/get-metadata endpoint (operationId: getGardenMetadata)"""
         response = self.client.get('/api/garden/get-metadata')
@@ -581,6 +602,102 @@ class TestRegressionSuite:
         # Verify we have 23 main endpoints covered
         assert len(covered_endpoints) >= 23
         print(f"✅ Comprehensive test suite covers {len(covered_endpoints)} major endpoints")
+
+    # =================================================================
+    # ChatGPT Request Pattern Tests (Bug Regression Prevention)
+    # =================================================================
+    
+    def test_chatgpt_request_pattern_care_optimization(self):
+        """Test ChatGPT's request pattern: GET with Content-Type: application/json but no body"""
+        # Simulate exactly what ChatGPT sends: Content-Type header with no JSON body
+        response = self.client.open(
+            '/api/garden/care-optimization',
+            method='GET',
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot'
+            }
+            # Note: No data/json parameter - this simulates empty body with JSON Content-Type
+        )
+        
+        # Should work now with our silent=True fix
+        assert response.status_code in [200, 500], f"ChatGPT request pattern failed with {response.status_code}"
+        
+        if response.status_code == 200:
+            data = json.loads(response.get_data(as_text=True))
+            assert 'optimization_analysis' in data or 'error' in data
+    
+    def test_chatgpt_request_pattern_metadata_enhanced(self):
+        """Test ChatGPT's request pattern for metadata endpoint"""
+        response = self.client.open(
+            '/api/garden/metadata/enhanced',
+            method='GET',
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot'
+            }
+        )
+        
+        # Should work now with our silent=True fix
+        assert response.status_code in [200, 500], f"ChatGPT metadata request pattern failed with {response.status_code}"
+        
+        if response.status_code == 200:
+            data = json.loads(response.get_data(as_text=True))
+            assert 'enhanced_metadata' in data or 'error' in data
+    
+    def test_chatgpt_vs_normal_get_request(self):
+        """Compare ChatGPT request pattern vs normal GET request behavior"""
+        # Normal GET request (no Content-Type header)
+        normal_response = self.client.get('/api/garden/care-optimization')
+        
+        # ChatGPT GET request (with Content-Type: application/json)
+        chatgpt_response = self.client.open(
+            '/api/garden/care-optimization',
+            method='GET',
+            headers={'Content-Type': 'application/json'}
+        )
+        
+        # Both should return the same successful response
+        assert normal_response.status_code == chatgpt_response.status_code, \
+            f"Request patterns differ: normal={normal_response.status_code}, chatgpt={chatgpt_response.status_code}"
+        
+        # Response content should be identical (if both succeed)
+        if normal_response.status_code == 200 and chatgpt_response.status_code == 200:
+            normal_data = json.loads(normal_response.get_data(as_text=True))
+            chatgpt_data = json.loads(chatgpt_response.get_data(as_text=True))
+            
+            # Core data should be the same (timestamps might differ)
+            assert normal_data.get('optimization_analysis') == chatgpt_data.get('optimization_analysis')
+    
+    def test_chatgpt_request_pattern_regression_prevention(self):
+        """Prevent regression of the ChatGPT 400 error bug"""
+        # Test the specific pattern that caused the original bug
+        garden_endpoints = [
+            '/api/garden/care-optimization',
+            '/api/garden/metadata/enhanced',
+            '/api/garden/optimize-care',
+            '/api/garden/get-metadata'
+        ]
+        
+        for endpoint in garden_endpoints:
+            with self.client:
+                response = self.client.open(
+                    endpoint,
+                    method='GET',
+                    headers={
+                        'Content-Type': 'application/json',  # This caused the original bug
+                        'User-Agent': 'ChatGPT-User/1.0'
+                    }
+                    # No body data - this is the key to the bug
+                )
+                
+                # The original bug: this returned 400 Bad Request
+                assert response.status_code != 400, \
+                    f"REGRESSION BUG: ChatGPT request pattern returns 400 for {endpoint}!"
+                
+                # Should return 200 (success) or other valid HTTP codes, but NOT 400
+                assert response.status_code in [200, 404, 500], \
+                    f"Unexpected status {response.status_code} for {endpoint} with ChatGPT headers"
 
 
 if __name__ == '__main__':

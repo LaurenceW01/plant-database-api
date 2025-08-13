@@ -640,13 +640,13 @@ paths:
     get:
       operationId: getLocationContext
       summary: Get location context
-      description: Get detailed context for a specific location
+      description: Get detailed context for a specific location (supports both location IDs and location names)
       security: []
       parameters:
         - name: id
           in: path
           required: true
-          description: Location ID
+          description: Location ID or location name (e.g., "1" or "middle" or "front patio")
           schema:
             type: string
       responses:
@@ -734,13 +734,13 @@ paths:
     get:
       operationId: getLocationCareProfile
       summary: Get location care profile
-      description: Get comprehensive care analysis for a location
+      description: Get comprehensive care analysis for a location (supports both location IDs and location names)
       security: []
       parameters:
         - name: location_id
           in: path
           required: true
-          description: Location ID
+          description: Location ID or location name (e.g., "1" or "middle" or "front patio")
           schema:
             type: string
       responses:

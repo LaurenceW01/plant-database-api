@@ -19,25 +19,45 @@ def get_location_context(location_id):
     Phase 2 direct implementation: Get location context and care profile.
     Provides semantic alignment: getLocationContext operationId → /api/locations/get-context/{id} URL
     This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
+    
+    Supports both location IDs (numeric) and location names for ChatGPT compatibility.
     """
     try:
-        from utils.locations_operations import get_location_care_profile
+        from utils.locations_operations import get_location_care_profile, find_location_by_id_or_name
         
-        # Get location care profile
-        care_profile = get_location_care_profile(location_id)
+        # Convert location name to ID if necessary (ChatGPT often sends location names)
+        actual_location_id = location_id
+        if not location_id.isdigit():
+            # Try to find location by name and get its ID
+            location_data = find_location_by_id_or_name(location_id)
+            if location_data is not None:
+                actual_location_id = location_data.get('location_id', location_id)
+                logging.info(f"Converted location name '{location_id}' to ID '{actual_location_id}'")
+            else:
+                return jsonify({
+                    "error": f"Location '{location_id}' not found in database",
+                    "message": "Please check the location name and try again",
+                    "location_id": location_id,
+                    "phase2_direct": True
+                }), 404
+        
+        # Generate care profile using the actual location ID
+        care_profile = get_location_care_profile(actual_location_id)
         
         if care_profile:
             return jsonify({
-                "location_id": location_id,
+                "location_id": actual_location_id,
+                "original_identifier": location_id,
                 "care_profile": care_profile,
-                "message": f"Care profile generated for location {care_profile.get('location_info', {}).get('location_name', location_id)}",
+                "message": f"Care profile generated for location {care_profile.get('location_info', {}).get('location_name', actual_location_id)}",
                 "phase2_direct": True,
                 "endpoint_type": "direct_implementation"
             }), 200
         else:
             return jsonify({
-                "error": f"Location {location_id} not found",
-                "location_id": location_id,
+                "error": f"Location {actual_location_id} not found",
+                "location_id": actual_location_id,
+                "original_identifier": location_id,
                 "phase2_direct": True
             }), 404
             
@@ -108,7 +128,7 @@ def optimize_garden_care():
 
 
 # Additional location and garden routes
-@locations_bp.route('/api/locations/<location_id>/care-profile', methods=['GET'])
+@locations_bp.route('/locations/<location_id>/care-profile', methods=['GET'])
 def get_location_care_profile_endpoint(location_id):
     """Get detailed care profile for a specific location"""
     return get_location_context(location_id)
