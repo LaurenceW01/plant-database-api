@@ -31,7 +31,7 @@ def upload_and_link_plant_photo(file, plant_id: str, plant_name: str) -> Dict[st
         raw_photo_url = upload_result.get('raw_photo_url', '')
         
         update_data = {
-            'Photo URL': f'=IMAGE("{photo_url}")' if photo_url else '',
+            'Photo URL': f'=IMAGE("{photo_url}")' if photo_url and not photo_url.startswith('=IMAGE("') else photo_url,
             'Raw Photo URL': raw_photo_url
         }
         
@@ -356,9 +356,17 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
             if canonical_field:
                 if canonical_field == get_canonical_field_name('Photo URL'):
                     # Handle photo URL specially - store both IMAGE formula and raw URL
-                    photo_formula = f'=IMAGE("{field_value}")' if field_value else ''
-                    plant_data[canonical_field] = photo_formula
-                    plant_data[get_canonical_field_name('Raw Photo URL')] = field_value
+                    if field_value and not field_value.startswith('=IMAGE("'):
+                        photo_formula = f'=IMAGE("{field_value}")' if field_value else ''
+                        plant_data[canonical_field] = photo_formula
+                        plant_data[get_canonical_field_name('Raw Photo URL')] = field_value
+                    else:
+                        # Already wrapped, use as-is
+                        plant_data[canonical_field] = field_value
+                        # Extract raw URL from existing IMAGE formula if needed
+                        if field_value.startswith('=IMAGE("') and field_value.endswith('")'):
+                            raw_url = field_value[8:-2]  # Remove =IMAGE(" and ")
+                            plant_data[get_canonical_field_name('Raw Photo URL')] = raw_url
                 else:
                     plant_data[canonical_field] = field_value
         

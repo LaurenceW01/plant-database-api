@@ -331,7 +331,10 @@ def update_plant_field(plant_row: int, field_name: str, new_value: str) -> bool:
             
         if canonical_field_name == get_canonical_field_name('Photo URL'):
             # Handle photo URL specially - store as IMAGE formula and update Raw Photo URL
-            photo_formula = f'=IMAGE("{new_value}")' if new_value else ''
+            if new_value and not new_value.startswith('=IMAGE("'):
+                photo_formula = f'=IMAGE("{new_value}")' if new_value else ''
+            else:
+                photo_formula = new_value  # Already wrapped or empty
             range_name = f'Plants!{chr(65 + col_idx)}{plant_row + 1}'
             logger.info(f"Updating Photo URL at {range_name}")
             sheets_client.values().update(
@@ -397,9 +400,17 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
             return {"success": False, "error": "Could not generate plant ID"}
         
         # Prepare plant data using field_config
-        # Wrap the photo_url in =IMAGE() for the 'Photo URL' field
-        photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
-        raw_photo_url = photo_url  # Store the raw URL directly
+        # Wrap the photo_url in =IMAGE() for the 'Photo URL' field (if not already wrapped)
+        if photo_url and not photo_url.startswith('=IMAGE("'):
+            photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
+            raw_photo_url = photo_url  # Store the raw URL directly
+        else:
+            photo_formula = photo_url  # Already wrapped or empty
+            # Extract raw URL from IMAGE formula if needed
+            if photo_url and photo_url.startswith('=IMAGE("') and photo_url.endswith('")'):
+                raw_photo_url = photo_url[8:-2]  # Remove =IMAGE(" and ")
+            else:
+                raw_photo_url = photo_url
         plant_data = {
             get_canonical_field_name('ID'): next_id,
             get_canonical_field_name('Plant Name'): plant_name,
