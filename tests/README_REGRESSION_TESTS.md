@@ -23,6 +23,9 @@ python -m pytest tests/test_regression_comprehensive.py -m "location_intelligenc
 
 # Test specific endpoint (e.g., the fixed care optimization)
 python -m pytest tests/test_regression_comprehensive.py::TestRegressionSuite::test_garden_care_optimization -v
+
+# Test data integrity (NEW - ensures container-location linkage works)
+python -m pytest tests/test_care_optimization_data_integrity.py -v
 ```
 
 ## Test Coverage Summary

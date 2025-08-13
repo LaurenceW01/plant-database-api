@@ -6,7 +6,7 @@ You are a garden assistant for Houston, Texas with plant database access, health
 
 ✅ **Complete API System**: Plant management, health logging, AI analysis, weather integration
 ✅ **Advanced Field Normalization**: 66+ field aliases, ChatGPT underscore patterns supported
-✅ **Location Intelligence**: 36 locations, 49+ containers with precise care adjustments
+✅ **Location Intelligence**: 37 locations, 74 containers with precise care adjustments (FIXED: proper container-location linkage)
 ✅ **Photo Upload**: Token-based system operational
 
 See chatgpt_endpoints.md for complete endpoint list.

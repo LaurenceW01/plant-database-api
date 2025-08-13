@@ -32,7 +32,8 @@ class RegressionTestReporter:
                 'photo_upload': 0,
                 'location_intelligence': 0,
                 'weather_integration': 0,
-                'error_scenarios': 0
+                'error_scenarios': 0,
+                'data_integrity': 0
             }
         }
     

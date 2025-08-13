@@ -61,7 +61,7 @@ GET    /api/plants/{plant_id}/location-context  // ✅ Legacy plant location con
 GET    /api/locations/{location_id}/care-profile  // ✅ Location care profile (supports IDs and names)
 GET    /api/locations/all                    // ✅ All locations
 GET    /api/garden/metadata/enhanced         // ✅ Enhanced garden metadata
-GET    /api/garden/care-optimization         // ✅ Care optimization analysis
+GET    /api/garden/care-optimization         // ✅ Care optimization analysis (FIXED: proper container-location linkage)
 ```
 
 ### Weather Integration (3 operations)

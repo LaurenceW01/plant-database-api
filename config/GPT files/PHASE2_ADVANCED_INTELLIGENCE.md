@@ -6,6 +6,8 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 
 **⚠️ Note**: This guide has been updated to align with the streamlined 24-operation ChatGPT schema. Some advanced endpoints have been simplified while preserving core functionality.
 
+**✅ Data Integrity Fixed (Aug 2025)**: Container-location mapping now works correctly. The care optimization endpoint provides accurate usage distribution (21/37 locations with containers) instead of previously incorrect "all empty" data. Field name consistency issues resolved.
+
 ## Core Phase 2 Capabilities
 
 ### 1. Enhanced Location Context (Available)
@@ -58,7 +60,7 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 - Garden-wide optimization opportunities
 
 ### 4. Care Optimization Recommendations
-**Endpoint**: `GET /api/garden/care-optimization`
+**Endpoint**: `GET /api/garden/care-optimization` ⚡ **ENHANCED**
 
 **When to Use**:
 - Optimization and efficiency questions
@@ -66,11 +68,15 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 - Planning better garden management
 - "How can I optimize my garden care?"
 
-**What it Provides**:
-- High-priority location recommendations
-- Container upgrade suggestions
-- Care efficiency improvements
-- Risk assessments and mitigation
+**What it Provides** (Updated with accurate data):
+- **Realistic usage distribution**: Empty, light, moderate, heavy usage locations
+- **Accurate container insights**: Material/size distribution across locations
+- **Precise location efficiency**: Underutilized prime locations identification
+- **Container upgrade suggestions**: Based on actual container-location mappings
+- **Care complexity analysis**: Data-driven complexity assessment
+- **Priority improvements**: With efficiency scoring and recommendations
+
+**Recent Fix**: Container-location linkage now properly reflects actual garden data (21/37 locations with containers, not 0/37)
 
 ### 5. All Locations Overview (Available)
 **Endpoint**: `GET /api/locations/all`
@@ -84,7 +90,7 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 **What it Provides**:
 - All locations with basic metadata
 - Location characteristics and sun patterns
-- Overview of all 36 locations
+- Overview of all 37 locations
 
 **Note**: Provides essential location overview within our streamlined schema.
 
@@ -121,8 +127,8 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 **Before (Phase 1)**:
 > "Your hibiscus in arboretum right needs morning watering due to afternoon sun."
 
-**After (Phase 2)**:
-> "Your hibiscus location analysis: arboretum right has 4 containers with 75% compatibility. Primary optimization: upgrade 3 plastic containers to ceramic for better heat management. Care complexity: medium due to afternoon sun exposure. Watering strategy: 5:30-7:00 AM every other day. This north-facing microclimate is excellent for heat-sensitive plants."
+**After (Phase 2 - ENHANCED)**:
+> "Your hibiscus location analysis: arboretum right has 4 containers with verified container-location mapping. Primary optimization: upgrade 3 plastic containers to ceramic for better heat management. Care complexity: medium due to afternoon sun exposure. Watering strategy: 5:30-7:00 AM every other day. This north-facing microclimate is excellent for heat-sensitive plants. Based on accurate usage distribution data: this is a moderately-used location with optimization potential."
 
 ### Garden-Wide Recommendations
 **Use Case**: "How can I improve my garden efficiency?"

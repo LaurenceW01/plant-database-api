@@ -39,7 +39,7 @@ def get_all_location_profiles() -> List[Dict]:
         # Group containers by location
         containers_by_location = {}
         for container in all_containers:
-            location_id = container.get('Location ID', '')
+            location_id = container.get('location_id', '')
             if location_id not in containers_by_location:
                 containers_by_location[location_id] = []
             containers_by_location[location_id].append(container)
@@ -51,12 +51,12 @@ def get_all_location_profiles() -> List[Dict]:
             location_containers = containers_by_location.get(location_id, [])
             
             # Calculate aggregated statistics
-            unique_plants = len(set(c.get('Plant ID', '') for c in location_containers if c.get('Plant ID', '')))
+            unique_plants = len(set(c.get('plant_id', '') for c in location_containers if c.get('plant_id', '')))
             
             # Aggregate container types, sizes, and materials
-            container_types = list(set(c.get('Container Type', 'Unknown') for c in location_containers))
-            container_sizes = list(set(c.get('Container Size', 'Unknown') for c in location_containers))
-            container_materials = list(set(c.get('Container Material', 'Unknown') for c in location_containers))
+            container_types = list(set(c.get('container_type', 'Unknown') for c in location_containers))
+            container_sizes = list(set(c.get('container_size', 'Unknown') for c in location_containers))
+            container_materials = list(set(c.get('container_material', 'Unknown') for c in location_containers))
             
             # Create profile combining location and container data
             profile = {
@@ -319,7 +319,7 @@ def _calculate_garden_statistics(location_profiles: List[Dict], all_containers: 
     total_containers = len(all_containers)
     
     # Count unique plants
-    unique_plants = len(set(c.get('Plant ID', '') for c in all_containers if c.get('Plant ID', '')))
+    unique_plants = len(set(c.get('plant_id', '') for c in all_containers if c.get('plant_id', '')))
     
     # Calculate utilization metrics
     locations_with_containers = sum(1 for profile in location_profiles if profile['total_containers'] > 0)
@@ -487,9 +487,9 @@ def _assess_care_requirements(location_profiles: List[Dict]) -> Dict:
         
         # Build location dict for assessment
         location = {
-            'Total Sun Hours': str(profile.get('total_sun_hours', 0)),
-            'Afternoon Sun Hours': str(profile.get('afternoon_sun_hours', 0)),
-            'Microclimate Conditions': profile.get('microclimate_conditions', '')
+            'total_sun_hours': profile.get('total_sun_hours', 0),
+            'afternoon_sun_hours': profile.get('afternoon_sun_hours', 0),
+            'microclimate_conditions': profile.get('microclimate_conditions', '')
         }
         
         # Assess complexity for this location

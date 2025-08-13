@@ -838,7 +838,7 @@ paths:
     get:
       operationId: getCareOptimization
       summary: Get care optimization analysis
-      description: Get location and container-based care optimization suggestions
+      description: Get location and container-based care optimization suggestions with detailed usage distribution and efficiency insights
       security: []
       responses:
         '200':
@@ -850,8 +850,73 @@ paths:
                 properties:
                   optimization_analysis:
                     type: object
+                    properties:
+                      location_efficiency:
+                        type: object
+                        properties:
+                          empty_locations:
+                            type: array
+                            items:
+                              type: string
+                          light_usage_locations:
+                            type: array
+                            items:
+                              type: string
+                          moderate_usage_locations:
+                            type: array
+                            items:
+                              type: string
+                          heavy_usage_locations:
+                            type: array
+                            items:
+                              type: string
+                          underutilized_prime_locations:
+                            type: array
+                            items:
+                              type: string
+                          usage_distribution:
+                            type: object
+                            properties:
+                              empty:
+                                type: integer
+                              light:
+                                type: integer
+                              moderate:
+                                type: integer
+                              heavy:
+                                type: integer
+                      care_complexity_summary:
+                        type: object
+                      container_insights:
+                        type: object
+                        properties:
+                          total_containers:
+                            type: integer
+                          material_distribution:
+                            type: object
+                          size_distribution:
+                            type: object
                   total_opportunities:
                     type: integer
+                  priority_improvements:
+                    type: array
+                    items:
+                      type: object
+                  efficiency_score:
+                    type: object
+                    properties:
+                      score:
+                        type: number
+                      description:
+                        type: string
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+                  generated_at:
+                    type: string
+                  api_version:
+                    type: string
 
   # =============================================
   # WEATHER INTEGRATION (3 operations)
