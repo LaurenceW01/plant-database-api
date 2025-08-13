@@ -49,7 +49,7 @@ class BaronWeatherVelocityAPI:
         
         # Cache for storing scraped data
         self.cache = {}
-        self.cache_timeout = 15 * 60  # 15 minutes in seconds
+        self.cache_timeout = 5 * 60  # 5 minutes in seconds
         
         # Set headers for API requests
         self.session.headers.update({
@@ -390,23 +390,24 @@ class BaronWeatherVelocityAPI:
             # Determine the best weather description
             description = self._determine_weather_description(weather_text, cloud_text, raw_metar)
             
-            # Extract precipitation chance from weather code
-            precip_chance = 0
-            if 'rain' in weather_text.lower() or 'shower' in weather_text.lower():
-                precip_chance = 70
-            elif 'drizzle' in weather_text.lower():
-                precip_chance = 40
-            elif 'thunderstorm' in weather_text.lower():
-                precip_chance = 90
+            # METAR data doesn't provide precipitation probability
+            # Only current conditions are reported, not forecasted precipitation chances
+            precip_chance = None
             
             houston_now = datetime.now(self.houston_tz)
-            return {
+            result = {
                 'temperature': round(float(temp_f), 1),
                 'humidity': int(humidity) if isinstance(humidity, (int, float)) else 60,
                 'description': description,
-                'wind_speed': round(wind_mph),
-                'precipitation_chance': precip_chance
+                'wind_speed': round(wind_mph)
             }
+            
+            # Only include precipitation_chance if we have meaningful data
+            # METAR doesn't provide precipitation forecasts, only current conditions
+            if precip_chance is not None:
+                result['precipitation_chance'] = precip_chance
+                
+            return result
             
         except Exception as e:
             logger.error(f"Error parsing METAR current data: {e}")

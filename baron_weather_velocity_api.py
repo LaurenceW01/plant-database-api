@@ -42,7 +42,7 @@ class BaronWeatherVelocityAPI:
         
         # Cache for storing scraped data
         self.cache = {}
-        self.cache_timeout = 15 * 60  # 15 minutes in seconds
+        self.cache_timeout = 5 * 60  # 5 minutes in seconds
         
         # Set headers for API requests
         self.session.headers.update({
