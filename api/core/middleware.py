@@ -39,7 +39,18 @@ def setup_middleware(app):
             
             if request.is_json:
                 print(f"📝 Original JSON: {request.get_json()}")  # Debug print
-            normalize_request_middleware()
+            
+            # Debug: Wrap normalize_request_middleware with exception handling
+            try:
+                print(f"🔧 About to call normalize_request_middleware()...")  # Debug print
+                normalize_request_middleware()
+                print(f"✅ normalize_request_middleware() completed successfully")  # Debug print
+            except Exception as e:
+                print(f"💥 EXCEPTION in normalize_request_middleware(): {e}")  # Debug print
+                logging.error(f"💥 EXCEPTION in normalize_request_middleware(): {e}")
+                # Re-raise to let Flask handle it
+                raise
+            
             if hasattr(g, 'normalized_request_data'):
                 print(f"✅ Normalized data: {g.normalized_request_data}")  # Debug print
             else:
