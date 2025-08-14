@@ -274,8 +274,8 @@ def get_plant_context_new(plant_id):
         if not plant_id.isdigit():
             # Try to find plant by name and get its ID
             plant_row, plant_data = find_plant_by_id_or_name(plant_id)
-            if plant_row is not None:
-                actual_plant_id = str(plant_row)  # plant_row is already 1-based from find_plant_by_id_or_name
+            if plant_row is not None and plant_data:
+                actual_plant_id = str(plant_data[0])  # Use the actual Plant ID from sheet, not row number
                 logging.info(f"Converted plant name '{plant_id}' to ID '{actual_plant_id}'")
             else:
                 return jsonify({

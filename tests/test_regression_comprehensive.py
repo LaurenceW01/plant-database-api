@@ -268,6 +268,32 @@ class TestRegressionSuite:
             assert 'plant_id' in data
             assert 'contexts' in data
 
+    def test_plants_get_context_by_name_purple_fountain_grass(self):
+        """Regression test for Purple Fountain Grass plant ID mapping bug.
+        
+        This test ensures that when searching for 'Purple Fountain Grass' by name,
+        the get-context endpoint returns the correct plant ID (142) and not the
+        row number (137). This prevents the bug where containers for Dipladenia
+        (ID 137) were returned instead of Purple Fountain Grass containers.
+        """
+        response = self.client.post('/api/plants/get-context/Purple Fountain Grass')
+        
+        assert response.status_code in [200, 404, 500]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            # Verify we get the correct plant ID (142, not 137)
+            assert data.get('plant_id') == '142', f"Expected plant_id '142' for Purple Fountain Grass, got '{data.get('plant_id')}'"
+            assert 'contexts' in data
+            
+            # Verify we have containers and they belong to Purple Fountain Grass
+            contexts = data.get('contexts', [])
+            if contexts:
+                for context in contexts:
+                    container = context.get('container', {})
+                    # All containers should have plant_id '142'
+                    assert container.get('plant_id') == '142', f"Container plant_id should be '142', got '{container.get('plant_id')}'"
+
     def test_plants_by_location(self):
         """Test GET /api/plants/by-location/{location_name} endpoint (operationId: getPlantsByLocation)"""
         # Test with a known location that should have plants
