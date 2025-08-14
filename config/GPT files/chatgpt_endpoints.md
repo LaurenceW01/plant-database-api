@@ -173,7 +173,9 @@ Content-Type: application/json
 {
   "id": "Basil",
   "Care___Notes": "Updated care instructions",  // Any underscore pattern works
-  "Watering___Needs": "Water when dry"
+  "Watering___Needs": "Water when dry",
+  "Soil___pH___Type": "neutral to slightly acidic",  // pH fields supported
+  "Soil___pH___Range": "6.0 - 7.0"
 }
 
 // Both return the same response

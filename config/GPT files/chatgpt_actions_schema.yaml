@@ -1022,6 +1022,12 @@ components:
           type: string
         Soil Preferences:
           type: string
+        Soil pH Type:
+          type: string
+          description: "Soil pH type (high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity)"
+        Soil pH Range:
+          type: string
+          description: "Soil pH range in numerical format like '5.5 - 6.5' or '6.0 - 7.0'"
         Frost Tolerance:
           type: string
         Fertilizing Schedule:
@@ -1032,7 +1038,15 @@ components:
           type: string
         Winterizing Instructions:
           type: string
+        Spacing Requirements:
+          type: string
         Care Notes:
+          type: string
+        Photo URL:
+          type: string
+        Raw Photo URL:
+          type: string
+        Last Updated:
           type: string
       additionalProperties: true
 

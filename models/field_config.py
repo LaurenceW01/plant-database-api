@@ -132,6 +132,7 @@ FIELD_ALIASES = {
     # Soil pH Type field aliases
     'soil ph type': 'Soil pH Type',
     'soil_ph_type': 'Soil pH Type',
+    'soil___ph___type': 'Soil pH Type',  # ChatGPT triple underscore pattern
     'ph type': 'Soil pH Type',
     'soil ph': 'Soil pH Type',
     'ph': 'Soil pH Type',
@@ -140,6 +141,7 @@ FIELD_ALIASES = {
     # Soil pH Range field aliases
     'soil ph range': 'Soil pH Range',
     'soil_ph_range': 'Soil pH Range',
+    'soil___ph___range': 'Soil pH Range',  # ChatGPT triple underscore pattern
     'ph range': 'Soil pH Range',
     'ph level': 'Soil pH Range',
     'ph levels': 'Soil pH Range',

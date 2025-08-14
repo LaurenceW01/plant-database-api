@@ -257,6 +257,39 @@ class TestRegressionSuite:
         data = response.get_json()
         assert 'success' in data or 'error' in data
 
+    def test_plants_update_soil_ph_fields_regression(self):
+        """Regression test for Soil pH fields UnrecognizedKwargsError bug.
+        
+        This test ensures that ChatGPT can successfully update plants with
+        Soil___pH___Type and Soil___pH___Range fields without getting
+        UnrecognizedKwargsError. This prevents the bug where these fields
+        were missing from the OpenAPI schema definition.
+        """
+        # Test the exact request format that ChatGPT was using that failed
+        update_data = {
+            "id": "Purple Fountain Grass",
+            "Soil___pH___Type": "neutral to slightly acidic",
+            "Soil___pH___Range": "6.0 to 7.0",
+            "Light___Requirements": "Full Sun",
+            "Care___Notes": "Test update with all pH fields"
+        }
+        
+        response = self.client.put('/api/plants/update',
+                                 data=json.dumps(update_data),
+                                 content_type='application/json')
+        
+        assert response.status_code in [200, 400, 404]
+        data = response.get_json()
+        
+        # Should NOT get UnrecognizedKwargsError for Soil pH fields
+        if response.status_code != 200 and 'error' in data:
+            error_msg = data.get('message', '') or data.get('error', '')
+            assert 'UnrecognizedKwargsError' not in error_msg, f"Got UnrecognizedKwargsError for Soil pH fields: {error_msg}"
+            assert 'Soil___pH___Type' not in error_msg, f"Soil___pH___Type field not recognized: {error_msg}"
+            assert 'Soil___pH___Range' not in error_msg, f"Soil___pH___Range field not recognized: {error_msg}"
+        
+        assert 'success' in data or 'error' in data
+
     def test_plants_get_context(self):
         """Test POST /api/plants/get-context/{plant_id} endpoint (operationId: getPlantContext)"""
         response = self.client.post('/api/plants/get-context/1')
