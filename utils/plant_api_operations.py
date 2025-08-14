@@ -159,6 +159,72 @@ def update_plant_api(id_or_name):
         logging.error(f"Error updating plant: {e}")
         return jsonify({'error': str(e)}), 500
 
+def extract_plant_names_only(plants_data: List[Dict]) -> List[str]:
+    """
+    Extract only plant names from full plant data objects.
+    
+    Args:
+        plants_data (List[Dict]): List of plant dictionaries with full data
+        
+    Returns:
+        List[str]: List of plant names only, with duplicates removed and empty names filtered
+    """
+    from models.field_config import get_canonical_field_name
+    
+    # Get the canonical field name for 'Plant Name'
+    name_field = get_canonical_field_name('Plant Name')
+    
+    # Extract plant names and filter out empty ones
+    plant_names = []
+    for plant in plants_data:
+        # Get plant name from the canonical field
+        plant_name = plant.get(name_field, '').strip()
+        if plant_name and plant_name not in plant_names:  # Remove duplicates and empty names
+            plant_names.append(plant_name)
+    
+    # Sort names alphabetically for consistent output
+    return sorted(plant_names)
+
+
+def format_plants_response(plants_data: List[Dict], names_only: bool = False, search_query: str = None) -> Dict:
+    """
+    Format the plants response based on the names_only parameter.
+    
+    Args:
+        plants_data (List[Dict]): List of plant dictionaries
+        names_only (bool): If True, return only plant names
+        search_query (str): Original search query for context
+        
+    Returns:
+        Dict: Formatted response dictionary
+    """
+    if names_only:
+        # Extract only plant names
+        plant_names = extract_plant_names_only(plants_data)
+        response = {
+            'count': len(plant_names),
+            'plants': plant_names,
+            'names_only': True,
+            'usage_note': 'Use these names with other plant endpoints for detailed information'
+        }
+        # Add search context if this was a search query
+        if search_query:
+            response['search_query'] = search_query
+            response['note'] = f'Plant names matching "{search_query}"'
+        else:
+            response['note'] = 'All plant names in database'
+    else:
+        # Return full plant data (existing behavior)
+        response = {
+            'count': len(plants_data),
+            'plants': plants_data
+        }
+        if search_query:
+            response['search_query'] = search_query
+    
+    return response
+
+
 def list_or_search_plants_api():
     """Core plant listing/search logic for API endpoints"""
     try:
@@ -168,6 +234,7 @@ def list_or_search_plants_api():
         # Handle both query parameters and JSON body parameters (ChatGPT-friendly)
         search_query = request.args.get('q', '').strip()
         limit = request.args.get('limit', type=int)
+        names_only = request.args.get('names_only', type=bool, default=False)
         
         # If not in query params, check JSON body
         if not search_query and request.is_json:
@@ -181,16 +248,20 @@ def list_or_search_plants_api():
                             limit = int(limit_value)
                         except (ValueError, TypeError):
                             limit = None
+                # Check for names_only parameter in JSON body
+                if 'names_only' in json_data:
+                    names_only = bool(json_data.get('names_only', False))
+        
+        # Log the request for debugging
+        logger.info(f"🔍 Plant search request: query='{search_query}', limit={limit}, names_only={names_only}")
         
         if search_query:
             # Search for plants by name
             plants = search_plants(search_query)
             if plants is not None:
                 result_plants = plants[:limit] if limit else plants
-                return jsonify({
-                    'count': len(result_plants),
-                    'plants': result_plants
-                }), 200
+                response_data = format_plants_response(result_plants, names_only, search_query)
+                return jsonify(response_data), 200
             else:
                 return jsonify({'error': 'Search failed'}), 500
         else:
@@ -198,10 +269,8 @@ def list_or_search_plants_api():
             plants = get_all_plants()
             if plants is not None:
                 result_plants = plants[:limit] if limit else plants
-                return jsonify({
-                    'count': len(result_plants),
-                    'plants': result_plants
-                }), 200
+                response_data = format_plants_response(result_plants, names_only)
+                return jsonify(response_data), 200
             else:
                 return jsonify({'error': 'Failed to retrieve plants'}), 500
                 

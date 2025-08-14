@@ -27,11 +27,23 @@ POST /api/plants/search
 Content-Type: application/json
 {"q": "vinca", "limit": 5}
 
+// ✅ NEW: Get plant names only for AI analysis (e.g., toxicity reports)
+POST /api/plants/search
+Content-Type: application/json
+{"names_only": true}
+
+// ✅ COMBINED: Search with names only
+POST /api/plants/search
+Content-Type: application/json
+{"q": "herb", "names_only": true, "limit": 10}
+
 // Also supported: POST with query parameters
-POST /api/plants/search?q=vinca&limit=5
+POST /api/plants/search?q=vinca&limit=5&names_only=true
 ```
 
 **For ChatGPT:** The `searchPlants` operation uses POST method with JSON body, which is the natural behavior for OpenAPI clients. Send parameters in the request body as JSON.
+
+**NEW: Names Only Parameter** - Use `names_only: true` to get just plant names as strings instead of full plant objects. Perfect for AI analysis tasks like toxicity reports, pest identification, or plant compatibility analysis.
 
 ### AI-Powered Analysis (2 operations)
 ```javascript

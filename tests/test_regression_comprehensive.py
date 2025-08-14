@@ -92,6 +92,99 @@ class TestRegressionSuite:
         data = response.get_json()
         assert 'count' in data
         assert 'plants' in data
+
+    def test_plants_search_names_only_post(self):
+        """Test POST /api/plants/search with names_only=true parameter"""
+        test_data = {"names_only": True, "limit": 10}
+        response = self.client.post('/api/plants/search', 
+                                  data=json.dumps(test_data),
+                                  content_type='application/json')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'count' in data
+        assert 'plants' in data
+        assert 'names_only' in data
+        assert 'usage_note' in data
+        assert 'note' in data
+        assert data['names_only'] is True
+        
+        # Verify plants is a list of strings (plant names)
+        assert isinstance(data['plants'], list)
+        for plant in data['plants']:
+            assert isinstance(plant, str), f"Expected string plant name, got {type(plant)}: {plant}"
+        
+        # Verify usage note is present
+        assert 'Use these names with other plant endpoints' in data['usage_note']
+        assert 'All plant names in database' in data['note']
+
+    def test_plants_search_names_only_with_query(self):
+        """Test POST /api/plants/search with names_only=true and search query"""
+        test_data = {"q": "a", "names_only": True, "limit": 5}
+        response = self.client.post('/api/plants/search', 
+                                  data=json.dumps(test_data),
+                                  content_type='application/json')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'count' in data
+        assert 'plants' in data
+        assert 'names_only' in data
+        assert 'search_query' in data
+        assert 'usage_note' in data
+        assert 'note' in data
+        assert data['names_only'] is True
+        assert data['search_query'] == "a"
+        
+        # Verify plants is a list of strings (plant names)
+        assert isinstance(data['plants'], list)
+        for plant in data['plants']:
+            assert isinstance(plant, str), f"Expected string plant name, got {type(plant)}: {plant}"
+        
+        # Verify search context in note
+        assert 'Plant names matching "a"' in data['note']
+
+    def test_plants_search_names_only_get_params(self):
+        """Test GET /api/plants/search with names_only query parameter"""
+        response = self.client.get('/api/plants/search?names_only=true&limit=5')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'count' in data
+        assert 'plants' in data
+        assert 'names_only' in data
+        assert data['names_only'] is True
+        
+        # Verify plants is a list of strings (plant names)
+        assert isinstance(data['plants'], list)
+        for plant in data['plants']:
+            assert isinstance(plant, str), f"Expected string plant name, got {type(plant)}: {plant}"
+
+    def test_plants_search_backward_compatibility(self):
+        """Test that existing search functionality still works without names_only parameter"""
+        test_data = {"q": "test", "limit": 3}
+        response = self.client.post('/api/plants/search', 
+                                  data=json.dumps(test_data),
+                                  content_type='application/json')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'count' in data
+        assert 'plants' in data
+        
+        # Verify backward compatibility - should NOT have names_only field when not requested
+        assert 'names_only' not in data or data.get('names_only') is False
+        
+        # Verify plants is a list of objects (full plant data) when names_only not specified
+        assert isinstance(data['plants'], list)
+        if data['plants']:  # If there are plants in the response
+            for plant in data['plants']:
+                assert isinstance(plant, dict), f"Expected dict plant object, got {type(plant)}: {plant}"
+                # Should have typical plant fields when returning full data
+                expected_fields = ['Plant Name', 'ID']  # At minimum these should be present
+                for field in expected_fields:
+                    if field in plant:  # Some plants might not have all fields
+                        assert isinstance(plant[field], str) or plant[field] is None
     
     def test_plants_add(self):
         """Test POST /api/plants/add endpoint (operationId: addPlant)"""

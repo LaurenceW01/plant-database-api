@@ -148,4 +148,7 @@ Call enhanceAnalysis API →
 - **Optional logging** respects user preference
 - **Personalized advice** for Houston gardening
 
+### 🔬 AI Analysis Features:
+- **Plant Names for Analysis**: Use `searchPlants` with `names_only: true` to get plant name lists for AI tasks like toxicity reports, compatibility analysis, or pest identification.
+
 🌱 **REMEMBER**: Read LOCATION_AWARE_WORKFLOW_GUIDE.md FIRST for plant care. For advanced planning/optimization, read PHASE2_ADVANCED_INTELLIGENCE.md. Always use location-specific endpoints for precise advice.

@@ -18,7 +18,7 @@ paths:
     post:
       operationId: searchPlants
       summary: "Search plants"
-      description: "Search for plants by name, description, or location"
+      description: "Search for plants by name, description, or location. Use names_only=true to get just plant names for AI analysis (e.g., toxicity reports)."
       security: []
       requestBody:
         required: false
@@ -36,6 +36,11 @@ paths:
                   description: "Maximum number of plants to return"
                   default: 20
                   example: 5
+                names_only:
+                  type: boolean
+                  description: "If true, returns only plant names as strings instead of full plant objects. Perfect for AI analysis tasks like toxicity reports."
+                  default: false
+                  example: true
       responses:
         '200':
           description: "Plants found matching search query"
@@ -50,13 +55,43 @@ paths:
                   plants:
                     type: array
                     items:
-                      type: object
+                      oneOf:
+                        - type: object
+                          description: "Full plant data (when names_only=false)"
+                        - type: string
+                          description: "Plant name only (when names_only=true)"
+                  names_only:
+                    type: boolean
+                    description: "Indicates if response contains names only"
+                  usage_note:
+                    type: string
+                    description: "Guidance for using the response data"
+                  note:
+                    type: string
+                    description: "Context about the search results"
               examples:
-                vinca_search:
-                  summary: "Example: GET /api/plants/search?q=vinca&limit=5"
+                full_search:
+                  summary: "Full plant data: POST /api/plants/search"
                   value:
                     count: 2
                     plants: [{"ID": "31", "Plant Name": "Trailing Vinca"}, {"ID": "134", "Plant Name": "Vinca"}]
+                names_only_all:
+                  summary: "All plant names: POST /api/plants/search"
+                  value:
+                    count: 150
+                    plants: ["Basil", "Tomato", "Rose", "Vinca"]
+                    names_only: true
+                    usage_note: "Use these names with other plant endpoints for detailed information"
+                    note: "All plant names in database"
+                names_only_search:
+                  summary: "Names matching search: POST /api/plants/search"
+                  value:
+                    count: 2
+                    plants: ["Trailing Vinca", "Vinca"]
+                    names_only: true
+                    search_query: "vinca"
+                    usage_note: "Use these names with other plant endpoints for detailed information"
+                    note: "Plant names matching \"vinca\""
 
   /api/plants/add:
     post:
