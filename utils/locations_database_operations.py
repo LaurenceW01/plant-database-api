@@ -167,14 +167,14 @@ def get_all_containers() -> List[Dict]:
         
         # Process each data row (skip header row)
         for row in values[1:]:
-            if len(row) >= 6:  # Ensure we have all required columns
+            if len(row) >= 4:  # Minimum: container_id, plant_id, location_id, container_type
                 container = {
                     'container_id': row[0],  # Container ID
                     'plant_id': row[1],  # Plant ID this container holds
                     'location_id': row[2],  # Location where container is placed
                     'container_type': row[3],  # Type of container (pot, planter, etc.)
-                    'container_size': row[4],  # Size designation (small, medium, large)
-                    'container_material': row[5]  # Material (plastic, ceramic, etc.)
+                    'container_size': row[4] if len(row) > 4 else '',  # Size designation (empty for ground plants)
+                    'container_material': row[5] if len(row) > 5 else ''  # Material (empty for ground plants)
                 }
                 containers.append(container)
         
