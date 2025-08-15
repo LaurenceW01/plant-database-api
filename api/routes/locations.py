@@ -8,6 +8,7 @@ and location-aware care optimization.
 from flask import Blueprint, request, jsonify
 from api.core.middleware import require_api_key
 import logging
+from datetime import datetime
 
 # Create the locations blueprint
 locations_bp = Blueprint('locations', __name__, url_prefix='/api')
@@ -312,6 +313,10 @@ def advanced_garden_query():
         from utils.advanced_query_executor import execute_advanced_query, QueryExecutionError
         
         logging.info("🔍 Advanced garden query endpoint called")
+        logging.info(f"🌐 Request Headers: {dict(request.headers)}")
+        logging.info(f"🔍 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logging.info(f"🔍 Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+        logging.info(f"🔍 Content-Length: {request.headers.get('Content-Length', 'Unknown')}")
         
         request_data = request.get_json(force=True, silent=True)
         if not request_data:
@@ -362,3 +367,13 @@ def advanced_garden_query():
             "details": str(e),
             "phase2_direct": True
         }), 500
+
+
+@locations_bp.route('/health', methods=['GET'])
+def health_check():
+    """Simple health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "plant-database-api"
+    })
