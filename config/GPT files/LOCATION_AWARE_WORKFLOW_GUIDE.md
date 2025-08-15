@@ -57,7 +57,7 @@ GET /api/weather/current
 
 ### Template 1: Single Location Response
 ```
-🌺 {Plant Name} Care - {Location Name}
+🌺 {plant_name} Care - {location_name}
 
 **Current Setup:**
 - Location: {location_name} ({shade_pattern})
@@ -80,7 +80,7 @@ GET /api/weather/current
 
 ### Template 2: Multi-Location Response
 ```
-🌺 {Plant Name} Care - All Your Locations
+🌺 {plant_name} Care - All Your Locations
 
 I found your {plant_name} in {X} different locations. Here's the specific care for each:
 
@@ -114,7 +114,7 @@ I found your {plant_name} in {X} different locations. Here's the specific care f
 - Location descriptors: "in the shade", "sunny spot", "by the pool"
 - Container references: "potted plants", "containers", "plastic pots"
 
-### Plant Name Triggers (always get all locations):
+### plant_name Triggers (always get all locations):
 - Any specific plant name mentioned
 - "My hibiscus", "the roses", "azalea care"
 - Multiple plants: "hibiscus and roses"

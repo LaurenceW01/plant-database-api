@@ -106,27 +106,34 @@ paths:
             schema:
               type: object
               required:
-                - Plant Name
+                - plant_name
               properties:
-                Plant Name:
+                plant_name:
                   type: string
                   description: Name of the plant (required)
                   example: "Basil"
-                Description:
+                description:
                   type: string
                   example: "Sweet basil for cooking"
-                Location:
+                location:
                   type: string
                   example: "Herb Garden"
-                Light Requirements:
+                light_requirements:
                   type: string
                   example: "Full Sun"
-                Watering Needs:
+                watering_needs:
                   type: string
                   example: "Water daily"
-                Care Notes:
+                care_notes:
                   type: string
                   example: "Harvest regularly"
+                # Backward compatibility - also accept title case
+                Plant Name:
+                  type: string
+                  description: "[DEPRECATED] Use plant_name instead"
+                Light Requirements:
+                  type: string
+                  description: "[DEPRECATED] Use light_requirements instead"
       responses:
         '201':
           description: Plant added successfully with upload token
@@ -171,11 +178,17 @@ paths:
                   plant:
                     type: object
                     properties:
-                      Plant Name:
+                      plant_name:
                         type: string
-                      Description:
+                      description:
                         type: string
-                      Location:
+                      location:
+                        type: string
+                      light_requirements:
+                        type: string
+                      watering_needs:
+                        type: string
+                      id:
                         type: string
 
   /api/plants/get-all-fields/{id}:

@@ -39,7 +39,7 @@ Container Considerations:
 Weather Context: Given today's conditions [insert current weather], continue with early morning watering to prevent heat stress.
 ```
 
-## Pattern 2: Plant Name Only (No Location)
+## Pattern 2: plant_name Only (No Location)
 
 ### Input Patterns:
 - "how to care for my hibiscus"

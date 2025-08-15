@@ -111,13 +111,13 @@ The API now accepts **ANY** reasonable field name variation:
 - **CamelCase**: `plantName`, `careNotes`, `lightRequirements`
 - **Aliases**: `name`, `notes`, `light`, `water`
 
-**Key Plant Fields**: Plant Name (required), Description, Location, Light Requirements, Watering Needs, Care Notes  
-**Field Format**: Flexible - use spaces, underscores, or camelCase (e.g., `Light Requirements`, `light_requirements`, `Light___Requirements`)
+**Key Plant Fields**: plant_name (required), description, location, light_requirements, watering_needs, care_notes  
+**Field Format**: API returns normalized lowercase_underscore format. Input accepts flexible formats for backward compatibility.
 
 ### Field Names for Log Operations  
 Use these EXACT field names for best compatibility:
-- **Required**: `Plant Name`
-- **Optional**: `Log Title`, `Diagnosis`, `Treatment`, `Symptoms`, `User Notes`, `Follow-up Required`, `Follow-up Date`
+- **Required**: `plant_name`
+- **Optional**: `log_title`, `diagnosis`, `treatment`, `symptoms`, `user_notes`, `follow_up_required`, `follow_up_date`
 
 ### Weather Integration Guidelines
 - **ALWAYS check weather for**: Watering schedules, planting timing, outdoor activities
@@ -139,9 +139,9 @@ POST /api/plants/add
 Content-Type: application/json
 
 {
-  "Plant Name": "Basil",
+  "plant_name": "Basil",
   "Location": "Herb Garden",
-  "Light Requirements": "Full Sun",
+  "light_requirements": "Full Sun",
   "Watering Needs": "Water daily",
   "Care Notes": "Harvest regularly"
 }
@@ -288,7 +288,7 @@ POST /api/logs/create
 Content-Type: application/json
 
 {
-  "Plant Name": "Tomato Plant #1",
+  "plant_name": "Tomato Plant #1",
   "Log Title": "Weekly Health Check",
   "Diagnosis": "Minor nitrogen deficiency", 
   "Treatment": "Apply balanced fertilizer",
@@ -393,10 +393,10 @@ GET /api/plants/get-all-fields/Vinca
   "success": true,
   "plant": {
     "ID": "1",
-    "Plant Name": "Vinca",
+    "plant_name": "Vinca",
     "Description": "Flowering annual",
     "Location": "Front patio",
-    "Light Requirements": "Full sun",
+    "light_requirements": "Full sun",
     "Watering Needs": "Daily",
     "Soil Preferences": "Well-draining",
     "Frost Tolerance": "None",

@@ -42,21 +42,21 @@ class TestRegressionSuite:
         cls.app = create_app_instance(testing=True)
         cls.client = Client(cls.app, Response)
         
-        # Common test data
+        # Common test data - using normalized field names
         cls.test_plant_data = {
-            "Plant Name": "Test Regression Plant",
-            "Description": "Plant for regression testing",
-            "Location": "Test Garden", 
-            "Light Requirements": "Full Sun",
-            "Watering Needs": "Daily",
-            "Care Notes": "Test plant for comprehensive testing"
+            "plant_name": "Test Regression Plant",
+            "description": "Plant for regression testing",
+            "location": "Test Garden", 
+            "light_requirements": "Full Sun",
+            "watering_needs": "Daily",
+            "care_notes": "Test plant for comprehensive testing"
         }
         
         cls.test_log_data = {
-            "Plant Name": "Test Plant Log",
-            "User Notes": "Regression test log entry",
-            "Diagnosis": "Healthy",
-            "Treatment": "Continue current care",
+            "plant_name": "Test Plant Log",
+            "user_notes": "Regression test log entry",
+            "diagnosis": "Healthy",
+            "treatment": "Continue current care",
             "Symptoms": "None observed"
         }
         
@@ -481,8 +481,8 @@ class TestRegressionSuite:
     def test_logs_create_simple(self):
         """Test POST /api/logs/create-simple endpoint (operationId: createSimpleLog)"""
         simple_log_data = {
-            "Plant Name": "Simple Test Plant",
-            "User Notes": "Simple log entry for testing"
+            "plant_name": "Simple Test Plant",
+            "user_notes": "Simple log entry for testing"
         }
         
         response = self.client.post('/api/logs/create-simple',
@@ -812,7 +812,7 @@ class TestRegressionSuite:
         
         # Test log create without required Plant Name
         response = self.client.post('/api/logs/create',
-                                  data=json.dumps({"User Notes": "No plant name"}),
+                                  data=json.dumps({"user_notes": "No plant name"}),
                                   content_type='application/json')
         assert response.status_code in [400]
 

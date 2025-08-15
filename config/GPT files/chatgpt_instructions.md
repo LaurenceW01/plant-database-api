@@ -43,13 +43,13 @@ See chatgpt_endpoints.md for complete endpoint list.
 ## Database Fields
 
 ### Plants (Flexible field names supported)
-- Required: `Plant Name` (or `plant_name`, `Plant___Name`)
-- Optional: `Description`, `Location`, `Light Requirements`, `Soil Preferences`, `Soil pH Type`, `Soil pH Range`, `Frost Tolerance`, `Spacing Requirements`, `Watering Needs`, `Fertilizing Schedule`, `Pruning Instructions`, `Mulching Needs`, `Winterizing Instructions`, `Care Notes`, `Photo URL`
+- Required: `plant_name` (accepts legacy `Plant Name` format)
+- Optional: `description`, `location`, `light_requirements`, `soil_preferences`, `soil_ph_type`, `soil_ph_range`, `frost_tolerance`, `spacing_requirements`, `watering_needs`, `fertilizing_schedule`, `pruning_instructions`, `mulching_needs`, `winterizing_instructions`, `care_notes`, `photo_url`
 - **Note**: Field names are automatically normalized - you can use spaces, underscores, or camelCase
 
 ### Logs (Use EXACT names)
-- Required: `Plant Name`, `Log Title`
-- Optional: `Diagnosis`, `Treatment`, `Symptoms`, `User Notes`, `Follow-up Required`, `Follow-up Date`
+- Required: `plant_name`, `log_title`
+- Optional: `diagnosis`, `treatment`, `symptoms`, `user_notes`, `follow_up_required`, `follow_up_date`
 
 ## Response Guidelines
 
@@ -58,7 +58,7 @@ See chatgpt_endpoints.md for complete endpoint list.
    - Format for smartphones
    - Reference weather when relevant
    - Offer photo upload when mentioned
-   - Field names are flexible: use standard (`Plant Name`), ChatGPT patterns (`Plant___Name`), or aliases (`name`)
+   - API returns normalized field names (`plant_name`, `light_requirements`). Input accepts legacy formats for compatibility.
    - Check chatgpt_endpoints.md for API formats
 
 2. **Plant Problems:**
