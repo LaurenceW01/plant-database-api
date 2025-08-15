@@ -69,7 +69,7 @@ def test_plant_list_cache_behavior(client, api_key):
     assert len(plants2) >= len(plants1)
     
     # Verify the new plant is in the list
-    plant_names = [plant.get('Plant Name', '') for plant in plants2]
+    plant_names = [plant.get('plant_name', '') for plant in plants2]
     assert unique_name in plant_names
 
 def test_crud_operations_end_to_end(client, api_key):
@@ -227,9 +227,9 @@ def test_photo_url_integration(client, api_key):
     assert 'Raw Photo URL' in plant_data
     
     # Photo URL should contain the IMAGE formula
-    assert plant_data.get('Photo URL', '').startswith('=IMAGE("')
-    assert plant_data.get('Photo URL', '').endswith('")')
-    assert test_photo_url in plant_data.get('Photo URL', '')
+    assert plant_data.get('photo_url', '').startswith('=IMAGE("')
+    assert plant_data.get('photo_url', '').endswith('")')
+    assert test_photo_url in plant_data.get('photo_url', '')
     
     # Raw Photo URL should contain the original URL
     assert plant_data.get('Raw Photo URL') == test_photo_url
@@ -249,9 +249,9 @@ def test_photo_url_integration(client, api_key):
     updated_plant_data = updated_read_response.get_json()['plant']
     
     # Verify updated Photo URL has IMAGE formula
-    assert updated_plant_data.get('Photo URL', '').startswith('=IMAGE("')
-    assert updated_plant_data.get('Photo URL', '').endswith('")')
-    assert new_photo_url in updated_plant_data.get('Photo URL', '')
+    assert updated_plant_data.get('photo_url', '').startswith('=IMAGE("')
+    assert updated_plant_data.get('photo_url', '').endswith('")')
+    assert new_photo_url in updated_plant_data.get('photo_url', '')
     
     # Raw Photo URL should contain the new URL without formula
     assert updated_plant_data.get('Raw Photo URL') == new_photo_url
@@ -305,21 +305,21 @@ def test_search_integration_comprehensive(client, api_key):
     response = client.get(f'/api/plants?q=climbing')
     assert response.status_code == 200
     results = response.get_json()['plants']
-    climbing_results = [p for p in results if 'climbing' in p.get('Description', '').lower()]
+    climbing_results = [p for p in results if 'climbing' in p.get('description', '').lower()]
     assert len(climbing_results) >= 1
     
     # Test 4: Search by location
     response = client.get(f'/api/plants?q=Front Garden {test_id}')
     assert response.status_code == 200
     results = response.get_json()['plants']
-    front_garden_results = [p for p in results if f"Front Garden {test_id}" in p.get('Location', '')]
+    front_garden_results = [p for p in results if f"Front Garden {test_id}" in p.get('location', '')]
     assert len(front_garden_results) >= 1
     
     # Test 5: Search by test ID should find all test plants
     response = client.get(f'/api/plants?q={test_id}')
     assert response.status_code == 200
     results = response.get_json()['plants']
-    test_results = [p for p in results if test_id in p.get('Plant Name', '') or test_id in p.get('Description', '')]
+    test_results = [p for p in results if test_id in p.get('plant_name', '') or test_id in p.get('description', '')]
     assert len(test_results) >= 3
     
     # Test 6: Empty search should return all plants

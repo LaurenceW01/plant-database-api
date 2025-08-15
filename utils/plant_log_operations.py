@@ -124,7 +124,7 @@ def validate_plant_for_log(plant_name: str) -> Dict[str, Any]:
         else:
             # Try fuzzy matching using existing search functionality
             similar_plants = search_plants(plant_name)
-            suggestions = [p.get('Plant Name') for p in similar_plants[:5] if p.get('Plant Name')]
+            suggestions = [p.get('plant_name') for p in similar_plants[:5] if p.get('plant_name')]
             
             return {
                 "valid": False,
@@ -210,7 +210,7 @@ def create_log_entry(
             else:
                 log_title = "General Care Log"
         
-        # Prepare log entry data
+        # Prepare log entry data (use original headers for writing to spreadsheet)
         log_data = {
             'Log ID': log_id,
             'Plant Name': canonical_plant_name,
@@ -434,11 +434,13 @@ def get_plant_log_entries(plant_name: str, limit: int = 20, offset: int = 0) -> 
             if len(row) > 1 and row[1] == canonical_plant_name:  # Plant Name is column 1
                 entry = {}
                 for i, header in enumerate(headers):
-                    entry[header] = row[i] if i < len(row) else ""
+                    # Normalize field names to lowercase_underscore format
+                    normalized_header = header.lower().replace(' ', '_').replace('-', '_')
+                    entry[normalized_header] = row[i] if i < len(row) else ""
                 log_entries.append(entry)
         
         # Sort by log date (newest first)
-        log_entries.sort(key=lambda x: x.get('Log Date', ''), reverse=True)
+        log_entries.sort(key=lambda x: x.get('log_date', ''), reverse=True)
         
         # Apply pagination
         total_entries = len(log_entries)
@@ -513,16 +515,16 @@ def format_log_entries_as_journal(log_entries: List[Dict]) -> List[Dict]:
     
     for entry in log_entries:
         # Create journal-style formatting
-        date = entry.get('Log Date', 'Unknown date')
-        title = entry.get('Log Title', 'Log Entry')
-        diagnosis = entry.get('Diagnosis', '')
-        treatment = entry.get('Treatment Recommendation', '')
-        symptoms = entry.get('Symptoms Observed', '')
-        user_notes = entry.get('User Notes', '')
-        photo_url = entry.get('Raw Photo URL', '')
-        confidence = entry.get('Confidence Score', '')
-        follow_up = entry.get('Follow-up Required', 'FALSE')
-        follow_up_date = entry.get('Follow-up Date', '')
+        date = entry.get('log_date', 'Unknown date')
+        title = entry.get('log_title', 'Log Entry')
+        diagnosis = entry.get('diagnosis', '')
+        treatment = entry.get('treatment_recommendation', '')
+        symptoms = entry.get('symptoms_observed', '')
+        user_notes = entry.get('user_notes', '')
+        photo_url = entry.get('raw_photo_url', '')
+        confidence = entry.get('confidence_score', '')
+        follow_up = entry.get('follow_up_required', 'FALSE')
+        follow_up_date = entry.get('follow_up_date', '')
         
         # Build journal entry text
         journal_text = f"📅 {date}\n🌱 {title}\n\n"
@@ -553,7 +555,7 @@ def format_log_entries_as_journal(log_entries: List[Dict]) -> List[Dict]:
             journal_text += f"📅 Follow-up: {follow_up_date}\n"
         
         journal_entry = {
-            "log_id": entry.get('Log ID', ''),
+            "log_id": entry.get('log_id', ''),
             "date": date,
             "title": title,
             "journal_entry": journal_text.strip(),
@@ -616,29 +618,29 @@ def search_log_entries(
                 entry[header] = row[i] if i < len(row) else ""
             
             # Apply filters
-            if plant_name and entry.get('Plant Name', '').lower() != plant_name.lower():
+            if plant_name and entry.get('plant_name', '').lower() != plant_name.lower():
                 continue
             
             if query:
                 # Search in diagnosis, treatment, symptoms, and notes
                 searchable_text = ' '.join([
-                    entry.get('Diagnosis', ''),
-                    entry.get('Treatment Recommendation', ''),
-                    entry.get('Symptoms Observed', ''),
-                    entry.get('User Notes', '')
+                    entry.get('diagnosis', ''),
+                    entry.get('treatment_recommendation', ''),
+                    entry.get('symptoms_observed', ''),
+                    entry.get('user_notes', '')
                 ]).lower()
                 
                 if query.lower() not in searchable_text:
                     continue
             
-            if symptoms and symptoms.lower() not in entry.get('Symptoms Observed', '').lower():
+            if symptoms and symptoms.lower() not in entry.get('symptoms_observed', '').lower():
                 continue
             
             # Add to results
             matching_entries.append(entry)
         
         # Sort by date (newest first)
-        matching_entries.sort(key=lambda x: x.get('Log Date', ''), reverse=True)
+        matching_entries.sort(key=lambda x: x.get('log_date', ''), reverse=True)
         
         # Apply limit
         limited_results = matching_entries[:limit]

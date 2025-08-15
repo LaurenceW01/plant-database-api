@@ -47,13 +47,13 @@ def test_get_plant_by_id_or_name(client):
         # Use the first plant's name or ID for a valid test
         plant = plants[0]
         # Try by name if available
-        plant_name = plant.get('Plant Name') or plant.get('name') or None
+        plant_name = plant.get('plant_name') or plant.get('name') or None
         if plant_name:
             response = client.get(f'/api/plants/{plant_name}')
             assert response.status_code == 200
             assert 'plant' in response.get_json()
         # Try by ID if available
-        plant_id = plant.get('ID') or plant.get('id') or None
+        plant_id = plant.get('id') or None
         if plant_id:
             response = client.get(f'/api/plants/{plant_id}')
             assert response.status_code == 200
@@ -123,7 +123,7 @@ def test_update_plant(client):
     assert response.status_code == 200
     plant = response.get_json().get('plant', {})
     # Assert that the description was updated
-    assert plant.get('Description') == "Updated description." 
+    assert plant.get('description') == "Updated description." 
 
 # Test POST /api/plants with missing required field
 # This test ensures a 400 error is returned if 'Plant Name' is missing

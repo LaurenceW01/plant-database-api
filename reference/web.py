@@ -418,7 +418,7 @@ def api_plant(plant_id):
     try:
         if request.method == 'GET':
             plants = get_plants()
-            plant = next((p for p in plants if p.get('ID') == str(plant_id)), None)
+            plant = next((p for p in plants if p.get('id') == str(plant_id)), None)
             if plant:
                 return jsonify({'success': True, 'plant': plant})
             else:

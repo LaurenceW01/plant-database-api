@@ -48,7 +48,7 @@ def mock_plant_operations(monkeypatch):
     def mock_update(*args, **kwargs):
         # Verify that Photo URL is wrapped in IMAGE formula
         update_data = kwargs.get('update_data', {}) if len(args) < 2 else args[1]
-        photo_url = update_data.get('Photo URL', '')
+        photo_url = update_data.get('photo_url', '')
         if photo_url and not photo_url.startswith('=IMAGE("'):
             photo_url = f'=IMAGE("{photo_url}")'
             update_data['Photo URL'] = photo_url

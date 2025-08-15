@@ -42,10 +42,12 @@ def get_all_plants() -> List[Dict]:
         for row in values[1:]:
             plant = {}
             for i, field in enumerate(header):
+                # Normalize field names to lowercase_underscore format
+                normalized_field = field.lower().replace(' ', '_').replace('-', '_')
                 if i < len(row):
-                    plant[field] = row[i]
+                    plant[normalized_field] = row[i]
                 else:
-                    plant[field] = ""
+                    plant[normalized_field] = ""
             if plant:  # Only add non-empty plants
                 plants.append(plant)
         
@@ -169,14 +171,16 @@ def get_plant_data(plant_names=None) -> List[Dict]:
         for row in values[1:]:
             plant = {}
             for i, field in enumerate(header):
+                # Normalize field names to lowercase_underscore format
+                normalized_field = field.lower().replace(' ', '_').replace('-', '_')
                 if i < len(row):
-                    plant[field] = row[i]
+                    plant[normalized_field] = row[i]
                 else:
-                    plant[field] = ""
+                    plant[normalized_field] = ""
             
             # Filter by plant names if provided
             if plant_names:
-                plant_name_field = get_canonical_field_name('Plant Name')
+                plant_name_field = 'plant_name'  # Use normalized field name
                 current_plant_name = plant.get(plant_name_field, '')
                 
                 # Check if current plant matches any of the requested names

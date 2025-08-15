@@ -275,7 +275,7 @@ class TestRegressionSuite:
             
             # Verify we got the right plant
             plant = data['plant']
-            assert plant.get('Plant Name') == 'Vinca'
+            assert plant.get('plant_name') == 'Vinca'
             
             # Verify endpoint type is marked correctly
             assert data.get('endpoint_type') == 'get_all_fields'

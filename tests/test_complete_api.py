@@ -227,7 +227,7 @@ class PlantAPITester:
             if success:
                 data = response.json()
                 plant_info = data.get('plant', {})
-                details = f"Retrieved plant: {plant_info.get('Plant Name', 'Unknown')}"
+                details = f"Retrieved plant: {plant_info.get('plant_name', 'Unknown')}"
             else:
                 details = f"Status: {response.status_code}, Response: {response.text}"
                 

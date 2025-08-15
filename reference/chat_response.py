@@ -518,7 +518,7 @@ def handle_list_query() -> str:
             return "There are currently no plants in the database."
         
         # Extract plant names
-        plant_names = [plant.get('Plant Name', '') for plant in plant_data if plant.get('Plant Name')]
+        plant_names = [plant.get('plant_name', '') for plant in plant_data if plant.get('plant_name')]
         
         if not plant_names:
             return "There are currently no plants in the database."
@@ -566,8 +566,8 @@ def handle_location_query(plant_references: List[str]) -> str:
             
             # Process each matching plant
             for plant in plant_data:
-                plant_name_actual = plant.get('Plant Name', plant_name)
-                location = plant.get('Location', '')
+                plant_name_actual = plant.get('plant_name', plant_name)
+                location = plant.get('location', '')
                 
                 if location:
                     response_parts.append(f"The {plant_name_actual} is located in the {location}.")
@@ -670,8 +670,8 @@ def handle_location_plants_query(location_references: List[str]) -> str:
         # Group plants by location for better organization
         plants_by_location = {}
         for plant in plant_data:
-            plant_name = plant.get('Plant Name', 'Unknown Plant')
-            location = plant.get('Location', 'Unknown Location')
+            plant_name = plant.get('plant_name', 'Unknown Plant')
+            location = plant.get('location', 'Unknown Location')
             
             if location not in plants_by_location:
                 plants_by_location[location] = []
@@ -688,7 +688,7 @@ def handle_location_plants_query(location_references: List[str]) -> str:
         # Add photo URLs if available
         photo_plants = []
         for plant in plant_data:
-            plant_name = plant.get('Plant Name', 'Unknown Plant')
+            plant_name = plant.get('plant_name', 'Unknown Plant')
             raw_photo_url = plant.get('Raw Photo URL', '')
             if raw_photo_url:
                 if 'photos.google.com' in raw_photo_url:
@@ -900,7 +900,7 @@ def handle_location_plants_query_with_ai(user_query: str) -> str:
         # Collect all unique plant names
         unique_plants = set()
         for plant in plant_data:
-            plant_name = plant.get('Plant Name', 'Unknown Plant')
+            plant_name = plant.get('plant_name', 'Unknown Plant')
             if plant_name and plant_name != 'Unknown Plant':
                 unique_plants.add(plant_name)
         
@@ -918,7 +918,7 @@ def handle_location_plants_query_with_ai(user_query: str) -> str:
         for plant_name in sorted_plants:
             # Find the first plant with this name to get the photo
             for plant in plant_data:
-                if plant.get('Plant Name') == plant_name:
+                if plant.get('plant_name') == plant_name:
                     raw_photo_url = plant.get('Raw Photo URL', '')
                     if raw_photo_url:
                         # Format Google Photos URL if needed

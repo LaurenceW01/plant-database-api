@@ -332,7 +332,7 @@ def handle_plant_request_fields(request_data: Optional[Dict[str, Any]]) -> Dict[
     normalized = normalize_request_fields(request_data)
     
     # Ensure Plant Name is present for plant operations
-    if not normalized.get('Plant Name') and any(key in normalized for key in ['id', 'plant_id', 'plantId']):
+    if not normalized.get('plant_name') and any(key in normalized for key in ['id', 'plant_id', 'plantId']):
         # If we have an ID but no name, we might be doing a lookup
         pass  # Let the endpoint handle ID-based lookups
     

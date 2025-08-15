@@ -365,7 +365,7 @@ def get_plant_all_fields(id_or_name):
         plant_id = str(plant_data[0]) if plant_data else None
         
         for plant in all_plants:
-            if plant.get('ID', '') == plant_id:
+            if plant.get('id', '') == plant_id:
                 target_plant = plant
                 break
         
@@ -402,7 +402,7 @@ def get_plant_all_fields(id_or_name):
         # Count non-empty fields for response metadata
         non_empty_fields = sum(1 for value in target_plant.values() if value and str(value).strip())
         
-        logging.info(f"✅ Retrieved all fields for plant: '{target_plant.get('Plant Name', id_or_name)}'")
+        logging.info(f"✅ Retrieved all fields for plant: '{target_plant.get('plant_name', id_or_name)}'")
         logging.info(f"📊 Total fields: {len(target_plant)}, Non-empty: {non_empty_fields}")
         
         return jsonify({
@@ -411,7 +411,7 @@ def get_plant_all_fields(id_or_name):
             "metadata": {
                 "query": id_or_name,
                 "plant_id": plant_id,
-                "plant_name": target_plant.get('Plant Name', ''),
+                "plant_name": target_plant.get('plant_name', ''),
                 "total_fields": len(target_plant),
                 "non_empty_fields": non_empty_fields,
                 "field_names": list(target_plant.keys())
