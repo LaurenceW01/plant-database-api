@@ -1090,28 +1090,7 @@ paths:
     post:
       operationId: advancedGardenQuery
       summary: "Advanced garden query with MongoDB-style filtering"
-      description: |
-        **🚀 CRITICAL OPTIMIZATION: Replaces multiple API calls with single query**
-        
-        MongoDB-style filtering across plants, locations, and containers. 
-        **Solves GPT rate limiting by replacing 20+ individual calls with 1 optimized query.**
-        
-        **Use for:**
-        - Complex multi-table queries (plants + locations + containers)
-        - Bulk filtering operations
-        - When you need more than 5-10 plants with context
-        
-        **Common scenarios:**
-        - "Plants on patio in small pots" (location + container filtering)
-        - "Sun-loving plants that need daily watering" (multiple plant conditions)
-        - "All plastic containers with plants that have photos" (container + plant conditions)
-        
-        **Operators supported:**
-        - $eq (equals), $ne (not equals)
-        - $in (in array), $nin (not in array)
-        - $gt, $gte, $lt, $lte (numeric comparisons)
-        - $regex (pattern matching - case insensitive)
-        - $exists (field has value), $contains (substring)
+      description: "🚀 CRITICAL: Replaces 20+ API calls with 1 query. MongoDB-style filtering across plants/locations/containers. Use for: complex queries, bulk operations, 5+ plants. Prevents rate limiting."
       security: []
       requestBody:
         required: true
