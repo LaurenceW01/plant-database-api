@@ -297,3 +297,68 @@ def get_garden_care_optimization_route():
             "phase2_direct": True
         }), 500
 
+
+@locations_bp.route('/garden/query', methods=['POST'])
+def advanced_garden_query():
+    """
+    Advanced Garden Query Endpoint
+    
+    MongoDB-style JSON query builder for complex plant database filtering.
+    Solves the critical GPT rate limiting bottleneck by replacing multiple 
+    individual API calls with a single optimized query.
+    """
+    try:
+        from utils.advanced_query_parser import parse_advanced_query, QueryParseError
+        from utils.advanced_query_executor import execute_advanced_query, QueryExecutionError
+        
+        logging.info("🔍 Advanced garden query endpoint called")
+        
+        request_data = request.get_json(force=True, silent=True)
+        if not request_data:
+            return jsonify({
+                "error": "Request body required",
+                "example": {
+                    "filters": {
+                        "plants": {"Plant Name": {"$regex": "vinca"}},
+                        "locations": {"location_name": {"$eq": "patio"}}
+                    },
+                    "response_format": "summary"
+                },
+                "phase2_direct": True
+            }), 400
+        
+        # Parse and execute query
+        try:
+            parsed_query = parse_advanced_query(request_data)
+            query_results = execute_advanced_query(parsed_query)
+            
+            # Add endpoint metadata
+            query_results['endpoint_metadata'] = {
+                "endpoint": "/api/garden/query",
+                "phase2_direct": True,
+                "optimization": "multi_table_single_call"
+            }
+            
+            return jsonify(query_results), 200
+            
+        except QueryParseError as e:
+            return jsonify({
+                "error": "Query parsing failed",
+                "message": str(e),
+                "phase2_direct": True
+            }), 400
+            
+        except QueryExecutionError as e:
+            return jsonify({
+                "error": "Query execution failed", 
+                "message": str(e),
+                "phase2_direct": True
+            }), 500
+        
+    except Exception as e:
+        logging.error(f"❌ Unexpected error in advanced garden query: {e}")
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e),
+            "phase2_direct": True
+        }), 500

@@ -2,12 +2,12 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 25 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
+**Status**: 27 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 ---
 
-## Quick Reference - All 25 Operations
+## Quick Reference - All 27 Operations
 
 ### Plant Management (7 operations)
 ```javascript
@@ -63,6 +63,11 @@ GET    /api/logs/search             // ✅ Search logs with comprehensive result
 ```javascript
 POST   /api/photos/upload-for-plant/{token}  // ✅ Upload photo for plant
 POST   /api/photos/upload-for-log/{token}    // ✅ Upload photo for log entry
+```
+
+### 🚀 Advanced Query System (1 operation)
+```javascript
+POST   /api/garden/query                     // ✅ MongoDB-style advanced filtering (REPLACES MULTIPLE CALLS!)
 ```
 
 ### Location Intelligence (8 operations)
@@ -132,6 +137,129 @@ Use these EXACT field names for best compatibility:
 ---
 
 ## Core API Examples
+
+### 🚀 Advanced Query System - PRIMARY METHOD
+
+**🔥 CRITICAL: Use this for ANY query involving multiple plants or complex filtering**
+
+**Replaces Multiple API Calls:**
+- ❌ Old: 1 search + 26 individual context calls = 27 API calls
+- ✅ New: 1 advanced query call = 1 API call (96% reduction!)
+
+#### "Plants on Patio in Small Pots" (Main Optimization Scenario)
+```javascript
+POST /api/garden/query
+Content-Type: application/json
+
+{
+  "filters": {
+    "locations": {"location_name": {"$regex": "patio"}},
+    "containers": {"container_size": {"$eq": "small"}}
+  },
+  "response_format": "summary",
+  "include": ["plants", "locations", "containers", "context"]
+}
+
+// Response: Aggregated summary with plant breakdowns
+{
+  "total_matches": 8,
+  "summary": {
+    "by_plant_type": {"vinca": 3, "petunia": 2, "herbs": 3},
+    "by_container": {"small plastic": 6, "small ceramic": 2},
+    "by_location": {"front patio": 5, "back patio": 3}
+  },
+  "sample_plants": [/* 5 plants with full context */],
+  "query_metadata": {
+    "execution_success": true,
+    "applied_limit": 50,
+    "tables_queried": ["locations", "containers"]
+  }
+}
+```
+
+#### "Sun-Loving Plants Needing Daily Water"
+```javascript
+POST /api/garden/query
+Content-Type: application/json
+
+{
+  "filters": {
+    "plants": {
+      "Light Requirements": {"$regex": "Full Sun"},
+      "Watering Needs": {"$regex": "daily"}
+    }
+  },
+  "response_format": "detailed",
+  "limit": 10
+}
+```
+
+#### "All Plastic Containers with Plants that Have Photos"
+```javascript
+POST /api/garden/query
+Content-Type: application/json
+
+{
+  "filters": {
+    "containers": {"container_material": {"$eq": "plastic"}},
+    "plants": {"Photo URL": {"$exists": true, "$ne": ""}}
+  },
+  "response_format": "summary"
+}
+```
+
+#### "High-Sun Locations (8+ hours) with Ceramic Containers"
+```javascript
+POST /api/garden/query
+Content-Type: application/json
+
+{
+  "filters": {
+    "locations": {"total_sun_hours": {"$gte": 8}},
+    "containers": {"container_material": {"$eq": "ceramic"}}
+  },
+  "response_format": "summary",
+  "include": ["plants", "locations", "containers"]
+}
+```
+
+#### MongoDB-Style Operators Supported
+```javascript
+// Equality and inequality
+{"Plant Name": {"$eq": "Vinca"}}
+{"container_size": {"$ne": "large"}}
+
+// Array membership
+{"container_material": {"$in": ["plastic", "ceramic"]}}
+{"Light Requirements": {"$nin": ["Full Shade"]}}
+
+// Numeric comparisons
+{"total_sun_hours": {"$gte": 6, "$lte": 12}}  // 6-12 hours
+{"total_sun_hours": {"$gt": 8}}              // More than 8 hours
+
+// Pattern matching (case-insensitive by default)
+{"Plant Name": {"$regex": "vinca"}}          // Contains "vinca"
+{"location_name": {"$regex": "^patio"}}      // Starts with "patio"
+
+// Field existence and substring
+{"Photo URL": {"$exists": true}}             // Has photo
+{"Care Notes": {"$contains": "morning"}}     // Contains "morning"
+```
+
+#### Response Format Options
+```javascript
+// Summary format (best for large results)
+{"response_format": "summary"}   // Aggregated data + sample plants
+
+// Detailed format (full data)
+{"response_format": "detailed"}  // Complete plant/location/container data
+
+// Minimal format (basic info)
+{"response_format": "minimal"}   // Just plant name, ID, location
+
+// IDs only (most efficient)
+{"response_format": "ids_only"}  // Just plant IDs array
+```
 
 ### Add Plant with Location Context
 ```javascript
