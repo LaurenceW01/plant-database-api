@@ -217,15 +217,15 @@ def _calculate_container_statistics(containers: List[Dict]) -> Dict:
     
     for container in containers:
         # Count types
-        container_type = container.get('Container Type', 'Unknown')
+        container_type = container.get('container_type', 'Unknown')
         type_counts[container_type] = type_counts.get(container_type, 0) + 1
         
         # Count sizes
-        container_size = container.get('Container Size', 'Unknown')
+        container_size = container.get('container_size', 'Unknown')
         size_counts[container_size] = size_counts.get(container_size, 0) + 1
         
         # Count materials
-        container_material = container.get('Container Material', 'Unknown')
+        container_material = container.get('container_material', 'Unknown')
         material_counts[container_material] = material_counts.get(container_material, 0) + 1
     
     # Create breakdown lists
@@ -272,8 +272,8 @@ def _generate_location_care_intelligence(location: Dict, containers: List[Dict])
     afternoon_sun_hours = float(location.get('Afternoon Sun Hours', '0') or '0')
     
     # Watering strategy based on containers and sun exposure
-    plastic_containers = sum(1 for c in containers if c.get('Container Material', '').lower() == 'plastic')
-    small_containers = sum(1 for c in containers if c.get('Container Size', '').lower() == 'small')
+    plastic_containers = sum(1 for c in containers if c.get('container_material', '').lower() == 'plastic')
+    small_containers = sum(1 for c in containers if c.get('container_size', '').lower() == 'small')
     
     watering_notes = []
     if plastic_containers > 0 and afternoon_sun_hours > 2:
@@ -319,7 +319,7 @@ def _get_seasonal_considerations(location: Dict, containers: List[Dict]) -> List
         considerations.append('Summer: Provide afternoon shade for sensitive plants')
     
     # Container material considerations
-    plastic_count = sum(1 for c in containers if c.get('Container Material', '').lower() == 'plastic')
+    plastic_count = sum(1 for c in containers if c.get('container_material', '').lower() == 'plastic')
     if plastic_count > 0:
         considerations.append(f'Summer: Monitor {plastic_count} plastic containers for overheating')
     
@@ -347,7 +347,7 @@ def _identify_location_optimization_opportunities(location: Dict, containers: Li
     
     # Container material optimization
     plastic_in_high_sun = [c for c in containers 
-                          if c.get('Container Material', '').lower() == 'plastic' 
+                          if c.get('container_material', '').lower() == 'plastic' 
                           and float(location.get('Afternoon Sun Hours', '0') or '0') > 3]
     
     if plastic_in_high_sun:
@@ -359,7 +359,7 @@ def _identify_location_optimization_opportunities(location: Dict, containers: Li
         })
     
     # Small container optimization
-    small_containers = [c for c in containers if c.get('Container Size', '').lower() == 'small']
+    small_containers = [c for c in containers if c.get('container_size', '').lower() == 'small']
     if len(small_containers) > 3:
         opportunities.append({
             'type': 'container_size',

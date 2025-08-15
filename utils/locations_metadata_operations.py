@@ -415,38 +415,38 @@ def _analyze_container_distribution(all_containers: List[Dict], all_locations: L
     # Analyze by material
     material_counts = {}
     for container in all_containers:
-        material = container.get('Container Material', 'Unknown')
+        material = container.get('container_material', 'Unknown')
         material_counts[material] = material_counts.get(material, 0) + 1
     
     # Analyze by size
     size_counts = {}
     for container in all_containers:
-        size = container.get('Container Size', 'Unknown')
+        size = container.get('container_size', 'Unknown')
         size_counts[size] = size_counts.get(size, 0) + 1
     
     # Analyze by type
     type_counts = {}
     for container in all_containers:
-        container_type = container.get('Container Type', 'Unknown')
+        container_type = container.get('container_type', 'Unknown')
         type_counts[container_type] = type_counts.get(container_type, 0) + 1
     
     # Risk analysis - plastic containers in high sun
-    high_sun_locations = {loc.get('Location ID'): loc for loc in all_locations 
-                         if float(loc.get('Afternoon Sun Hours', '0') or '0') > 3}
+    high_sun_locations = {loc.get('location_id'): loc for loc in all_locations 
+                         if float(loc.get('afternoon_sun_hours', '0') or '0') > 3}
     plastic_high_sun_risk = 0
     for container in all_containers:
-        if (container.get('Container Material', '').lower() == 'plastic' and 
-            container.get('Location ID') in high_sun_locations):
+        if (container.get('container_material', '').lower() == 'plastic' and 
+            container.get('location_id') in high_sun_locations):
             plastic_high_sun_risk += 1
     
     # Small containers in high sun
     small_high_sun_risk = 0
     for container in all_containers:
-        location_id = container.get('Location ID')
+        location_id = container.get('location_id')
         if location_id in high_sun_locations:
             location = high_sun_locations[location_id]
-            if (container.get('Container Size', '').lower() == 'small' and 
-                float(location.get('Total Sun Hours', '0') or '0') > 7):
+            if (container.get('container_size', '').lower() == 'small' and 
+                float(location.get('total_sun_hours', '0') or '0') > 7):
                 small_high_sun_risk += 1
     
     return {
@@ -458,8 +458,8 @@ def _analyze_container_distribution(all_containers: List[Dict], all_locations: L
             'small_containers_high_sun': small_high_sun_risk
         },
         'total_containers': len(all_containers),
-        'most_common_material': max(material_counts.items(), key=lambda x: x[1])[0] if material_counts else 'None',
-        'most_common_size': max(size_counts.items(), key=lambda x: x[1])[0] if size_counts else 'None'
+        'most_common_material': max([item for item in material_counts.items() if item[0].strip()], key=lambda x: x[1])[0] if any(k.strip() for k in material_counts.keys()) else 'None',
+        'most_common_size': max([item for item in size_counts.items() if item[0].strip()], key=lambda x: x[1])[0] if any(k.strip() for k in size_counts.keys()) else 'None'
     }
 
 def _assess_care_requirements(location_profiles: List[Dict]) -> Dict:
@@ -564,7 +564,7 @@ def _identify_improvement_areas(location_profiles: List[Dict]) -> List[Dict]:
     for profile in location_profiles:
         if profile['afternoon_sun_hours'] > 3:
             plastic_containers = [c for c in profile.get('containers_detail', []) 
-                                if c.get('Container Material', '').lower() == 'plastic']
+                                if c.get('container_material', '').lower() == 'plastic']
             total_plastic_high_sun += len(plastic_containers)
     
     if total_plastic_high_sun > 3:
@@ -580,7 +580,7 @@ def _identify_improvement_areas(location_profiles: List[Dict]) -> List[Dict]:
     small_container_locations = []
     for profile in location_profiles:
         small_containers = [c for c in profile.get('containers_detail', []) 
-                          if c.get('Container Size', '').lower() == 'small']
+                          if c.get('container_size', '').lower() == 'small']
         if len(small_containers) > 4:
             small_container_locations.append({
                 'location_name': profile['location_name'],

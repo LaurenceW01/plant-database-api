@@ -170,8 +170,8 @@ def _assess_container_location_compatibility(location: Dict, containers: List[Di
     
     # Check for problematic combinations
     for container in containers:
-        material = container.get('Container Material', '').lower()
-        size = container.get('Container Size', '').lower()
+        material = container.get('container_material', '').lower()
+        size = container.get('container_size', '').lower()
         
         # Plastic containers in high afternoon sun
         if material == 'plastic' and afternoon_sun > 3:
@@ -268,8 +268,8 @@ def _calculate_optimal_watering_strategy(location: Dict, containers: List[Dict])
         base_frequency_days = 3  # Every 3 days
     
     # Adjust for container factors
-    small_containers = sum(1 for c in containers if c.get('Container Size', '').lower() == 'small')
-    plastic_containers = sum(1 for c in containers if c.get('Container Material', '').lower() == 'plastic')
+    small_containers = sum(1 for c in containers if c.get('container_size', '').lower() == 'small')
+    plastic_containers = sum(1 for c in containers if c.get('container_material', '').lower() == 'plastic')
     
     # Small containers need more frequent watering
     if small_containers > len(containers) / 2:
@@ -496,11 +496,11 @@ def _identify_complexity_factors(location: Dict, containers: List[Dict]) -> List
     if afternoon_sun > 3:
         factors.append('High afternoon sun intensity')
     
-    plastic_count = sum(1 for c in containers if c.get('Container Material', '').lower() == 'plastic')
+    plastic_count = sum(1 for c in containers if c.get('container_material', '').lower() == 'plastic')
     if plastic_count > 0:
         factors.append(f'{plastic_count} plastic containers requiring heat monitoring')
     
-    small_count = sum(1 for c in containers if c.get('Container Size', '').lower() == 'small')
+    small_count = sum(1 for c in containers if c.get('container_size', '').lower() == 'small')
     if small_count > 2:
         factors.append(f'{small_count} small containers requiring frequent watering')
     
