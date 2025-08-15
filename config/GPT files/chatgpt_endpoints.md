@@ -2,12 +2,12 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 27 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
+**Status**: 28 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 ---
 
-## Quick Reference - All 27 Operations
+## Quick Reference - All 28 Operations
 
 ### Plant Management (7 operations)
 ```javascript
@@ -65,9 +65,10 @@ POST   /api/photos/upload-for-plant/{token}  // ✅ Upload photo for plant
 POST   /api/photos/upload-for-log/{token}    // ✅ Upload photo for log entry
 ```
 
-### 🚀 Advanced Query System (1 operation)
+### 🚀 Advanced Query System (2 operations)
 ```javascript
-POST   /api/garden/query                     // ✅ MongoDB-style advanced filtering (REPLACES MULTIPLE CALLS!)
+POST   /api/garden/quick-query               // ⚡ FASTEST: Ultra-fast query (max 5 results, ChatGPT optimized)
+POST   /api/garden/query                     // 🔧 FULL: Complete advanced filtering (all response formats)
 ```
 
 ### Location Intelligence (8 operations)
@@ -140,15 +141,21 @@ Use these EXACT field names for best compatibility:
 
 ### 🚀 Advanced Query System - PRIMARY METHOD
 
-**🔥 CRITICAL: Use this for ANY query involving multiple plants or complex filtering**
+**⚡ NEW: Use `/api/garden/quick-query` for ALL ChatGPT queries** (ultra-fast, timeout-optimized)
+**🔧 Use `/api/garden/query` only for detailed analysis** (full features but slower)
 
-**Replaces Multiple API Calls:**
+**🔥 CRITICAL: Replaces Multiple API Calls:**
 - ❌ Old: 1 search + 26 individual context calls = 27 API calls
-- ✅ New: 1 advanced query call = 1 API call (96% reduction!)
+- ✅ New: 1 quick query call = 1 API call (96% reduction!)
+
+**Quick-Query Optimizations:**
+- ⚡ Max 5 results (prevents timeouts)
+- 🏃 Minimal response format (faster processing)
+- 🎯 Same MongoDB filtering as full query
 
 #### "Plants on Patio in Small Pots" (Main Optimization Scenario)
 ```javascript
-POST /api/garden/query
+POST /api/garden/quick-query  // ⚡ Use quick-query for ChatGPT!
 Content-Type: application/json
 
 {

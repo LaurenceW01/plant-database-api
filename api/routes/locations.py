@@ -319,6 +319,14 @@ def advanced_garden_query():
         logging.info(f"🔍 Content-Length: {request.headers.get('Content-Length', 'Unknown')}")
         
         request_data = request.get_json(force=True, silent=True)
+        
+        # ChatGPT optimization: Set aggressive defaults for speed
+        if request_data and request_data.get('response_format') == 'summary':
+            if 'limit' not in request_data:
+                request_data['limit'] = 10  # Reduce from default 50
+            # Force minimal response for ChatGPT timeout prevention
+            logging.info("🚀 ChatGPT optimization: Using speed-optimized settings")
+        
         if not request_data:
             return jsonify({
                 "error": "Request body required",
@@ -367,6 +375,37 @@ def advanced_garden_query():
             "details": str(e),
             "phase2_direct": True
         }), 500
+
+
+@locations_bp.route('/garden/quick-query', methods=['POST'])
+def quick_garden_query():
+    """
+    Ultra-fast garden query optimized for ChatGPT timeouts.
+    Limited functionality but guaranteed fast response.
+    """
+    try:
+        logging.info("⚡ Quick garden query endpoint called (ChatGPT optimized)")
+        
+        request_data = request.get_json(force=True, silent=True)
+        if not request_data:
+            return jsonify({"error": "Request body required"}), 400
+            
+        # Ultra-aggressive optimizations for ChatGPT
+        request_data['response_format'] = 'minimal'  # Force minimal
+        request_data['limit'] = min(request_data.get('limit', 5), 5)  # Max 5 results
+        
+        from utils.advanced_query_parser import parse_advanced_query, QueryParseError
+        from utils.advanced_query_executor import execute_advanced_query, QueryExecutionError
+        
+        # Parse and execute with speed optimizations
+        parsed_query = parse_advanced_query(request_data)
+        result = execute_advanced_query(parsed_query)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logging.error(f"❌ Quick query error: {e}")
+        return jsonify({"error": "Query failed", "details": str(e)}), 500
 
 
 @locations_bp.route('/health', methods=['GET'])

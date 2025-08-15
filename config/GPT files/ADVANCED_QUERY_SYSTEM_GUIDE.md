@@ -22,7 +22,7 @@ The Advanced Query System solves the critical GPT rate limiting problem by repla
 ### Endpoint
 `POST /api/garden/query`
 
-### Basic Structure
+### Basic Structure (Speed Optimized for ChatGPT)
 ```json
 {
   "filters": {
@@ -30,10 +30,12 @@ The Advanced Query System solves the critical GPT rate limiting problem by repla
     "locations": { /* location conditions */ },
     "containers": { /* container conditions */ }
   },
-  "response_format": "summary|detailed|minimal|ids_only",
-  "limit": 50
+  "response_format": "summary",
+  "limit": 10
 }
 ```
+
+**⚡ Speed Tip**: Use `"response_format": "summary"` and `"limit": 10` for fastest ChatGPT responses.
 
 ## Common Query Examples
 

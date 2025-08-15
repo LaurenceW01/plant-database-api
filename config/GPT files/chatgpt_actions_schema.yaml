@@ -1086,11 +1086,91 @@ paths:
   # ADVANCED QUERY SYSTEM (1 operation)
   # =============================================
 
+  /api/garden/quick-query:
+    post:
+      operationId: quickGardenQuery
+      summary: "Ultra-fast garden query (ChatGPT optimized)"
+      description: "⚡ FASTEST: Optimized for ChatGPT timeouts. Same filtering as advanced query but limited to 5 results, minimal format. Use for all garden queries."
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: object
+                  description: "Filters organized by table (plants, locations, containers)"
+                  properties:
+                    plants:
+                      type: object
+                      description: "Plant field filters"
+                      additionalProperties: true
+                      properties:
+                        Plant Name:
+                          description: "Plant name filter"
+                        Light Requirements:
+                          description: "Light requirements filter" 
+                        Watering Needs:
+                          description: "Watering needs filter"
+                        Care Notes:
+                          description: "Care notes filter"
+                        Photo URL:
+                          description: "Photo URL filter"
+                    locations:
+                      type: object
+                      description: "Location field filters"
+                      additionalProperties: true
+                      properties:
+                        location_name:
+                          description: "Location name filter"
+                        total_sun_hours:
+                          description: "Total sun hours filter (numeric)"
+                        shade_pattern:
+                          description: "Shade pattern filter"
+                    containers:
+                      type: object
+                      description: "Container field filters"
+                      additionalProperties: true
+                      properties:
+                        container_size:
+                          description: "Container size filter"
+                        container_material:
+                          description: "Container material filter"
+                        container_type:
+                          description: "Container type filter"
+                  additionalProperties: true
+              required: ["filters"]
+            examples:
+              patio_small_pots:
+                summary: "Plants on patio in small pots"
+                value:
+                  filters:
+                    locations:
+                      location_name: {"$regex": "patio"}
+                    containers:
+                      container_size: {"$eq": "small"}
+      responses:
+        '200':
+          description: "Fast query results (minimal format, max 5 results)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_matches:
+                    type: integer
+                  plants:
+                    type: array
+                    items:
+                      type: object
+
   /api/garden/query:
     post:
       operationId: advancedGardenQuery
-      summary: "Advanced garden query with MongoDB-style filtering"
-      description: "🚀 CRITICAL: Replaces 20+ API calls with 1 query. MongoDB-style filtering across plants/locations/containers. Use for: complex queries, bulk operations, 5+ plants. Prevents rate limiting."
+      summary: "Advanced garden query with MongoDB-style filtering (full features)"
+      description: "🔧 ADVANCED: Full-featured query with all response formats. Use quick-query for speed. This for detailed analysis only."
       security: []
       requestBody:
         required: true
@@ -1166,8 +1246,8 @@ paths:
                   type: integer
                   minimum: 1
                   maximum: 1000
-                  default: 50
-                  description: "Maximum number of results to return"
+                  default: 10
+                  description: "Maximum number of results to return (default 10 for speed)"
                 sort:
                   type: array
                   items:
