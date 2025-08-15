@@ -173,7 +173,7 @@ def update_plant_flexible():
                             logger.info(f"   {orig_field} -> {norm_field}")
     
     # Get plant ID from request body
-    plant_id = get_normalized_field('id') or get_normalized_field('plant_id') or get_normalized_field('Plant ID')
+    plant_id = get_normalized_field('id') or get_normalized_field('plant_id')
     
     if not plant_id:
         logger.error("❌ No plant ID found in request body")

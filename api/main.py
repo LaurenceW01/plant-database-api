@@ -180,7 +180,7 @@ def create_plant_log_simple():
         
         # Get normalized field values
         plant_name = get_plant_name()
-        user_notes = get_normalized_field('User Notes') or get_normalized_field('user_notes', '')
+        user_notes = get_normalized_field('user_notes', '') or get_normalized_field('User Notes', '')
         diagnosis = get_diagnosis() or ''
         treatment = get_treatment() or ''
         symptoms = get_symptoms() or ''

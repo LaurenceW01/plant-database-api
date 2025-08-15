@@ -555,7 +555,7 @@ def analyze_plant_api():
         
         # Use field normalization to get data
         plant_name = get_plant_name() or ''
-        user_notes = get_normalized_field('user_notes', '') or get_normalized_field('User Notes', '')
+        user_notes = get_normalized_field('user_notes', '')
         analysis_type = get_normalized_field('analysis_type', 'general_care')
         location = get_normalized_field('location', '') or get_normalized_field('Location', '')
         
