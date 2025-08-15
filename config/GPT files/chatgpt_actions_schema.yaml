@@ -178,6 +178,122 @@ paths:
                       Location:
                         type: string
 
+  /api/plants/get-all-fields/{id}:
+    get:
+      operationId: getPlantAllFields
+      summary: Get all plant fields by ID or name
+      description: Retrieve ALL available fields from the plant spreadsheet for a specific plant. Returns complete plant data including all configured fields.
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Plant ID or name to retrieve all fields for
+          schema:
+            type: string
+            example: "1"
+      responses:
+        '200':
+          description: Complete plant data with all fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  plant:
+                    type: object
+                    description: Complete plant object with all spreadsheet fields
+                    properties:
+                      ID:
+                        type: string
+                      Plant Name:
+                        type: string
+                      Description:
+                        type: string
+                      Location:
+                        type: string
+                      Light Requirements:
+                        type: string
+                      Watering Needs:
+                        type: string
+                      Soil Preferences:
+                        type: string
+                      Soil pH Type:
+                        type: string
+                      Soil pH Range:
+                        type: string
+                      Frost Tolerance:
+                        type: string
+                      Fertilizing Schedule:
+                        type: string
+                      Pruning Instructions:
+                        type: string
+                      Mulching Needs:
+                        type: string
+                      Winterizing Instructions:
+                        type: string
+                      Spacing Requirements:
+                        type: string
+                      Care Notes:
+                        type: string
+                      Photo URL:
+                        type: string
+                      Raw Photo URL:
+                        type: string
+                      Last Updated:
+                        type: string
+                    additionalProperties: true
+                  metadata:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                        description: Original query (ID or name)
+                      plant_id:
+                        type: string
+                        description: Plant ID from database
+                      plant_name:
+                        type: string
+                        description: Plant name from database
+                      total_fields:
+                        type: integer
+                        description: Total number of fields returned
+                      non_empty_fields:
+                        type: integer
+                        description: Number of fields with values
+                      field_names:
+                        type: array
+                        items:
+                          type: string
+                        description: List of all field names
+                  endpoint_type:
+                    type: string
+                    example: "get_all_fields"
+                  note:
+                    type: string
+                    example: "All available plant fields from spreadsheet"
+        '404':
+          description: Plant not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  query:
+                    type: string
+                  endpoint_type:
+                    type: string
+
   /api/plants/update/{id}:
     put:
       operationId: updatePlant

@@ -2,18 +2,19 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 24 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
+**Status**: 25 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 ---
 
-## Quick Reference - All 24 Operations
+## Quick Reference - All 25 Operations
 
-### Plant Management (6 operations)
+### Plant Management (7 operations)
 ```javascript
 POST   /api/plants/add              // ✅ Add new plant with upload token
 POST   /api/plants/search           // ✅ Search plants (use JSON body: {"q": "vinca", "limit": 5})
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
+GET    /api/plants/get-all-fields/{id} // ✅ Get ALL plant fields from spreadsheet
 PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
 PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
 POST   /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
@@ -368,9 +369,63 @@ in that evening sun location."
 
 ---
 
+## NEW: Complete Plant Field Retrieval
+
+### GET /api/plants/get-all-fields/{id}
+**Purpose**: Retrieve ALL available fields from the plant spreadsheet for comprehensive plant data analysis.
+
+**Key Features**:
+- Returns complete plant object with all spreadsheet fields (ID, Plant Name, Description, Location, Light Requirements, Watering Needs, Soil Preferences, Frost Tolerance, etc.)
+- Supports both plant IDs (e.g., "1") and plant names (e.g., "Vinca")
+- Includes metadata about field counts and completeness
+- Perfect for comprehensive plant analysis and data export
+
+**Usage Examples**:
+```javascript
+// Get all fields by plant ID
+GET /api/plants/get-all-fields/1
+
+// Get all fields by plant name
+GET /api/plants/get-all-fields/Vinca
+
+// Response includes complete plant data:
+{
+  "success": true,
+  "plant": {
+    "ID": "1",
+    "Plant Name": "Vinca",
+    "Description": "Flowering annual",
+    "Location": "Front patio",
+    "Light Requirements": "Full sun",
+    "Watering Needs": "Daily",
+    "Soil Preferences": "Well-draining",
+    "Frost Tolerance": "None",
+    "Fertilizing Schedule": "Monthly",
+    // ... all other fields
+  },
+  "metadata": {
+    "total_fields": 20,
+    "non_empty_fields": 15,
+    "field_names": ["ID", "Plant Name", "Description", ...]
+  }
+}
+```
+
+**When to Use**:
+- Need complete plant data for analysis
+- Exporting plant information
+- Comprehensive plant reports
+- Detailed care planning
+
+**Difference from /api/plants/get/{id}**:
+- `get/{id}`: Returns basic plant info (subset of fields)
+- `get-all-fields/{id}`: Returns ALL available spreadsheet fields + metadata
+
+---
+
 ## Important Notes
 
-🔴 **ChatGPT Limitations**: This schema contains exactly 24 operations (under the 30 limit)
+🔴 **ChatGPT Limitations**: This schema contains exactly 25 operations (under the 30 limit)
 🔴 **Field Compatibility**: Field names are flexible - use any format (spaces, underscores, camelCase)
 🔴 **Token Expiration**: All upload tokens expire in 24 hours
 🔴 **Location Intelligence**: Use context endpoints for precise, location-aware advice

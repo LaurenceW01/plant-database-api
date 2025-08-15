@@ -315,6 +315,122 @@ def get_plant_context_new(plant_id):
         }), 500
 
 
+@plants_bp.route('/get-all-fields/<id_or_name>', methods=['GET'])
+def get_plant_all_fields(id_or_name):
+    """
+    NEW ENDPOINT: Get all plant fields from the plant spreadsheet for a given plant name or ID.
+    
+    This is a completely new endpoint that retrieves all available field data
+    for a specific plant without modifying any existing functionality.
+    
+    Supports both plant IDs (numeric) and plant names for maximum compatibility.
+    Returns all fields from the spreadsheet row for the specified plant.
+    
+    Args:
+        id_or_name (str): Plant ID or plant name to retrieve all fields for
+        
+    Returns:
+        JSON response containing all plant fields or error message
+    """
+    import logging
+    
+    try:
+        # Use existing database operations without modification
+        from utils.plant_database_operations import find_plant_by_id_or_name, get_all_plants
+        from models.field_config import get_all_field_names
+        
+        logging.info(f"🔍 GET_PLANT_ALL_FIELDS called for: '{id_or_name}'")
+        
+        # Find the plant using existing function (no modification)
+        plant_row, plant_data = find_plant_by_id_or_name(id_or_name)
+        
+        if plant_row is None or not plant_data:
+            logging.error(f"❌ Plant not found: '{id_or_name}'")
+            return jsonify({
+                "success": False,
+                "error": f"Plant '{id_or_name}' not found in database",
+                "message": "Please check the plant name or ID and try again",
+                "query": id_or_name,
+                "endpoint_type": "get_all_fields"
+            }), 404
+        
+        # Get all field names from field configuration (no modification)
+        all_field_names = get_all_field_names()
+        
+        # Get full plant data to ensure we have all fields
+        all_plants = get_all_plants()
+        
+        # Find the matching plant in the full dataset to get all fields
+        target_plant = None
+        plant_id = str(plant_data[0]) if plant_data else None
+        
+        for plant in all_plants:
+            if plant.get('ID', '') == plant_id:
+                target_plant = plant
+                break
+        
+        if target_plant is None:
+            # Fallback: create plant object from row data and field names
+            target_plant = {}
+            header_result = []
+            
+            # Get header from sheets to map fields correctly
+            from config.config import sheets_client, SPREADSHEET_ID, RANGE_NAME
+            try:
+                result = sheets_client.values().get(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=RANGE_NAME
+                ).execute()
+                values = result.get('values', [])
+                header_result = values[0] if values else []
+            except Exception as header_error:
+                logging.warning(f"Could not get header: {header_error}")
+                header_result = all_field_names  # Fallback to field config
+            
+            # Map plant data to field names
+            for i, field_name in enumerate(header_result):
+                if i < len(plant_data):
+                    target_plant[field_name] = plant_data[i]
+                else:
+                    target_plant[field_name] = ""
+        
+        # Ensure all configured fields are present
+        for field_name in all_field_names:
+            if field_name not in target_plant:
+                target_plant[field_name] = ""
+        
+        # Count non-empty fields for response metadata
+        non_empty_fields = sum(1 for value in target_plant.values() if value and str(value).strip())
+        
+        logging.info(f"✅ Retrieved all fields for plant: '{target_plant.get('Plant Name', id_or_name)}'")
+        logging.info(f"📊 Total fields: {len(target_plant)}, Non-empty: {non_empty_fields}")
+        
+        return jsonify({
+            "success": True,
+            "plant": target_plant,
+            "metadata": {
+                "query": id_or_name,
+                "plant_id": plant_id,
+                "plant_name": target_plant.get('Plant Name', ''),
+                "total_fields": len(target_plant),
+                "non_empty_fields": non_empty_fields,
+                "field_names": list(target_plant.keys())
+            },
+            "endpoint_type": "get_all_fields",
+            "note": "All available plant fields from spreadsheet"
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error getting all plant fields for '{id_or_name}': {e}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to retrieve plant fields",
+            "details": str(e),
+            "query": id_or_name,
+            "endpoint_type": "get_all_fields"
+        }), 500
+
+
 # Legacy route redirects for backward compatibility
 @plants_bp.route('', methods=['GET'])
 @plants_bp.route('/all', methods=['GET'])

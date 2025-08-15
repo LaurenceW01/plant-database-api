@@ -226,6 +226,61 @@ class TestRegressionSuite:
             assert 'success' in data
             assert 'plant' in data
     
+    def test_plants_get_all_fields_by_id(self):
+        """Test GET /api/plants/get-all-fields/{id} endpoint (operationId: getPlantAllFields)"""
+        # Test with plant ID
+        response = self.client.get('/api/plants/get-all-fields/1')
+        
+        assert response.status_code in [200, 404]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'success' in data
+            assert data['success'] is True
+            assert 'plant' in data
+            assert 'metadata' in data
+            
+            # Verify metadata structure
+            metadata = data['metadata']
+            assert 'total_fields' in metadata
+            assert 'non_empty_fields' in metadata
+            assert 'field_names' in metadata
+            assert 'plant_id' in metadata
+            assert 'plant_name' in metadata
+            
+            # Verify plant data contains all expected fields
+            plant = data['plant']
+            expected_fields = ['ID', 'Plant Name', 'Description', 'Location']
+            for field in expected_fields:
+                assert field in plant
+            
+            # Verify field count is reasonable
+            assert metadata['total_fields'] >= 15  # Should have many fields
+            assert metadata['non_empty_fields'] >= 1  # At least plant name should be populated
+            assert len(metadata['field_names']) == metadata['total_fields']
+    
+    def test_plants_get_all_fields_by_name(self):
+        """Test GET /api/plants/get-all-fields/{name} endpoint with plant name"""
+        # Test with plant name
+        response = self.client.get('/api/plants/get-all-fields/Vinca')
+        
+        assert response.status_code in [200, 404]
+        data = response.get_json()
+        
+        if response.status_code == 200:
+            assert 'success' in data
+            assert data['success'] is True
+            assert 'plant' in data
+            assert 'metadata' in data
+            
+            # Verify we got the right plant
+            plant = data['plant']
+            assert plant.get('Plant Name') == 'Vinca'
+            
+            # Verify endpoint type is marked correctly
+            assert data.get('endpoint_type') == 'get_all_fields'
+            assert 'note' in data
+    
     def test_plants_update_with_id_in_path(self):
         """Test PUT /api/plants/update/{id} endpoint (operationId: updatePlant)"""
         update_data = {
@@ -783,10 +838,11 @@ class TestRegressionSuite:
         """Validate that all major endpoints are covered by tests"""
         # This test serves as documentation of covered endpoints
         covered_endpoints = [
-            # Core Plant Management (6 operations)
+            # Core Plant Management (7 operations)
             '/api/plants/search',
             '/api/plants/add', 
             '/api/plants/get/{id}',
+            '/api/plants/get-all-fields/{id}',
             '/api/plants/update/{id}',
             '/api/plants/update',
             '/api/plants/get-context/{plant_id}',
