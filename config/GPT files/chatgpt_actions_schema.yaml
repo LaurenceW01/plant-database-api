@@ -1086,6 +1086,54 @@ paths:
   # ADVANCED QUERY SYSTEM (1 operation)
   # =============================================
 
+  /api/garden/simple-query:
+    post:
+      operationId: simpleGardenQuery
+      summary: "Simple garden query (GET endpoint compatibility)"
+      description: "🌟 COMPATIBLE: Same response format as working GET endpoints. Use for all advanced filtering with guaranteed ChatGPT compatibility."
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: object
+                  properties:
+                    plants:
+                      type: object
+                      additionalProperties: true
+                    locations:
+                      type: object
+                      additionalProperties: true
+                    containers:
+                      type: object
+                      additionalProperties: true
+              required: ["filters"]
+            examples:
+              patio_plants:
+                summary: "Plants on patio"
+                value:
+                  filters:
+                    locations:
+                      location_name: {"$regex": "patio"}
+      responses:
+        '200':
+          description: "Simple query results (same format as GET endpoints)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  plants:
+                    type: array
+                  debug_signature:
+                    type: string
+
   /api/garden/quick-query:
     post:
       operationId: quickGardenQuery

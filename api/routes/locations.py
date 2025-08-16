@@ -422,6 +422,44 @@ def advanced_garden_query():
         }), 500
 
 
+@locations_bp.route('/garden/simple-query', methods=['POST'])
+def simple_garden_query():
+    """
+    Ultra-simplified garden query that mimics successful GET endpoint format.
+    Returns same structure as /api/plants/by-location for ChatGPT compatibility.
+    """
+    try:
+        logging.info("🌟 SIMPLE GARDEN QUERY ENDPOINT CALLED (ChatGPT Compatible)")
+        logging.info(f"🌟 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        
+        request_data = request.get_json(force=True, silent=True)
+        if not request_data:
+            return jsonify({"error": "Request body required"}), 400
+            
+        from utils.advanced_query_parser import parse_advanced_query
+        from utils.advanced_query_executor import execute_advanced_query
+        
+        # Execute query
+        parsed_query = parse_advanced_query(request_data)
+        result = execute_advanced_query(parsed_query)
+        
+        # Convert to simple format like /api/plants/by-location
+        plants = result.get('plants', [])
+        simple_response = {
+            "count": len(plants),
+            "plants": plants,
+            "debug_signature": "SIMPLE-QUERY-LIVE-2025"
+        }
+        
+        logging.info(f"🌟 SIMPLE QUERY: Found {len(plants)} plants")
+        logging.info("🌟 SIMPLE QUERY COMPLETED")
+        return jsonify(simple_response)
+        
+    except Exception as e:
+        logging.error(f"🌟 ❌ Simple query error: {e}")
+        return jsonify({"error": "Query failed", "details": str(e)}), 500
+
+
 @locations_bp.route('/garden/quick-query', methods=['POST'])
 def quick_garden_query():
     """
