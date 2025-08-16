@@ -453,7 +453,7 @@ def quick_garden_query():
             
         # Ultra-aggressive optimizations for ChatGPT
         request_data['response_format'] = 'minimal'  # Force minimal
-        request_data['limit'] = min(request_data.get('limit', 5), 5)  # Max 5 results
+        request_data['limit'] = min(request_data.get('limit', 3), 3)  # Max 3 results for speed
         
         from utils.advanced_query_parser import parse_advanced_query, QueryParseError
         from utils.advanced_query_executor import execute_advanced_query, QueryExecutionError
