@@ -84,6 +84,34 @@ def create_app(testing=False):
     # Register remaining non-modularized routes and components
     register_legacy_components(app, limiter)
     
+    # Add comprehensive request logging to catch ALL requests
+    @app.before_request
+    def log_all_requests():
+        """Log every single request that hits the server"""
+        logging.info("🌐" + "="*80)
+        logging.info(f"🌐 INCOMING REQUEST: {request.method} {request.path}")
+        logging.info(f"🌐 Full URL: {request.url}")
+        logging.info(f"🌐 Remote Address: {request.remote_addr}")
+        logging.info(f"🌐 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logging.info(f"🌐 Content-Type: {request.headers.get('Content-Type', 'None')}")
+        logging.info(f"🌐 Accept: {request.headers.get('Accept', 'None')}")
+        logging.info(f"🌐 Content-Length: {request.headers.get('Content-Length', '0')}")
+        
+        # Detect ChatGPT requests
+        user_agent = request.headers.get('User-Agent', '').lower()
+        is_chatgpt = any(keyword in user_agent for keyword in ['openai', 'gpt', 'chatgpt'])
+        logging.info(f"🤖 IS CHATGPT REQUEST: {is_chatgpt}")
+        
+        # Log request body for POST requests
+        if request.method == 'POST' and request.content_length and request.content_length > 0:
+            try:
+                raw_data = request.get_data(as_text=True)
+                logging.info(f"🌐 POST BODY: {raw_data[:200]}{'...' if len(raw_data) > 200 else ''}")
+            except:
+                logging.info("🌐 POST BODY: <could not read>")
+        
+        logging.info("🌐" + "="*80)
+
     # Add cache-busting headers to prevent CloudFlare caching issues
     @app.after_request
     def add_cache_headers(response):
@@ -92,6 +120,9 @@ def create_app(testing=False):
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '0'
+            
+        # Log response info
+        logging.info(f"🌐 RESPONSE: {request.method} {request.path} → {response.status_code}")
         return response
     
     logging.info("✅ Flask app created and configured successfully")

@@ -490,8 +490,11 @@ def quick_garden_query():
 @locations_bp.route('/health', methods=['GET'])
 def health_check():
     """Simple health check endpoint"""
+    logging.info("🩺 HEALTH CHECK ENDPOINT CALLED")
+    logging.info(f"🩺 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "service": "plant-database-api"
+        "service": "plant-database-api",
+        "debugging": "comprehensive-logging-active"
     })
