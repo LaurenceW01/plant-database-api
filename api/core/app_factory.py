@@ -81,6 +81,24 @@ def create_app(testing=False):
     # Register all blueprints
     register_all_blueprints(app)
     
+    # Add root route to fix health check 404s and prevent restart cycles
+    @app.route('/')
+    def root_health():
+        """Root health check endpoint to prevent Render restart cycles"""
+        logging.info("🏠 ROOT HEALTH CHECK CALLED")
+        logging.info(f"🏠 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        return {
+            "status": "healthy",
+            "service": "plant-database-api", 
+            "version": "v2.4.0",
+            "message": "Plant Database API is running",
+            "endpoints": {
+                "health": "/api/health",
+                "docs": "/api/docs",
+                "filter": "/api/garden/filter"
+            }
+        }
+    
     # Register remaining non-modularized routes and components
     register_legacy_components(app, limiter)
     
