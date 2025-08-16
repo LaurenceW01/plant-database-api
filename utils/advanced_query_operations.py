@@ -205,16 +205,16 @@ def join_filtered_data(filtered_data: Dict[str, List[Dict]]) -> List[Dict]:
     locations = filtered_data.get('locations', [])
     containers = filtered_data.get('containers', [])
     
-    # Create lookup maps
-    locations_by_id = {loc.get('location_id', ''): loc for loc in locations}
+    # Create lookup maps (ensure consistent string keys)
+    locations_by_id = {str(loc.get('location_id', '')): loc for loc in locations}
     locations_by_name = {loc.get('location_name', '').strip().lower(): loc for loc in locations}
     containers_by_plant_id = defaultdict(list)
     
-    # Group containers by plant_id
+    # Group containers by plant_id (ensure consistent string keys)
     for container in containers:
         plant_id = container.get('plant_id', '')
         if plant_id:
-            containers_by_plant_id[plant_id].append(container)
+            containers_by_plant_id[str(plant_id)].append(container)
     
     joined_results = []
     
