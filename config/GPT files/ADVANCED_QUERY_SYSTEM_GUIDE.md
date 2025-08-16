@@ -56,33 +56,67 @@ GET /api/garden/filter?plant_name=vinca
 GET /api/garden/filter?location=patio&container_material=ceramic&container_size=large
 ```
 
-## Response Format
+## Response Format - NEW HIERARCHICAL STRUCTURE ✨
 
-Standard response includes:
-- `count`: Number of matching plants
-- `plants`: Array of plant objects with details
-- `debug_signature`: Endpoint identifier
-- `filters_applied`: Summary of filters used
+**🎉 IMPROVED 2025**: The garden filter now returns a clear hierarchical structure that eliminates confusion and provides complete information.
 
+### Key Improvements:
+- **No Misleading Data**: Each plant shows ALL locations where it exists
+- **Complete Information**: Location names are resolved (no ID lookups needed)
+- **Clear Hierarchy**: Plant → Locations → Containers structure
+- **No Inference Required**: GPT gets exact, explicit information
+
+### New Response Structure:
 ```javascript
 {
-  "count": 8,
+  "count": 2,
+  "total_matches": 2,
+  "debug_signature": "GET-FILTER-HIERARCHICAL-2025",
+  "filters_applied": {
+    "plants": {"plant_name": {"$regex": "hibiscus"}}
+  },
   "plants": [
     {
-      "Plant Name": "Vinca",
-      "Location": "Front Patio",
-      "container_info": "small plastic pot",
-      // ... other plant details
+      "plant_name": "Tropical Hibiscus",
+      "plant_id": "1",
+      "locations": [
+        {
+          "location_name": "arboretum right",
+          "location_id": "1",
+          "containers": [
+            {
+              "container_id": "1",
+              "container_type": "Pot buried in ground",
+              "container_size": "Medium",
+              "container_material": "Plastic"
+            }
+          ]
+        },
+        {
+          "location_name": "patio",
+          "location_id": "25",
+          "containers": [
+            {
+              "container_id": "5",
+              "container_type": "Pot",
+              "container_size": "Large", 
+              "container_material": "Ceramic"
+            }
+          ]
+        }
+        // ... all other locations where this plant exists
+      ]
     }
-    // ... more plants
-  ],
-  "debug_signature": "filter_garden_endpoint",
-  "filters_applied": {
-    "location": "patio",
-    "container_size": "small"
-  }
+    // ... other plants
+  ]
 }
 ```
+
+### Benefits of New Structure:
+✅ **Accurate**: Shows plant exists in multiple locations clearly  
+✅ **Complete**: All location names resolved, no IDs to lookup  
+✅ **Organized**: Logical plant → locations → containers hierarchy  
+✅ **GPT-Friendly**: No confusion about where plants actually are
 
 ## Integration with Other Endpoints
 

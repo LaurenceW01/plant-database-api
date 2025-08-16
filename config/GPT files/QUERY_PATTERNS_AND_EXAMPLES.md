@@ -126,16 +126,46 @@ Weather Considerations: [Current weather impact on this specific location]
 2. Group by location characteristics from results
 3. Provide material + location integrated advice
 
-### Filter Examples:
+### Filter Examples with NEW Hierarchical Response ✨:
 ```javascript
 // All plastic containers
 GET /api/garden/filter?container_material=plastic
 
-// Small containers on patio
+// Small containers on patio  
 GET /api/garden/filter?location=patio&container_size=small
 
 // Ceramic pots with specific plants
 GET /api/garden/filter?container_material=ceramic&plant_name=vinca
+
+// NEW RESPONSE FORMAT: Clear plant → locations → containers hierarchy
+{
+  "plants": [
+    {
+      "plant_name": "Rose",
+      "plant_id": "2",
+      "locations": [
+        {
+          "location_name": "patio",
+          "location_id": "25", 
+          "containers": [
+            {
+              "container_id": "22",
+              "container_type": "Pot",
+              "container_size": "small",
+              "container_material": "ceramic"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+// BENEFITS: 
+// ✅ No misleading data - shows exactly where each plant is
+// ✅ Location names resolved - no ID lookups needed
+// ✅ Complete container details for each location
+// ✅ GPT-ready format requiring no inference
 ```
 
 ## Anti-Patterns (What NOT to Do)

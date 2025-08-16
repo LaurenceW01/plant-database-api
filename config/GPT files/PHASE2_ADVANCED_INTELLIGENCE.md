@@ -8,6 +8,8 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 
 **✅ Data Integrity Fixed (Aug 2025)**: Container-location mapping now works correctly. The care optimization endpoint provides accurate usage distribution (21/37 locations with containers) instead of previously incorrect "all empty" data. Field name consistency issues resolved.
 
+**🎉 NEW: Hierarchical Structure (2025)**: Garden filter endpoint now returns clear plant → locations → containers hierarchy. Each plant explicitly shows ALL locations where it exists with complete container details. No more misleading data - location names are resolved and no inference is needed.
+
 ## Core Phase 2 Capabilities
 
 ### 1. Enhanced Location Context (Available)

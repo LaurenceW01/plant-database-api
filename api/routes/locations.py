@@ -14,6 +14,104 @@ from datetime import datetime
 locations_bp = Blueprint('locations', __name__, url_prefix='/api')
 
 
+def convert_to_hierarchical_structure(plants_data):
+    """
+    Convert plant data to hierarchical structure: plant → locations → containers
+    
+    Args:
+        plants_data: List of plant records with containers and location data
+        
+    Returns:
+        List: Plants organized by plant → locations → containers
+    """
+    from collections import defaultdict
+    
+    # Group containers by plant_id and location_id
+    plants_locations = defaultdict(lambda: defaultdict(list))
+    plant_info = {}
+    location_names = {}
+    
+    # Process each plant record to extract container and location data
+    for plant_record in plants_data:
+        plant_data = plant_record.get('plant_data', {})
+        location_data = plant_record.get('location_data', {})
+        containers = plant_record.get('containers', [])
+        plant_id = plant_record.get('plant_id')
+        
+        # Store plant basic info
+        if plant_id not in plant_info:
+            plant_info[plant_id] = {
+                'plant_name': plant_data.get('Plant Name', plant_data.get('plant_name', 'Unknown')),
+                'plant_id': plant_id
+            }
+        
+        # Group containers by their actual location_id (not the misleading top-level location)
+        for container in containers:
+            container_location_id = container.get('location_id', '')
+            
+            # Get location name from location data or container data
+            if location_data and str(location_data.get('location_id', '')) == str(container_location_id):
+                location_name = location_data.get('location_name', f'Location {container_location_id}')
+            else:
+                # Need to look up location name from location_id
+                location_name = get_location_name_by_id(container_location_id)
+            
+            location_names[container_location_id] = location_name
+            
+            # Create clean container data without redundant location info
+            clean_container = {
+                'container_id': container.get('container_id'),
+                'container_type': container.get('container_type', ''),
+                'container_size': container.get('container_size', ''),
+                'container_material': container.get('container_material', '')
+            }
+            
+            plants_locations[plant_id][container_location_id].append(clean_container)
+    
+    # Convert to final hierarchical structure
+    hierarchical_plants = []
+    for plant_id, locations in plants_locations.items():
+        plant_locations = []
+        
+        for location_id, containers in locations.items():
+            plant_locations.append({
+                'location_name': location_names.get(location_id, f'Location {location_id}'),
+                'location_id': location_id,
+                'containers': containers
+            })
+        
+        hierarchical_plants.append({
+            'plant_name': plant_info[plant_id]['plant_name'],
+            'plant_id': plant_id,
+            'locations': plant_locations
+        })
+    
+    return hierarchical_plants
+
+
+def get_location_name_by_id(location_id):
+    """
+    Get location name from location_id by looking up in the locations data
+    
+    Args:
+        location_id: The location ID to look up
+        
+    Returns:
+        str: Location name or fallback
+    """
+    try:
+        from utils.locations_operations import find_location_by_id_or_name
+        
+        location_data = find_location_by_id_or_name(str(location_id))
+        if location_data:
+            return location_data.get('location_name', f'Location {location_id}')
+        else:
+            return f'Location {location_id}'
+    except Exception as e:
+        logging.error(f"Error looking up location name for ID {location_id}: {e}")
+        return f'Location {location_id}'
+
+
 @locations_bp.route('/locations/get-context/<location_id>', methods=['GET'])
 def get_location_context(location_id):
     """
@@ -591,30 +689,18 @@ def filter_garden_get():
         plants_data = result.get('plants', [])
         total_matches = result.get('total_matches', len(plants_data))
         
-        # Convert detailed format to simple format for ChatGPT
-        simple_plants = []
-        for plant_record in plants_data:
-            plant_data = plant_record.get('plant_data', {})
-            location_data = plant_record.get('location_data', {})
-            containers = plant_record.get('containers', [])
-            
-            simple_plant = {
-                'plant_id': plant_record.get('plant_id'),
-                'Plant Name': plant_data.get('Plant Name', plant_data.get('plant_name', 'Unknown')),
-                'Location': location_data.get('location_name', 'Unknown') if location_data else 'Unknown',
-                'containers': containers
-            }
-            simple_plants.append(simple_plant)
+        # Convert to new hierarchical structure: plant → locations → containers
+        hierarchical_plants = convert_to_hierarchical_structure(plants_data)
         
         response = {
-            "count": len(simple_plants),
+            "count": len(hierarchical_plants),
             "total_matches": total_matches,
-            "plants": simple_plants,
-            "debug_signature": "GET-FILTER-DETAILED-2025",
+            "plants": hierarchical_plants,
+            "debug_signature": "GET-FILTER-HIERARCHICAL-2025",
             "filters_applied": filters
         }
         
-        logging.info(f"🌈 GET FILTER: Found {len(simple_plants)} plants from result with keys: {list(result.keys())}")
+        logging.info(f"🌈 GET FILTER: Found {len(hierarchical_plants)} plants from result with keys: {list(result.keys())}")
         return jsonify(response)
         
     except Exception as e:

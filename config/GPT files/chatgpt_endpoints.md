@@ -183,26 +183,65 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 // Combine multiple filters for precise results
 ```
 
-#### Response Format
+#### NEW Hierarchical Response Format ✨
+**🎉 IMPROVED 2025**: Clear plant → locations → containers structure
+
 ```javascript
 {
-  "count": 8,
+  "count": 9,
+  "total_matches": 9,
+  "debug_signature": "GET-FILTER-HIERARCHICAL-2025",
+  "filters_applied": {
+    "containers": {"container_size": {"$eq": "small"}},
+    "locations": {"location_name": {"$regex": "patio"}}
+  },
   "plants": [
     {
-      "Plant Name": "Vinca",
-      "Location": "Front Patio", 
-      "container_info": "small plastic pot",
-      // ... other plant details
+      "plant_name": "Rose",
+      "plant_id": "2", 
+      "locations": [
+        {
+          "location_name": "patio",
+          "location_id": "25",
+          "containers": [
+            {
+              "container_id": "22",
+              "container_type": "Pot",
+              "container_size": "small",
+              "container_material": "ceramic"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "plant_name": "African Daisy",
+      "plant_id": "15",
+      "locations": [
+        {
+          "location_name": "patio", 
+          "location_id": "25",
+          "containers": [
+            {
+              "container_id": "63",
+              "container_type": "Pot",
+              "container_size": "Small",
+              "container_material": "Ceramic"
+            }
+          ]
+        }
+      ]
     }
-    // ... more plants
-  ],
-  "debug_signature": "filter_garden_endpoint",
-  "filters_applied": {
-    "location": "patio",
-    "container_size": "small"
-  }
+    // ... 7 more plants on patio in small containers
+  ]
 }
 ```
+
+**Key Benefits:**
+- ✅ **No Misleading Data**: Each plant clearly shows ALL locations where it exists
+- ✅ **Complete Info**: Location names resolved, no ID lookups needed
+- ✅ **Clear Structure**: Easy to understand plant distribution across garden
+- ✅ **GPT-Ready**: No inference required, all information is explicit
 
 ### Add Plant with Location Context
 ```javascript

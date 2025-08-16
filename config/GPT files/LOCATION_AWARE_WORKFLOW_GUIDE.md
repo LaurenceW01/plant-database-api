@@ -70,10 +70,12 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 - `container_material` - Filter by material (plastic, ceramic, terracotta)
 - `plant_name` - Filter by plant name
 
-**Response Format:**
-- Standard plant list with count and filter summary
-- Consistent with other API responses
-- Easy to process and integrate
+**NEW Hierarchical Response Format ✨:**
+- Clear plant → locations → containers structure
+- Location names resolved (no ID lookups needed)
+- Complete container details for each location
+- No misleading data about plant locations
+- GPT-ready format requiring no inference
 
 ---
 

@@ -1127,12 +1127,54 @@ paths:
                 properties:
                   count:
                     type: integer
+                    description: "Number of plants found"
+                  total_matches:
+                    type: integer
+                    description: "Total matching records"
                   plants:
                     type: array
+                    description: "Plants with hierarchical location structure"
+                    items:
+                      type: object
+                      properties:
+                        plant_name:
+                          type: string
+                          description: "Name of the plant"
+                        plant_id:
+                          type: string
+                          description: "Plant identifier"
+                        locations:
+                          type: array
+                          description: "All locations where this plant exists"
+                          items:
+                            type: object
+                            properties:
+                              location_name:
+                                type: string
+                                description: "Resolved location name"
+                              location_id:
+                                type: string
+                                description: "Location identifier"
+                              containers:
+                                type: array
+                                description: "Containers in this location"
+                                items:
+                                  type: object
+                                  properties:
+                                    container_id:
+                                      type: string
+                                    container_type:
+                                      type: string
+                                    container_size:
+                                      type: string
+                                    container_material:
+                                      type: string
                   debug_signature:
                     type: string
+                    description: "GET-FILTER-HIERARCHICAL-2025"
                   filters_applied:
                     type: object
+                    description: "Summary of applied filters"
 
   # =============================================
   # WEATHER INTEGRATION (3 operations)
