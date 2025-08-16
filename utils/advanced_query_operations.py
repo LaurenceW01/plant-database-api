@@ -224,16 +224,20 @@ def join_filtered_data(filtered_data: Dict[str, List[Dict]]) -> List[Dict]:
         
         # Find related containers and location
         related_containers = containers_by_plant_id.get(str(plant_id), [])
+        
+        # Use containers table as authoritative source for plant locations
         related_location = None
-        
-        # Try to find location by ID from containers first
         if related_containers:
+            # Get location from first container (containers should all be in same location)
             container_location_id = related_containers[0].get('location_id', '')
-            related_location = locations_by_id.get(container_location_id)
-        
-        # Fallback: find location by name from plant data
-        if not related_location and plant_location:
-            related_location = locations_by_name.get(plant_location.strip().lower())
+            if container_location_id:
+                related_location = locations_by_id.get(str(container_location_id))
+            
+            # Fallback: try location_name from container if location_id doesn't work
+            if not related_location:
+                container_location_name = related_containers[0].get('location_name', '').strip().lower()
+                if container_location_name:
+                    related_location = locations_by_name.get(container_location_name)
         
         # Create joined record
         joined_record = {
