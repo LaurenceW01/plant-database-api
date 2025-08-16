@@ -1171,7 +1171,7 @@ paths:
                                       type: string
                   debug_signature:
                     type: string
-                    description: "GET-FILTER-HIERARCHICAL-2025"
+                    description: "GET-FILTER-HIERARCHICAL-v2.4.0"
                   filters_applied:
                     type: object
                     description: "Summary of applied filters"

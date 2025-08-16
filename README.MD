@@ -1,7 +1,8 @@
 # Plant Database API
+**Version 2.4.0 - Hierarchical Query Structure**
 
 ## Overview
-A production-ready Plant Database API with full ChatGPT integration, deployed on render.com. This API provides secure access to a comprehensive plant database with advanced features including intelligent pagination, field name compatibility, and Redis-based rate limiting.
+A production-ready Plant Database API with full ChatGPT integration, deployed on render.com. Features revolutionary hierarchical query structure that provides complete, accurate plant location data without inference. Includes intelligent pagination, field name compatibility, and Redis-based rate limiting.
 
 **🌐 Live API**: [https://plant-database-api.onrender.com](https://plant-database-api.onrender.com)
 

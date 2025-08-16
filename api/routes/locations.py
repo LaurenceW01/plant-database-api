@@ -326,7 +326,7 @@ def get_enhanced_garden_metadata():
         if enhanced_metadata:
             return jsonify({
                 "enhanced_metadata": enhanced_metadata,
-                "api_version": "v2.3.8 - Schema Fix Complete",
+                "api_version": "v2.4.0 - Hierarchical Query Structure",
                 "message": "Enhanced garden metadata generated successfully",
                 "phase2_direct": True
             }), 200
@@ -696,7 +696,7 @@ def filter_garden_get():
             "count": len(hierarchical_plants),
             "total_matches": total_matches,
             "plants": hierarchical_plants,
-            "debug_signature": "GET-FILTER-HIERARCHICAL-2025",
+            "debug_signature": "GET-FILTER-HIERARCHICAL-v2.4.0",
             "filters_applied": filters
         }
         
