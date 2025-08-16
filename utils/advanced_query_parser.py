@@ -252,10 +252,17 @@ class AdvancedQueryParser:
             }
         
         # If condition is a dict, it should contain operators
-        if len(condition) != 1:
+        # Special case: Allow $regex with $options
+        if len(condition) == 2 and '$regex' in condition and '$options' in condition:
+            operator = '$regex'
+            value = {
+                'pattern': condition['$regex'],
+                'options': condition['$options']
+            }
+        elif len(condition) != 1:
             raise QueryParseError(f"Field condition must contain exactly one operator, got: {list(condition.keys())}")
-        
-        operator, value = next(iter(condition.items()))
+        else:
+            operator, value = next(iter(condition.items()))
         
         # Validate operator
         if operator not in self.supported_operators:

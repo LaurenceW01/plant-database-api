@@ -312,13 +312,30 @@ def advanced_garden_query():
         from utils.advanced_query_parser import parse_advanced_query, QueryParseError
         from utils.advanced_query_executor import execute_advanced_query, QueryExecutionError
         
-        logging.info("🔍 Advanced garden query endpoint called")
+        logging.info("=" * 80)
+        logging.info("🔍 ADVANCED GARDEN QUERY ENDPOINT CALLED")
+        logging.info("=" * 80)
         logging.info(f"🌐 Request Headers: {dict(request.headers)}")
         logging.info(f"🔍 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
         logging.info(f"🔍 Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
         logging.info(f"🔍 Content-Length: {request.headers.get('Content-Length', 'Unknown')}")
+        logging.info(f"🔍 Request Method: {request.method}")
+        logging.info(f"🔍 Request URL: {request.url}")
+        logging.info(f"🔍 Remote Address: {request.remote_addr}")
+        
+        # Detect ChatGPT requests
+        user_agent = request.headers.get('User-Agent', '').lower()
+        is_chatgpt = 'openai' in user_agent or 'gpt' in user_agent
+        logging.info(f"🤖 IS CHATGPT REQUEST: {is_chatgpt}")
+        logging.info("=" * 80)
+        
+        # Get and log request data
+        raw_data = request.get_data(as_text=True)
+        logging.info(f"📥 RAW REQUEST BODY: {raw_data[:500]}{'...' if len(raw_data) > 500 else ''}")
         
         request_data = request.get_json(force=True, silent=True)
+        logging.info(f"📋 PARSED JSON: {request_data}")
+        logging.info(f"📊 JSON FIELDS COUNT: {len(request_data) if request_data else 0}")
         
         # ChatGPT optimization: Set aggressive defaults for speed
         if request_data and request_data.get('response_format') == 'summary':
@@ -326,8 +343,11 @@ def advanced_garden_query():
                 request_data['limit'] = 10  # Reduce from default 50
             # Force minimal response for ChatGPT timeout prevention
             logging.info("🚀 ChatGPT optimization: Using speed-optimized settings")
+            logging.info(f"🚀 Optimized request: {request_data}")
         
         if not request_data:
+            logging.error("❌ NO REQUEST DATA RECEIVED")
+            logging.error(f"❌ Raw data was: '{raw_data}'")
             return jsonify({
                 "error": "Request body required",
                 "example": {
@@ -342,8 +362,19 @@ def advanced_garden_query():
         
         # Parse and execute query
         try:
+            logging.info("🔄 STARTING QUERY PARSING...")
+            start_time = datetime.utcnow()
             parsed_query = parse_advanced_query(request_data)
+            parse_time = (datetime.utcnow() - start_time).total_seconds()
+            logging.info(f"✅ Query parsed successfully in {parse_time:.3f}s")
+            logging.info(f"🔍 Parsed query structure: {parsed_query}")
+            
+            logging.info("🚀 STARTING QUERY EXECUTION...")
+            exec_start = datetime.utcnow()
             query_results = execute_advanced_query(parsed_query)
+            exec_time = (datetime.utcnow() - exec_start).total_seconds()
+            logging.info(f"✅ Query executed successfully in {exec_time:.3f}s")
+            logging.info(f"📊 Query results: {len(query_results.get('plants', []))} plants found")
             
             # Add endpoint metadata
             query_results['endpoint_metadata'] = {
@@ -352,28 +383,42 @@ def advanced_garden_query():
                 "optimization": "multi_table_single_call"
             }
             
+            total_request_time = (datetime.utcnow() - start_time).total_seconds()
+            logging.info(f"🎉 ADVANCED QUERY COMPLETED in {total_request_time:.3f}s")
+            logging.info("=" * 80)
             return jsonify(query_results), 200
             
         except QueryParseError as e:
+            logging.error(f"❌ QUERY PARSE ERROR: {e}")
+            logging.error(f"❌ Failed request data: {request_data}")
             return jsonify({
                 "error": "Query parsing failed",
                 "message": str(e),
-                "phase2_direct": True
+                "phase2_direct": True,
+                "debug_request": request_data
             }), 400
             
         except QueryExecutionError as e:
+            logging.error(f"❌ QUERY EXECUTION ERROR: {e}")
+            logging.error(f"❌ Failed parsed query: {parsed_query if 'parsed_query' in locals() else 'Not available'}")
             return jsonify({
                 "error": "Query execution failed", 
                 "message": str(e),
-                "phase2_direct": True
+                "phase2_direct": True,
+                "debug_parsed_query": parsed_query if 'parsed_query' in locals() else None
             }), 500
         
     except Exception as e:
-        logging.error(f"❌ Unexpected error in advanced garden query: {e}")
+        logging.error(f"❌ UNEXPECTED ERROR in advanced garden query: {e}")
+        logging.error(f"❌ Request headers: {dict(request.headers)}")
+        logging.error(f"❌ Request data: {request_data if 'request_data' in locals() else 'Not available'}")
+        logging.error("=" * 80)
         return jsonify({
             "error": "Internal server error",
             "details": str(e),
-            "phase2_direct": True
+            "phase2_direct": True,
+            "debug_headers": dict(request.headers),
+            "debug_data": request_data if 'request_data' in locals() else None
         }), 500
 
 
@@ -384,10 +429,26 @@ def quick_garden_query():
     Limited functionality but guaranteed fast response.
     """
     try:
-        logging.info("⚡ Quick garden query endpoint called (ChatGPT optimized)")
+        logging.info("=" * 60)
+        logging.info("⚡ QUICK GARDEN QUERY ENDPOINT CALLED")
+        logging.info("=" * 60)
+        logging.info(f"⚡ User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logging.info(f"⚡ Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+        logging.info(f"⚡ Remote Address: {request.remote_addr}")
+        
+        # Detect ChatGPT requests
+        user_agent = request.headers.get('User-Agent', '').lower()
+        is_chatgpt = 'openai' in user_agent or 'gpt' in user_agent
+        logging.info(f"⚡ IS CHATGPT REQUEST: {is_chatgpt}")
+        
+        raw_data = request.get_data(as_text=True)
+        logging.info(f"⚡ RAW REQUEST: {raw_data}")
         
         request_data = request.get_json(force=True, silent=True)
+        logging.info(f"⚡ PARSED JSON: {request_data}")
+        
         if not request_data:
+            logging.error("⚡ ❌ NO REQUEST DATA")
             return jsonify({"error": "Request body required"}), 400
             
         # Ultra-aggressive optimizations for ChatGPT
@@ -398,14 +459,32 @@ def quick_garden_query():
         from utils.advanced_query_executor import execute_advanced_query, QueryExecutionError
         
         # Parse and execute with speed optimizations
+        logging.info("⚡ QUICK-QUERY: Starting parsing...")
+        start_time = datetime.utcnow()
         parsed_query = parse_advanced_query(request_data)
-        result = execute_advanced_query(parsed_query)
+        parse_time = (datetime.utcnow() - start_time).total_seconds()
+        logging.info(f"⚡ QUICK-QUERY: Parsed in {parse_time:.3f}s")
         
+        logging.info("⚡ QUICK-QUERY: Starting execution...")
+        exec_start = datetime.utcnow()
+        result = execute_advanced_query(parsed_query)
+        exec_time = (datetime.utcnow() - exec_start).total_seconds()
+        total_time = (datetime.utcnow() - start_time).total_seconds()
+        logging.info(f"⚡ QUICK-QUERY: Executed in {exec_time:.3f}s (total: {total_time:.3f}s)")
+        logging.info(f"⚡ QUICK-QUERY: Found {len(result.get('plants', []))} plants")
+        
+        logging.info(f"⚡ 🎉 QUICK-QUERY COMPLETED in {total_time:.3f}s")
+        logging.info("=" * 60)
         return jsonify(result)
         
     except Exception as e:
-        logging.error(f"❌ Quick query error: {e}")
-        return jsonify({"error": "Query failed", "details": str(e)}), 500
+        logging.error(f"⚡ ❌ Quick query error: {e}")
+        logging.error(f"⚡ ❌ Request data: {request_data if 'request_data' in locals() else 'Not available'}")
+        return jsonify({
+            "error": "Query failed", 
+            "details": str(e),
+            "debug_data": request_data if 'request_data' in locals() else None
+        }), 500
 
 
 @locations_bp.route('/health', methods=['GET'])

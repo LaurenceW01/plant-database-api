@@ -165,9 +165,10 @@ def apply_operator(actual_value: Any, operator: str, expected_value: Any) -> boo
             flags = re.IGNORECASE  # Default case-insensitive
             
             if isinstance(expected_value, dict):
+                # Support both formats: {"pattern": "x", "options": "i"} and {"$regex": "x", "$options": "i"} 
                 pattern = expected_value.get('pattern', expected_value.get('$regex', ''))
-                options = expected_value.get('$options', expected_value.get('options', ''))
-                flags = re.IGNORECASE if 'i' in options else 0
+                options = expected_value.get('options', expected_value.get('$options', ''))
+                flags = re.IGNORECASE if options and 'i' in options.lower() else re.IGNORECASE
             
             return bool(re.search(pattern, actual_str, flags))
         
