@@ -575,7 +575,11 @@ def filter_garden_get():
         from utils.advanced_query_parser import parse_advanced_query
         from utils.advanced_query_executor import execute_advanced_query
         
-        request_data = {"filters": filters}
+        request_data = {
+            "filters": filters,
+            "response_format": "detailed",
+            "include": ["plants", "locations", "containers"]
+        }
         parsed_query = parse_advanced_query(request_data)
         result = execute_advanced_query(parsed_query)
         
@@ -583,21 +587,34 @@ def filter_garden_get():
         logging.info(f"🌈 DEBUG: Raw result keys: {list(result.keys())}")
         logging.info(f"🌈 DEBUG: Raw result: {result}")
         
-        # Return in same format as working endpoints  
-        # The result contains 'sample_plants' not 'plants'
-        plants = result.get('sample_plants', result.get('plants', []))
-        total_matches = result.get('total_matches', len(plants))
+        # Handle detailed response format
+        plants_data = result.get('plants', [])
+        total_matches = result.get('total_matches', len(plants_data))
+        
+        # Convert detailed format to simple format for ChatGPT
+        simple_plants = []
+        for plant_record in plants_data:
+            plant_data = plant_record.get('plant_data', {})
+            location_data = plant_record.get('location_data', {})
+            containers = plant_record.get('containers', [])
+            
+            simple_plant = {
+                'plant_id': plant_record.get('plant_id'),
+                'Plant Name': plant_data.get('Plant Name', plant_data.get('plant_name', 'Unknown')),
+                'Location': location_data.get('location_name', 'Unknown') if location_data else 'Unknown',
+                'containers': containers
+            }
+            simple_plants.append(simple_plant)
         
         response = {
-            "count": len(plants),
+            "count": len(simple_plants),
             "total_matches": total_matches,
-            "plants": plants,
-            "summary": result.get('summary', {}),
-            "debug_signature": "GET-FILTER-LIVE-2025",
+            "plants": simple_plants,
+            "debug_signature": "GET-FILTER-DETAILED-2025",
             "filters_applied": filters
         }
         
-        logging.info(f"🌈 GET FILTER: Found {len(plants)} plants from result with keys: {list(result.keys())}")
+        logging.info(f"🌈 GET FILTER: Found {len(simple_plants)} plants from result with keys: {list(result.keys())}")
         return jsonify(response)
         
     except Exception as e:
