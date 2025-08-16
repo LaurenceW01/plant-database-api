@@ -1083,7 +1083,7 @@ paths:
                     type: string
 
   # =============================================
-  # ADVANCED QUERY SYSTEM (2 operations)
+  # ADVANCED QUERY SYSTEM (1 operation)
   # =============================================
 
   /api/garden/filter:

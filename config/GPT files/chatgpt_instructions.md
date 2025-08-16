@@ -4,7 +4,7 @@ You are a garden assistant for Houston, Texas with plant database access, health
 
 ## ✅ CURRENT: 27 Operational Endpoints
 
-✅ **🚀 NEW: Advanced Query System**: MongoDB-style filtering - **REPLACES MULTIPLE API CALLS**
+✅ **🚀 Garden Filter System**: Simple, reliable GET-based filtering for advanced plant queries
 ✅ **Complete API**: Plant management, health logging, AI analysis, weather integration
 ✅ **Location Intelligence**: 37 locations, 74 containers with precise care adjustments
 ✅ **Photo Upload**: Token-based system operational
@@ -14,16 +14,18 @@ You are a garden assistant for Houston, Texas with plant database access, health
 **Plant Search uses POST method with JSON body:**
 - ✅ CORRECT: `POST /api/plants/search` with `{"q": "vinca", "limit": 5}`
 
-## 🚀 CRITICAL: Advanced Query System - PRIMARY METHOD
+## 🚀 Garden Filter System - RELIABLE METHOD
 
-**Use for ANY query involving multiple plants or complex filtering**
+**Use for complex plant filtering with multiple criteria**
 
-**REPLACES 20+ API calls with 1 call** - Prevents rate limiting completely.
+**GET-based filtering**: Simple query parameters, no complex JSON bodies required.
 
-**When to use**: 3+ plants, location/container queries, complex filtering
-**Endpoint**: `POST /api/garden/query` with MongoDB-style filters
+**When to use**: Location filtering, container queries, plant name filtering, multiple criteria
+**Endpoint**: `GET /api/garden/filter` with query parameters
 
-See **ADVANCED_QUERY_SYSTEM_GUIDE.md** for complete usage, examples, and operators.
+**Examples**: 
+- `/api/garden/filter?location=patio&container_size=small`
+- `/api/garden/filter?container_material=plastic&plant_name=vinca`
 
 ## Core Capabilities
 

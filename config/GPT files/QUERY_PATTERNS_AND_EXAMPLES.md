@@ -118,11 +118,25 @@ Weather Considerations: [Current weather impact on this specific location]
 - "care for plants in plastic containers"
 - "how often to water ceramic pots"
 - "container material considerations"
+- "show me all small containers"
+- "plants on patio in small pots"
 
 ### Required Response Pattern:
-1. Find all containers of specified material
-2. Group by location characteristics
+1. Use Garden Filter for container-based queries: `GET /api/garden/filter?container_material=plastic`
+2. Group by location characteristics from results
 3. Provide material + location integrated advice
+
+### Filter Examples:
+```javascript
+// All plastic containers
+GET /api/garden/filter?container_material=plastic
+
+// Small containers on patio
+GET /api/garden/filter?location=patio&container_size=small
+
+// Ceramic pots with specific plants
+GET /api/garden/filter?container_material=ceramic&plant_name=vinca
+```
 
 ## Anti-Patterns (What NOT to Do)
 
@@ -142,6 +156,13 @@ Weather Considerations: [Current weather impact on this specific location]
 - Time words: when, how often, schedule, timing, etc.
 
 **API Call Sequence for ANY Plant Care Query:**
+
+**For Multi-Criteria Filtering:**
+1. `GET /api/garden/filter?parameter=value&parameter2=value2` → Get filtered plants with criteria
+2. `/api/weather/current` → Get current conditions
+3. Integrate results into specific, actionable response
+
+**For Individual Plant Focus:**
 1. `POST /api/plants/search` with `{"q": "{plant_name}"}` → Get ALL plants matching the name
 2. `POST /api/plants/get-context/{id}` → Get location details for EACH found plant
 3. `/api/weather/current` → Get current conditions

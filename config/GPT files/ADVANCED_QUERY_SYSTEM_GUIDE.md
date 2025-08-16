@@ -1,144 +1,148 @@
-# Advanced Query System Guide
+# Garden Filter System Guide
 
-## 🚀 Critical Optimization Overview
+## 🚀 Reliable Plant Filtering Overview
 
-The Advanced Query System solves the critical GPT rate limiting problem by replacing 20+ individual API calls with a single optimized query.
+The Garden Filter System provides a simple, reliable way to filter plants using GET query parameters. This approach is consistent with other working endpoints and avoids the complexity of JSON body requests.
 
-### The Problem It Solves
-- **Before**: Query "plants on patio in small pots" → 1 search + 26 individual context calls = **27 API calls** → Rate limits & incomplete responses
-- **After**: 1 advanced query call = **1 API call** → Complete results every time
+### The Solution It Provides
+- **Reliable**: GET-based filtering using query parameters
+- **Simple**: No complex JSON body construction required
+- **Consistent**: Follows same pattern as other working endpoints
+- **ChatGPT-friendly**: Easy parameter-based queries
 
-## When to Use Advanced Query (REQUIRED)
+## When to Use Garden Filter
 
-✅ **ALWAYS use for:**
-- ANY question about multiple plants (3+ plants)
-- Location-based queries ("plants on patio", "plants in sunny areas")  
-- Container-based queries ("plants in small pots", "plastic containers")
-- Condition-based queries ("sun-loving plants", "plants needing daily water")
-- **ESPECIALLY when you would need 5+ individual API calls**
+✅ **Use for:**
+- Location-based filtering ("plants on patio", "plants in sunny areas")  
+- Container-based filtering ("plants in small pots", "plastic containers")
+- Plant name filtering ("find vinca plants")
+- Multiple criteria filtering ("plants on patio in small containers")
 
 ## Quick Usage Pattern
 
 ### Endpoint
-`POST /api/garden/query`
+`GET /api/garden/filter`
 
-### Basic Structure (Speed Optimized for ChatGPT)
-```json
-{
-  "filters": {
-    "plants": { /* plant conditions */ },
-    "locations": { /* location conditions */ },
-    "containers": { /* container conditions */ }
-  },
-  "response_format": "summary",
-  "limit": 10
-}
+### Available Parameters
+- `location` - Filter by location name (e.g., "patio", "garden")
+- `container_size` - Filter by container size ("small", "medium", "large") 
+- `container_material` - Filter by material ("plastic", "ceramic", "terracotta")
+- `plant_name` - Filter by plant name
+
+### Basic Structure
 ```
-
-**⚡ Speed Tip**: Use `"response_format": "summary"` and `"limit": 10` for fastest ChatGPT responses.
+GET /api/garden/filter?parameter=value&parameter2=value2
+```
 
 ## Common Query Examples
 
 ### 1. "Plants on patio in small pots"
-```json
-{
-  "filters": {
-    "locations": {"location_name": {"$regex": "patio"}},
-    "containers": {"container_size": {"$eq": "small"}}
-  },
-  "response_format": "summary"
-}
+```
+GET /api/garden/filter?location=patio&container_size=small
 ```
 
-### 2. "Sun-loving plants that need daily watering"
-```json
+### 2. "All plastic containers"
+```
+GET /api/garden/filter?container_material=plastic
+```
+
+### 3. "Find all vinca plants"
+```
+GET /api/garden/filter?plant_name=vinca
+```
+
+### 4. "Large ceramic containers on patio"
+```
+GET /api/garden/filter?location=patio&container_material=ceramic&container_size=large
+```
+
+## Response Format
+
+Standard response includes:
+- `count`: Number of matching plants
+- `plants`: Array of plant objects with details
+- `debug_signature`: Endpoint identifier
+- `filters_applied`: Summary of filters used
+
+```javascript
 {
-  "filters": {
-    "plants": {
-      "light_requirements": {"$regex": "sun"},
-      "watering_needs": {"$regex": "daily"}
+  "count": 8,
+  "plants": [
+    {
+      "Plant Name": "Vinca",
+      "Location": "Front Patio",
+      "container_info": "small plastic pot",
+      // ... other plant details
     }
-  },
-  "response_format": "detailed"
+    // ... more plants
+  ],
+  "debug_signature": "filter_garden_endpoint",
+  "filters_applied": {
+    "location": "patio",
+    "container_size": "small"
+  }
 }
 ```
 
-### 3. "All plastic containers with plants that have photos"
-```json
-{
-  "filters": {
-    "containers": {"container_material": {"$eq": "plastic"}},
-    "plants": {"photo_url": {"$exists": true}}
-  },
-  "response_format": "minimal"
-}
-```
+## Integration with Other Endpoints
 
-## Supported Operators
+### Replace Complex Queries Pattern
+❌ **Old Complex Pattern**:
+1. Multiple API calls with complex JSON
+2. Timeout risks with large responses
+3. Difficult parameter construction
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `$eq` | Equals | `{"size": {"$eq": "large"}}` |
-| `$ne` | Not equals | `{"status": {"$ne": "dead"}}` |
-| `$in` | In array | `{"type": {"$in": ["herb", "flower"]}}` |
-| `$regex` | Pattern match | `{"name": {"$regex": "rose"}}` |
-| `$exists` | Has value | `{"photo_url": {"$exists": true}}` |
-| `$contains` | Contains substring | `{"notes": {"$contains": "pest"}}` |
-| `$gt`, `$gte` | Greater than | `{"height": {"$gt": 12}}` |
-| `$lt`, `$lte` | Less than | `{"age": {"$lt": 365}}` |
-
-## Response Formats
-
-- **summary**: Aggregated data with sample plants (best for large results)
-- **detailed**: Full plant/location/container data
-- **minimal**: Basic plant info only  
-- **ids_only**: Just plant IDs (most efficient)
-
-## Integration with Legacy Workflows
-
-### Replace Multiple Calls Pattern
-❌ **Old Pattern**:
-1. Search plants
-2. Loop through results calling get-context for each
-3. Hit rate limits after 5-10 calls
-
-✅ **New Pattern**:
-1. Use advanced query with appropriate filters
-2. Get complete results in one call
-3. No rate limits, complete responses
+✅ **New Simple Pattern**:
+1. Single GET request with clear parameters
+2. Reliable responses
+3. Easy parameter construction
 
 ### When to Still Use Individual Endpoints
-- Single plant queries (1-2 plants)
-- Specific plant by ID/name
-- Weather-only queries
-- Photo upload operations
-- Health logging
+- Single plant details (use `/api/plants/get/{id}`)
+- Plant context with location (use `/api/plants/get-context/{id}`)
+- Weather queries (use `/api/weather/*`)
+- Health logging (use `/api/logs/*`)
+- Photo uploads (use `/api/photos/*`)
 
 ## Error Handling
 
-Common errors and solutions:
-- **400 Bad Request**: Check JSON syntax and operator usage
-- **Invalid operator**: Use only supported operators listed above
-- **Empty results**: Verify filter conditions match actual data
-- **Too many results**: Use `limit` parameter or more specific filters
+Common scenarios and solutions:
+- **No results**: Check parameter spelling and available data
+- **Too many results**: Add more specific filter parameters
+- **Parameter errors**: Verify parameter names and values match available options
 
 ## Performance Tips
 
-1. **Use appropriate response_format**:
-   - `summary` for 20+ results
-   - `detailed` for 5-15 results
-   - `minimal` for quick overviews
-   - `ids_only` for subsequent processing
+1. **Combine filters for specificity**:
+   - More specific filters = more targeted results
+   - Combine location + container for best results
 
-2. **Combine filters efficiently**:
-   - More specific filters = faster queries
-   - Use `$regex` sparingly for better performance
+2. **Use appropriate filter combinations**:
+   - `location + container_size` for placement-based queries
+   - `container_material + plant_name` for specific plant-container combinations
 
-3. **Set reasonable limits**:
-   - Default: 50 results
-   - Maximum: 1000 results
-   - Recommend: 20-100 for most queries
+3. **Check response counts**:
+   - Large result sets may indicate need for more specific filtering
+   - Use additional parameters to narrow results
+
+## Integration Examples
+
+### For Location-Based Questions
+**Query**: "What plants are on the patio?"
+**API Call**: `GET /api/garden/filter?location=patio`
+
+### For Container-Based Questions  
+**Query**: "Show me all small containers"
+**API Call**: `GET /api/garden/filter?container_size=small`
+
+### For Specific Plant Queries
+**Query**: "Where are all my vinca plants?"
+**API Call**: `GET /api/garden/filter?plant_name=vinca`
+
+### For Complex Multi-Criteria
+**Query**: "Plastic containers on the patio"
+**API Call**: `GET /api/garden/filter?location=patio&container_material=plastic`
 
 ## Complete Documentation
 
-For full API reference including all fields and advanced options, see `chatgpt_endpoints.md`.
+For full API reference and additional examples, see `chatgpt_endpoints.md`.

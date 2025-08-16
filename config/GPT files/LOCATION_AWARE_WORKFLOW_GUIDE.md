@@ -10,34 +10,26 @@ This guide provides detailed workflows for delivering precise, location-aware pl
 
 ---
 
-## 🚀 NEW: Advanced Query System (PRIMARY METHOD)
+## 🚀 NEW: Garden Filter System (RELIABLE METHOD)
 
-**🔥 CRITICAL OPTIMIZATION: Use this for ANY query involving multiple plants or complex filtering**
+**🔥 SIMPLE & RELIABLE: Use this for filtering plants with multiple criteria**
 
-**When to Use Advanced Query:**
-- ANY question about multiple plants (3+ plants)
+**When to Use Garden Filter:**
 - Location-based queries ("plants on patio", "plants in sunny areas")
 - Container-based queries ("plants in small pots", "plastic containers")
-- Condition-based queries ("sun-loving plants", "plants needing daily water")
-- **ESPECIALLY when you would need 5+ individual API calls**
+- Plant name filtering ("find vinca plants")
+- Multiple criteria filtering ("plants on patio in small containers")
 
-**Single Endpoint Replaces Multiple Calls:**
-- ❌ Old: 1 search + 26 individual context calls = 27 API calls
-- ✅ New: 1 advanced query call = 1 API call (96% reduction!)
+**Simple GET-Based Approach:**
+- ✅ Reliable: GET method with query parameters
+- ✅ Simple: No complex JSON body required
+- ✅ Consistent: Follows same pattern as other working endpoints
 
-### Workflow: Advanced Query Method
+### Workflow: Garden Filter Method
 
-**Step 1: Use Advanced Query for Complex Scenarios**
+**Step 1: Use Garden Filter for Multi-Criteria Scenarios**
 ```javascript
-POST /api/garden/query
-{
-  "filters": {
-    "locations": {"location_name": {"$regex": "patio"}},
-    "containers": {"container_size": {"$eq": "small"}}
-  },
-  "response_format": "summary",
-  "include": ["plants", "locations", "containers", "context"]
-}
+GET /api/garden/filter?location=patio&container_size=small
 ```
 
 **Step 2: Get Weather (optional)**
@@ -46,81 +38,46 @@ GET /api/weather/current
 ```
 
 **Step 3: Provide Comprehensive Response**
-Use the aggregated summary to provide intelligent care advice for all matched plants.
+Use the filtered results to provide intelligent care advice for all matched plants.
 
-### Common Advanced Query Patterns
+### Common Garden Filter Patterns
 
 **Plants by Location + Container:**
-```javascript
-{
-  "filters": {
-    "locations": {"location_name": {"$regex": "patio"}},
-    "containers": {"container_size": {"$eq": "small"}}
-  },
-  "response_format": "summary"
-}
 ```
-
-**Plants by Care Requirements:**
-```javascript
-{
-  "filters": {
-    "plants": {
-      "Light Requirements": {"$regex": "Full Sun"},
-      "Watering Needs": {"$regex": "daily"}
-    }
-  },
-  "response_format": "detailed"
-}
+GET /api/garden/filter?location=patio&container_size=small
 ```
 
 **Plants by Container Material:**
-```javascript
-{
-  "filters": {
-    "containers": {"container_material": {"$eq": "plastic"}},
-    "plants": {"Photo URL": {"$exists": true}}
-  },
-  "response_format": "summary"
-}
+```
+GET /api/garden/filter?container_material=plastic
 ```
 
-**High-Sun Locations with Specific Container Types:**
-```javascript
-{
-  "filters": {
-    "locations": {"total_sun_hours": {"$gte": 8}},
-    "containers": {"container_material": {"$in": ["ceramic", "terracotta"]}}
-  },
-  "response_format": "summary"
-}
+**Plants by Name:**
+```
+GET /api/garden/filter?plant_name=vinca
 ```
 
-### Advanced Query Response Formats
+**Multiple Criteria:**
+```
+GET /api/garden/filter?location=patio&container_material=ceramic&container_size=large
+```
 
-**Use "summary" for:**
-- Large result sets (10+ plants)
-- Overview questions ("what plants are...")
-- When you need plant type breakdowns
+### Garden Filter Parameters
 
-**Use "detailed" for:**
-- Specific care advice needed
-- 5-10 plants maximum
-- When context is crucial
+**Available Parameters:**
+- `location` - Filter by location name
+- `container_size` - Filter by size (small, medium, large)
+- `container_material` - Filter by material (plastic, ceramic, terracotta)
+- `plant_name` - Filter by plant name
 
-**Use "minimal" for:**
-- Quick lists
-- Follow-up queries
-- Simple verification
-
-**Use "ids_only" for:**
-- Very large sets
-- When you need just counts
-- Performance-critical queries
+**Response Format:**
+- Standard plant list with count and filter summary
+- Consistent with other API responses
+- Easy to process and integrate
 
 ---
 
-## Workflow 1: Single Plant Care Query WITH Location Mentioned (LEGACY - Use Advanced Query Instead)
+## Workflow 1: Single Plant Care Query WITH Location Mentioned (Individual Plant Focus)
 
 **Query Examples:**
 - "How should I water my hibiscus in the right arboretum?"
@@ -144,32 +101,25 @@ GET /api/weather/current
 
 ---
 
-## Workflow 2: Plant Care Query WITHOUT Location Mentioned (LEGACY - Use Advanced Query Instead)
+## Workflow 2: Plant Care Query WITHOUT Location Mentioned (Multiple Plant Search)
 
-**🚨 IMPORTANT: If this would result in 5+ API calls, use Advanced Query instead**
+**🚨 IMPORTANT: If this would result in 5+ API calls, use Garden Filter instead**
 
 **Query Examples:**
 - "How should I water my hibiscus?" (if you have multiple hibiscus)
 - "What fertilizer for my roses?" (if you have multiple rose locations)
 - "When to prune azaleas?" (if you have multiple azalea plants)
 
-**Legacy Steps (use only for 1-4 plants):**
+**Steps for Small Numbers (use only for 1-4 plants):**
 1. **Find All Plant Instances**: Call `POST /api/plants/search` with `{"q": "{plant_name}"}`
-2. **Check Plant Count**: If 5+ plants found, use Advanced Query instead
+2. **Check Plant Count**: If 5+ plants found, use Garden Filter instead
 3. **Get All Location Contexts**: Call `POST /api/plants/get-context/{plant_id}` (supports both IDs and names)
 4. **Check Weather**: Call `/api/weather/current` (continue if fails)
 5. **Provide Multi-Location Response** showing all locations and their specific care needs
 
-**Advanced Query Alternative (PREFERRED for multiple plants):**
+**Garden Filter Alternative (PREFERRED for multiple plants):**
 ```javascript
-POST /api/garden/query
-{
-  "filters": {
-    "plants": {"Plant Name": {"$regex": "hibiscus"}}
-  },
-  "response_format": "summary",
-  "include": ["plants", "locations", "containers", "context"]
-}
+GET /api/garden/filter?plant_name=hibiscus
 ```
 
 **⚠️ IMPORTANT**: When user asks "where are all the [plant_name]" or "find all [plant_name]", you MUST use the search endpoint first to find ALL plants with that name (e.g., both "Vinca" and "Trailing Vinca"), then get context for each individual plant. Do NOT shortcut directly to get-context with a single plant name.

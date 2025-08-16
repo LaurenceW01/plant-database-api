@@ -208,15 +208,33 @@ def join_filtered_data(filtered_data: Dict[str, List[Dict]]) -> List[Dict]:
     # Create lookup maps (ensure consistent string keys)
     locations_by_id = {str(loc.get('location_id', '')): loc for loc in locations}
     locations_by_name = {loc.get('location_name', '').strip().lower(): loc for loc in locations}
-    containers_by_plant_id = defaultdict(list)
+    
+    # CRITICAL FIX: If both location and container filters are present,
+    # only include containers that are in the filtered locations
+    if 'locations' in filtered_data and 'containers' in filtered_data:
+        logger.info(f"FILTERING CONTAINERS BY LOCATION: {len(containers)} containers, {len(locations)} locations")
+        
+        # Filter containers to only include those in filtered locations
+        location_filtered_containers = []
+        for container in containers:
+            container_location_id = str(container.get('location_id', ''))
+            
+            # Check if container's location is in the filtered locations
+            if container_location_id in locations_by_id:
+                location_filtered_containers.append(container)
+                logger.debug(f"MATCH: Container {container.get('container_id')} in filtered location {container_location_id}")
+            else:
+                logger.debug(f"SKIP: Container {container.get('container_id')} NOT in filtered location {container_location_id}")
+        
+        containers = location_filtered_containers
+        logger.info(f"FILTERED CONTAINERS: {len(containers)} containers remain after location filtering")
     
     # Group containers by plant_id (ensure consistent string keys)
+    containers_by_plant_id = defaultdict(list)
     for container in containers:
         plant_id = container.get('plant_id', '')
         if plant_id:
             containers_by_plant_id[str(plant_id)].append(container)
-    
-
     
     joined_results = []
     
