@@ -532,6 +532,74 @@ def quick_garden_query():
         }), 500
 
 
+@locations_bp.route('/garden/filter', methods=['GET'])
+def filter_garden_get():
+    """
+    GET-based garden filtering endpoint for ChatGPT compatibility.
+    Uses query parameters instead of POST body to match working endpoints.
+    """
+    try:
+        logging.info("🌈 GET GARDEN FILTER ENDPOINT CALLED")
+        logging.info(f"🌈 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logging.info(f"🌈 Query params: {dict(request.args)}")
+        
+        # Extract parameters
+        location = request.args.get('location', '')
+        container_size = request.args.get('container_size', '')
+        container_material = request.args.get('container_material', '')
+        plant_name = request.args.get('plant_name', '')
+        
+        # Build filters from query parameters
+        filters = {}
+        if location:
+            filters['locations'] = {'location_name': {'$regex': location}}
+        if container_size:
+            if 'containers' not in filters:
+                filters['containers'] = {}
+            filters['containers']['container_size'] = {'$eq': container_size}
+        if container_material:
+            if 'containers' not in filters:
+                filters['containers'] = {}
+            filters['containers']['container_material'] = {'$eq': container_material}
+        if plant_name:
+            filters['plants'] = {'plant_name': {'$regex': plant_name}}
+        
+        if not filters:
+            return jsonify({
+                "error": "No filter parameters provided",
+                "usage": "Use ?location=patio&container_size=medium etc.",
+                "debug_signature": "GET-FILTER-LIVE-2025"
+            }), 400
+        
+        # Use our existing query system
+        from utils.advanced_query_parser import parse_advanced_query
+        from utils.advanced_query_executor import execute_advanced_query
+        
+        request_data = {"filters": filters}
+        parsed_query = parse_advanced_query(request_data)
+        result = execute_advanced_query(parsed_query)
+        
+        # Return in same format as working endpoints
+        plants = result.get('plants', [])
+        response = {
+            "count": len(plants),
+            "plants": plants,
+            "debug_signature": "GET-FILTER-LIVE-2025",
+            "filters_applied": filters
+        }
+        
+        logging.info(f"🌈 GET FILTER: Found {len(plants)} plants")
+        return jsonify(response)
+        
+    except Exception as e:
+        logging.error(f"🌈 ❌ GET filter error: {e}")
+        return jsonify({
+            "error": "Filter failed", 
+            "details": str(e),
+            "debug_signature": "GET-FILTER-ERROR-2025"
+        }), 500
+
+
 @locations_bp.route('/health', methods=['GET'])
 def health_check():
     """Simple health check endpoint"""
