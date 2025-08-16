@@ -81,26 +81,39 @@ def create_app(testing=False):
     # Register all blueprints
     register_all_blueprints(app)
     
-    # Add root route to fix health check 404s and prevent restart cycles
-    @app.route('/')
+    # Register remaining non-modularized routes and components
+    register_legacy_components(app, limiter)
+    
+    # Add root route LAST to fix health check 404s and prevent restart cycles
+    # This ensures it takes precedence over any conflicting routes
+    @app.route('/', methods=['GET', 'HEAD', 'POST', 'PUT'])
     def root_health():
         """Root health check endpoint to prevent Render restart cycles"""
         logging.info("🏠 ROOT HEALTH CHECK CALLED")
+        logging.info(f"🏠 Method: {request.method}")
         logging.info(f"🏠 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
-        return {
+        
+        response_data = {
             "status": "healthy",
             "service": "plant-database-api", 
             "version": "v2.4.0",
             "message": "Plant Database API is running",
+            "method": request.method,
             "endpoints": {
                 "health": "/api/health",
-                "docs": "/api/docs",
-                "filter": "/api/garden/filter"
+                "docs": "/api/docs", 
+                "filter": "/api/garden/filter",
+                "test_post": "/api/test/simple-post",
+                "test_put": "/api/test/simple-put"
             }
         }
-    
-    # Register remaining non-modularized routes and components
-    register_legacy_components(app, limiter)
+        
+        # Also handle POST/PUT requests to root for testing
+        if request.method in ['POST', 'PUT']:
+            logging.info(f"🏠 {request.method} request to root - treating as health check")
+            response_data["message"] = f"{request.method} request received at root - API is healthy"
+        
+        return response_data
     
     # Add comprehensive request logging to catch ALL requests
     @app.before_request
