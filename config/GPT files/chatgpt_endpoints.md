@@ -168,6 +168,37 @@ Content-Type: application/json
 - ✅ Clear success/failure indication
 - ✅ Helps diagnose POST request issues
 
+### Simple PUT Test Endpoint
+**Use this to test if PUT requests work (alternative to POST):**
+
+```javascript
+PUT /api/test/simple-put
+Content-Type: application/json
+
+{
+  "test_message": "Hello from GPT via PUT"
+}
+
+// Expected Response:
+{
+  "status": "success",
+  "message": "PUT request received successfully", 
+  "timestamp": "2025-01-16T18:45:00.000Z",
+  "received_data": {
+    "test_message": "Hello from GPT via PUT"
+  },
+  "test_type": "simple_put_test",
+  "method": "PUT",
+  "version": "v2.4.0"
+}
+```
+
+**Benefits:**
+- ✅ Tests PUT method as alternative to POST
+- ✅ Same simplicity as POST test
+- ✅ Could enable add/update operations if successful
+- ✅ Identical payload structure to POST test
+
 ---
 
 ## Core API Examples

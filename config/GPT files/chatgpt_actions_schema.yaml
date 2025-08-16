@@ -1224,6 +1224,53 @@ paths:
                     type: string
                     description: "API version"
 
+  /api/test/simple-put:
+    put:
+      operationId: testSimplePut
+      summary: "Test PUT request capability"
+      description: "Ultra-simple PUT endpoint for testing GPT's ability to send PUT requests. Accepts any JSON."
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                test_message:
+                  type: string
+                  description: "Optional test message"
+              additionalProperties: true
+      responses:
+        '200':
+          description: "PUT test successful"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: "success"
+                  message:
+                    type: string
+                    description: "PUT request received successfully"
+                  timestamp:
+                    type: string
+                    description: "Response timestamp"
+                  received_data:
+                    type: object
+                    description: "Data that was received"
+                  test_type:
+                    type: string
+                    description: "simple_put_test"
+                  method:
+                    type: string
+                    description: "PUT"
+                  version:
+                    type: string
+                    description: "API version"
+
   # =============================================
   # WEATHER INTEGRATION (3 operations)
   # =============================================

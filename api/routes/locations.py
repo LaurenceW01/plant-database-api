@@ -756,3 +756,37 @@ def simple_post_test():
     
     logging.info("🧪 Simple POST test completed successfully")
     return jsonify(response), 200
+
+
+@locations_bp.route('/test/simple-put', methods=['PUT'])
+def simple_put_test():
+    """
+    Ultra-simple PUT endpoint for testing GPT's ability to send PUT requests.
+    Accepts any JSON and returns a simple confirmation.
+    """
+    logging.info("🔧 SIMPLE PUT TEST ENDPOINT CALLED")
+    logging.info(f"🔧 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logging.info(f"🔧 Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+    logging.info(f"🔧 Request Method: {request.method}")
+    
+    # Get request data (any JSON or empty)
+    try:
+        request_data = request.get_json(force=True, silent=True)
+        logging.info(f"🔧 Request Data: {request_data}")
+    except Exception as e:
+        request_data = None
+        logging.info(f"🔧 No JSON data or parsing error: {e}")
+    
+    # Simple response
+    response = {
+        "status": "success",
+        "message": "PUT request received successfully",
+        "timestamp": datetime.utcnow().isoformat(),
+        "received_data": request_data,
+        "test_type": "simple_put_test",
+        "method": "PUT",
+        "version": "v2.4.0"
+    }
+    
+    logging.info("🔧 Simple PUT test completed successfully")
+    return jsonify(response), 200
