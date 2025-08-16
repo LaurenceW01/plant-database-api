@@ -228,18 +228,20 @@ def join_filtered_data(filtered_data: Dict[str, List[Dict]]) -> List[Dict]:
         related_containers = containers_by_plant_id.get(str(plant_id), [])
         
         # Use containers table as authoritative source for plant locations
+        # Find the FIRST container that matches a filtered location (not just first container)
         related_location = None
         if related_containers:
-            # Get location from first container (containers should all be in same location)
-            container_location_id = related_containers[0].get('location_id', '')
-            if container_location_id:
-                related_location = locations_by_id.get(str(container_location_id))
-            
-            # Fallback: try location_name from container if location_id doesn't work
-            if not related_location:
-                container_location_name = related_containers[0].get('location_name', '').strip().lower()
-                if container_location_name:
-                    related_location = locations_by_name.get(container_location_name)
+            for container in related_containers:
+                container_location_id = str(container.get('location_id', ''))
+                if container_location_id in locations_by_id:
+                    related_location = locations_by_id[container_location_id]
+                    break  # Found a container in a valid location
+                
+                # Fallback: try location_name from container if location_id doesn't work
+                container_location_name = container.get('location_name', '').strip().lower()
+                if container_location_name and container_location_name in locations_by_name:
+                    related_location = locations_by_name[container_location_name]
+                    break  # Found a container in a valid location
         
         # Create joined record
         joined_record = {
