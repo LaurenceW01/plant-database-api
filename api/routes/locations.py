@@ -583,14 +583,18 @@ def filter_garden_get():
         logging.info(f"🌈 DEBUG: Raw result keys: {list(result.keys())}")
         logging.info(f"🌈 DEBUG: Raw result: {result}")
         
-        # Return in same format as working endpoints
-        plants = result.get('plants', [])
+        # Return in same format as working endpoints  
+        # The result contains 'sample_plants' not 'plants'
+        plants = result.get('sample_plants', result.get('plants', []))
+        total_matches = result.get('total_matches', len(plants))
+        
         response = {
             "count": len(plants),
+            "total_matches": total_matches,
             "plants": plants,
+            "summary": result.get('summary', {}),
             "debug_signature": "GET-FILTER-LIVE-2025",
-            "filters_applied": filters,
-            "debug_raw_result": result  # Include raw result for debugging
+            "filters_applied": filters
         }
         
         logging.info(f"🌈 GET FILTER: Found {len(plants)} plants from result with keys: {list(result.keys())}")
