@@ -579,16 +579,21 @@ def filter_garden_get():
         parsed_query = parse_advanced_query(request_data)
         result = execute_advanced_query(parsed_query)
         
+        # Debug the result structure
+        logging.info(f"🌈 DEBUG: Raw result keys: {list(result.keys())}")
+        logging.info(f"🌈 DEBUG: Raw result: {result}")
+        
         # Return in same format as working endpoints
         plants = result.get('plants', [])
         response = {
             "count": len(plants),
             "plants": plants,
             "debug_signature": "GET-FILTER-LIVE-2025",
-            "filters_applied": filters
+            "filters_applied": filters,
+            "debug_raw_result": result  # Include raw result for debugging
         }
         
-        logging.info(f"🌈 GET FILTER: Found {len(plants)} plants")
+        logging.info(f"🌈 GET FILTER: Found {len(plants)} plants from result with keys: {list(result.keys())}")
         return jsonify(response)
         
     except Exception as e:
