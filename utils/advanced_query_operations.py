@@ -216,8 +216,7 @@ def join_filtered_data(filtered_data: Dict[str, List[Dict]]) -> List[Dict]:
         if plant_id:
             containers_by_plant_id[str(plant_id)].append(container)
     
-    # Debug: log container groupings
-    logger.info(f"🔍 Containers grouped by plant_id: {dict(containers_by_plant_id)}")
+
     
     joined_results = []
     
@@ -225,12 +224,8 @@ def join_filtered_data(filtered_data: Dict[str, List[Dict]]) -> List[Dict]:
         plant_id = plant.get('id') or plant.get('ID') or plant.get('plant_id', '')
         plant_location = plant.get('location') or plant.get('Location', '')
         
-        # Debug: log all plant IDs being processed
-        logger.info(f"🔍 Processing plant ID: {plant_id}, name: {plant.get('plant_name', plant.get('Plant Name', 'UNKNOWN'))}")
-        
         # Find related containers and location
         related_containers = containers_by_plant_id.get(str(plant_id), [])
-        logger.info(f"🔍 Plant {plant_id} has {len(related_containers)} containers")
         
         # Use containers table as authoritative source for plant locations
         related_location = None
