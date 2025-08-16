@@ -723,3 +723,36 @@ def health_check():
         "service": "plant-database-api",
         "debugging": "comprehensive-logging-active"
     })
+
+
+@locations_bp.route('/test/simple-post', methods=['POST'])
+def simple_post_test():
+    """
+    Ultra-simple POST endpoint for testing GPT's ability to send POST requests.
+    Accepts any JSON and returns a simple confirmation.
+    """
+    logging.info("🧪 SIMPLE POST TEST ENDPOINT CALLED")
+    logging.info(f"🧪 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logging.info(f"🧪 Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+    logging.info(f"🧪 Request Method: {request.method}")
+    
+    # Get request data (any JSON or empty)
+    try:
+        request_data = request.get_json(force=True, silent=True)
+        logging.info(f"🧪 Request Data: {request_data}")
+    except Exception as e:
+        request_data = None
+        logging.info(f"🧪 No JSON data or parsing error: {e}")
+    
+    # Simple response
+    response = {
+        "status": "success",
+        "message": "POST request received successfully",
+        "timestamp": datetime.utcnow().isoformat(),
+        "received_data": request_data,
+        "test_type": "simple_post_test",
+        "version": "v2.4.0"
+    }
+    
+    logging.info("🧪 Simple POST test completed successfully")
+    return jsonify(response), 200

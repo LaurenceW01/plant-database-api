@@ -136,6 +136,40 @@ Use these EXACT field names for best compatibility:
 
 ---
 
+## 🧪 POST Request Testing
+
+### Simple POST Test Endpoint
+**Use this to test if POST requests are working:**
+
+```javascript
+POST /api/test/simple-post
+Content-Type: application/json
+
+{
+  "test_message": "Hello from GPT"
+}
+
+// Expected Response:
+{
+  "status": "success",
+  "message": "POST request received successfully", 
+  "timestamp": "2025-01-16T18:45:00.000Z",
+  "received_data": {
+    "test_message": "Hello from GPT"
+  },
+  "test_type": "simple_post_test",
+  "version": "v2.4.0"
+}
+```
+
+**Benefits:**
+- ✅ Ultra-simple - accepts any JSON or empty body
+- ✅ No complex validation or processing
+- ✅ Clear success/failure indication
+- ✅ Helps diagnose POST request issues
+
+---
+
 ## Core API Examples
 
 ### 🚀 Advanced Query System - Garden Filter

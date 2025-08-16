@@ -1177,6 +1177,54 @@ paths:
                     description: "Summary of applied filters"
 
   # =============================================
+  # TESTING ENDPOINTS (1 operation)
+  # =============================================
+
+  /api/test/simple-post:
+    post:
+      operationId: testSimplePost
+      summary: "Test POST request capability"
+      description: "Ultra-simple POST endpoint for testing GPT's ability to send POST requests. Accepts any JSON."
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                test_message:
+                  type: string
+                  description: "Optional test message"
+              additionalProperties: true
+      responses:
+        '200':
+          description: "POST test successful"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: "success"
+                  message:
+                    type: string
+                    description: "Confirmation message"
+                  timestamp:
+                    type: string
+                    description: "Response timestamp"
+                  received_data:
+                    type: object
+                    description: "Data that was received"
+                  test_type:
+                    type: string
+                    description: "simple_post_test"
+                  version:
+                    type: string
+                    description: "API version"
+
+  # =============================================
   # WEATHER INTEGRATION (3 operations)
   # =============================================
 
