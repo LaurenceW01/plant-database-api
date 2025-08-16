@@ -166,11 +166,15 @@ def apply_operator(actual_value: Any, operator: str, expected_value: Any) -> boo
             
             if isinstance(expected_value, dict):
                 # Support both formats: {"pattern": "x", "options": "i"} and {"$regex": "x", "$options": "i"} 
-                pattern = expected_value.get('pattern', expected_value.get('$regex', ''))
+                pattern = expected_value.get('pattern', expected_value.get('$regex', expected_value))
                 options = expected_value.get('options', expected_value.get('$options', ''))
                 flags = re.IGNORECASE if options and 'i' in options.lower() else re.IGNORECASE
             
-            return bool(re.search(pattern, actual_str, flags))
+            # Handle case where pattern is still a dict (fallback)
+            if isinstance(pattern, dict):
+                pattern = str(pattern.get('$regex', pattern))
+            
+            return bool(re.search(str(pattern), actual_str, flags))
         
         elif operator == '$exists':
             has_value = actual_value is not None and actual_value != ''
