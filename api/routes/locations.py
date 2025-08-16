@@ -473,6 +473,13 @@ def quick_garden_query():
         logging.info(f"⚡ QUICK-QUERY: Executed in {exec_time:.3f}s (total: {total_time:.3f}s)")
         logging.info(f"⚡ QUICK-QUERY: Found {len(result.get('plants', []))} plants")
         
+        # Add unique debugging identifier
+        result['debug_info'] = {
+            "server_timestamp": datetime.utcnow().isoformat(),
+            "request_id": f"quick-query-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}",
+            "server_signature": "LIVE-PRODUCTION-SERVER-2025"
+        }
+        
         logging.info(f"⚡ 🎉 QUICK-QUERY COMPLETED in {total_time:.3f}s")
         logging.info("=" * 60)
         return jsonify(result)
