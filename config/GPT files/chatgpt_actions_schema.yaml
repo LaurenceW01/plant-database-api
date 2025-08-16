@@ -1083,45 +1083,43 @@ paths:
                     type: string
 
   # =============================================
-  # ADVANCED QUERY SYSTEM (1 operation)
+  # ADVANCED QUERY SYSTEM (2 operations)
   # =============================================
 
-  /api/garden/simple-query:
-    post:
-      operationId: simpleGardenQuery
-      summary: "Simple garden query (GET endpoint compatibility)"
-      description: "🌟 COMPATIBLE: Same response format as working GET endpoints. Use for all advanced filtering with guaranteed ChatGPT compatibility."
+  /api/garden/filter:
+    get:
+      operationId: filterGarden
+      summary: "Filter garden plants (GET method - reliable)"
+      description: "🌈 RELIABLE: GET-based filtering like other working endpoints. Use query parameters for advanced plant filtering."
       security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                filters:
-                  type: object
-                  properties:
-                    plants:
-                      type: object
-                      additionalProperties: true
-                    locations:
-                      type: object
-                      additionalProperties: true
-                    containers:
-                      type: object
-                      additionalProperties: true
-              required: ["filters"]
-            examples:
-              patio_plants:
-                summary: "Plants on patio"
-                value:
-                  filters:
-                    locations:
-                      location_name: {"$regex": "patio"}
+      parameters:
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Location name to filter (e.g., 'patio', 'garden')"
+        - name: container_size
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Container size (e.g., 'small', 'medium', 'large')"
+        - name: container_material
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Container material (e.g., 'ceramic', 'plastic', 'terracotta')"
+        - name: plant_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant name to filter"
       responses:
         '200':
-          description: "Simple query results (same format as GET endpoints)"
+          description: "Filtered plants list"
           content:
             application/json:
               schema:
@@ -1133,272 +1131,8 @@ paths:
                     type: array
                   debug_signature:
                     type: string
-
-  /api/garden/quick-query:
-    post:
-      operationId: quickGardenQuery
-      summary: "Ultra-fast garden query (ChatGPT optimized)"
-      description: "⚡ FASTEST: Optimized for ChatGPT timeouts. Same filtering as advanced query but limited to 5 results, minimal format. Use for all garden queries."
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                filters:
-                  type: object
-                  description: "Filters organized by table (plants, locations, containers)"
-                  properties:
-                    plants:
-                      type: object
-                      description: "Plant field filters"
-                      additionalProperties: true
-                      properties:
-                        Plant Name:
-                          description: "Plant name filter"
-                        Light Requirements:
-                          description: "Light requirements filter" 
-                        Watering Needs:
-                          description: "Watering needs filter"
-                        Care Notes:
-                          description: "Care notes filter"
-                        Photo URL:
-                          description: "Photo URL filter"
-                    locations:
-                      type: object
-                      description: "Location field filters"
-                      additionalProperties: true
-                      properties:
-                        location_name:
-                          description: "Location name filter"
-                        total_sun_hours:
-                          description: "Total sun hours filter (numeric)"
-                        shade_pattern:
-                          description: "Shade pattern filter"
-                    containers:
-                      type: object
-                      description: "Container field filters"
-                      additionalProperties: true
-                      properties:
-                        container_size:
-                          description: "Container size filter"
-                        container_material:
-                          description: "Container material filter"
-                        container_type:
-                          description: "Container type filter"
-                  additionalProperties: true
-              required: ["filters"]
-            examples:
-              patio_small_pots:
-                summary: "Plants on patio in small pots"
-                value:
-                  filters:
-                    locations:
-                      location_name: {"$regex": "patio"}
-                    containers:
-                      container_size: {"$eq": "small"}
-      responses:
-        '200':
-          description: "Fast query results (minimal format, max 5 results)"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  total_matches:
-                    type: integer
-                  plants:
-                    type: array
-                    items:
-                      type: object
-
-  /api/garden/query:
-    post:
-      operationId: advancedGardenQuery
-      summary: "Advanced garden query with MongoDB-style filtering (full features)"
-      description: "🔧 ADVANCED: Full-featured query with all response formats. Use quick-query for speed. This for detailed analysis only."
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                filters:
-                  type: object
-                  description: "Filters organized by table (plants, locations, containers)"
-                  properties:
-                    plants:
-                      type: object
-                      description: "Plant field filters"
-                      additionalProperties: true
-                      properties:
-                        Plant Name:
-                          description: "Plant name filter"
-                        Light Requirements:
-                          description: "Light requirements filter" 
-                        Watering Needs:
-                          description: "Watering needs filter"
-                        Care Notes:
-                          description: "Care notes filter"
-                        Photo URL:
-                          description: "Photo URL filter"
-                    locations:
-                      type: object
-                      description: "Location field filters"
-                      additionalProperties: true
-                      properties:
-                        location_name:
-                          description: "Location name filter"
-                        total_sun_hours:
-                          description: "Total sun hours filter (numeric)"
-                        shade_pattern:
-                          description: "Shade pattern filter"
-                    containers:
-                      type: object
-                      description: "Container field filters"
-                      additionalProperties: true
-                      properties:
-                        container_size:
-                          description: "Container size filter"
-                        container_material:
-                          description: "Container material filter"
-                        container_type:
-                          description: "Container type filter"
-                join:
-                  type: string
-                  enum: ["AND", "OR"]
-                  default: "AND"
-                  description: "How to combine multiple conditions"
-                response_format:
-                  type: string
-                  enum: ["summary", "detailed", "minimal", "ids_only"]
-                  default: "summary"
-                  description: |
-                    Response format:
-                    - summary: Aggregated data with sample plants (best for large results)
-                    - detailed: Full plant/location/container data
-                    - minimal: Basic plant info only
-                    - ids_only: Just plant IDs (most efficient)
-                include:
-                  type: array
-                  items:
-                    type: string
-                    enum: ["plants", "locations", "containers", "context"]
-                  default: ["plants", "locations", "containers"]
-                  description: "Data to include in response"
-                limit:
-                  type: integer
-                  minimum: 1
-                  maximum: 1000
-                  default: 10
-                  description: "Maximum number of results to return (default 10 for speed)"
-                sort:
-                  type: array
-                  items:
+                  filters_applied:
                     type: object
-                    properties:
-                      field:
-                        type: string
-                        description: "Field name to sort by"
-                      direction:
-                        type: string
-                        enum: ["asc", "desc"]
-                        default: "asc"
-                  description: "Sort specifications"
-              required: ["filters"]
-              additionalProperties: true
-            examples:
-              patio_small_pots:
-                summary: "Plants on patio in small pots"
-                value:
-                  filters:
-                    locations:
-                      location_name: {"$regex": "patio"}
-                    containers:
-                      container_size: {"$eq": "small"}
-                  response_format: "summary"
-              sun_loving_plants:
-                summary: "Sun-loving plants needing daily water"
-                value:
-                  filters:
-                    plants:
-                      Light Requirements: {"$regex": "Full Sun"}
-                      Watering Needs: {"$regex": "daily"}
-                  response_format: "detailed"
-              high_sun_ceramic:
-                summary: "High-sun locations with ceramic containers"
-                value:
-                  filters:
-                    locations:
-                      total_sun_hours: {"$gte": 8}
-                    containers:
-                      container_material: {"$eq": "ceramic"}
-                  response_format: "summary"
-      responses:
-        '200':
-          description: "Query results in requested format"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  total_matches:
-                    type: integer
-                    description: "Total number of matches found"
-                  summary:
-                    type: object
-                    description: "Aggregated summary (summary format only)"
-                    properties:
-                      by_plant_type:
-                        type: object
-                        description: "Plant count by type"
-                      by_container:
-                        type: object
-                        description: "Plant count by container type"
-                      by_location:
-                        type: object
-                        description: "Plant count by location"
-                  sample_plants:
-                    type: array
-                    description: "Sample plants with context (summary format)"
-                  plants:
-                    type: array
-                    description: "Full plant data (detailed format)"
-                  plant_ids:
-                    type: array
-                    items:
-                      type: string
-                    description: "Plant IDs only (ids_only format)"
-                  query_metadata:
-                    type: object
-                    properties:
-                      execution_success:
-                        type: boolean
-                      applied_limit:
-                        type: integer
-                      response_format:
-                        type: string
-                      tables_queried:
-                        type: array
-                        items:
-                          type: string
-                  endpoint_metadata:
-                    type: object
-                    properties:
-                      endpoint:
-                        type: string
-                      phase2_direct:
-                        type: boolean
-                      optimization:
-                        type: string
-        '400':
-          description: "Query parsing failed or invalid parameters"
-        '500':
-          description: "Query execution failed"
 
   # =============================================
   # WEATHER INTEGRATION (3 operations)
