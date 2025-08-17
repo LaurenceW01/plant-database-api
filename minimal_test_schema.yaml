@@ -1,64 +1,45 @@
 openapi: 3.1.0
 info:
-  title: Plant Database API
-  description: Minimal test schema for plant database API
+  title: Plant Database API - Minimal Test
+  description: Ultra-minimal schema to test POST functionality
   version: 1.0.0
-
 servers:
   - url: https://dev-plant-database-api.onrender.com
+    description: Development server
 
 paths:
-  /api/enhance-analysis:
-    post:
-      operationId: enhanceAnalysis
-      summary: Enhance plant analysis with database knowledge
-      description: Enhance ChatGPT's image analysis with personalized care instructions
-      security:
-        - ApiKeyAuth: []
-  /api/plants:
+  /api/health:
     get:
-      operationId: listPlants
-      summary: List all plants
-      description: Get a paginated list of all plants in the database
-      parameters:
-        - name: q
-          in: query
-          description: Search query to find plants by name, description, or location
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Maximum number of plants to return (default 20)
-          required: false
-          schema:
-            type: integer
-            default: 20
-        - name: offset
-          in: query
-          description: Number of plants to skip for pagination (default 0)
-          required: false
-          schema:
-            type: integer
-            default: 0
+      operationId: testHealthGet
+      summary: Test GET endpoint
+      description: Working GET endpoint for comparison
       responses:
-        "200":
-          description: Paginated list of plants
+        '200':
+          description: Success
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  plants:
-                    type: array
-                    items:
-                      type: object
-                  total:
-                    type: integer
-                  count:
-                    type: integer
-                  offset:
-                    type: integer
-                  limit:
-                    type: integer
-                additionalProperties: true 
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/test/minimal-post:
+    post:
+      operationId: testMinimalPost
+      summary: Test POST endpoint
+      description: Ultra-minimal POST test
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string

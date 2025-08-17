@@ -13,7 +13,10 @@ import logging
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/api/plants')
 
 
-@analysis_bp.route('/diagnose', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['POST'] → methods=['GET']
+@analysis_bp.route('/diagnose', methods=['GET'])  # WORKAROUND: was POST
 def diagnose_plant():
     """
     Phase 2 direct implementation: Diagnose plant health with action-based URL.
@@ -48,7 +51,10 @@ def diagnose_plant():
         }), 500
 
 
-@analysis_bp.route('/enhance-analysis', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again 
+# Changed: methods=['POST'] → methods=['GET']
+@analysis_bp.route('/enhance-analysis', methods=['GET'])  # WORKAROUND: was POST
 def enhance_plant_analysis():
     """
     Phase 2 direct implementation: Enhance plant analysis with database context.

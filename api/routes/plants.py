@@ -13,29 +13,32 @@ import logging
 plants_bp = Blueprint('plants', __name__, url_prefix='/api/plants')
 
 
-@plants_bp.route('/add', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['POST'] → methods=['GET'] 
+# Changed: request.get_json() → request.args
+@plants_bp.route('/add', methods=['GET'])  # WORKAROUND: was POST
 def add_plant_new():
     """
-    Phase 2 direct implementation: Add a new plant with action-based URL.
+    CHATGPT WORKAROUND: Temporarily converted from POST to GET due to ChatGPT platform issue.
+    
+    Original: Phase 2 direct implementation: Add a new plant with action-based URL.
     Provides semantic alignment: addPlant operationId → /api/plants/add URL
     This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
     """
-    # Apply field normalization middleware (already handled by @app.before_request)
-    from utils.field_normalization_middleware import (
-        get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
-        validate_required_fields
-    )
+    # WORKAROUND: Convert GET query params to POST body format
+    from flask import request as flask_request
     
-    # Get normalized field values
-    plant_name = get_plant_name()
+    # Simulate JSON request body from query parameters
+    plant_name = flask_request.args.get('plant_name') or flask_request.args.get('Plant Name')
     
     # Validate required fields  
     if not plant_name:
-        error_response = create_error_response_with_field_suggestions(
-            "Plant name is required for adding a plant",
-            ['plant_name']
-        )
-        return jsonify(error_response), 400
+        return jsonify({
+            "error": "Plant name is required for adding a plant",
+            "message": "Use ?plant_name=YourPlantName in the URL",
+            "workaround": "GET endpoint due to ChatGPT POST issue"
+        }), 400
     
     # Import the core business logic function
     from api.main import add_plant
@@ -57,7 +60,10 @@ def add_plant_new():
     return response
 
 
-@plants_bp.route('/search', methods=['GET', 'POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['GET', 'POST'] → methods=['GET'] (removed POST)
+@plants_bp.route('/search', methods=['GET'])  # WORKAROUND: removed POST
 def search_plants_new():
     """
     Phase 2 direct implementation: Search for plants with action-based URL.
@@ -256,7 +262,10 @@ def get_plants_by_location_new(location_name):
         }), 500
 
 
-@plants_bp.route('/get-context/<plant_id>', methods=['GET', 'POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again 
+# Changed: methods=['GET', 'POST'] → methods=['GET'] (removed POST)
+@plants_bp.route('/get-context/<plant_id>', methods=['GET'])  # WORKAROUND: removed POST
 def get_plant_context_new(plant_id):
     """
     Phase 2 direct implementation: Get comprehensive plant context with location/container intelligence.

@@ -13,7 +13,10 @@ import logging
 logs_bp = Blueprint('logs', __name__, url_prefix='/api/logs')
 
 
-@logs_bp.route('/create', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['POST'] → methods=['GET']
+@logs_bp.route('/create', methods=['GET'])  # WORKAROUND: was POST
 def create_log():
     """
     Phase 2 direct implementation: Create plant log entry with AI-friendly endpoint name.
