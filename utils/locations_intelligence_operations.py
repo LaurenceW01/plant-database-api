@@ -17,8 +17,7 @@ def get_plant_location_context(plant_id: str) -> List[Dict]:
     """
     Get comprehensive location and container context for a specific plant.
     
-    This function provides the foundation for location-aware plant care recommendations
-    by combining container and location data for a specific plant.
+    OPTIMIZED: Fetches all locations once to avoid rate limit issues.
     
     Args:
         plant_id (str): The plant ID to get context for
@@ -30,7 +29,7 @@ def get_plant_location_context(plant_id: str) -> List[Dict]:
             - context: Dict (combined analysis for care recommendations)
     """
     try:
-        from .locations_database_operations import get_containers_by_plant_id, get_location_by_id
+        from .locations_database_operations import get_containers_by_plant_id, get_all_locations
         
         # Get all containers for this plant
         plant_containers = get_containers_by_plant_id(plant_id)
@@ -39,11 +38,16 @@ def get_plant_location_context(plant_id: str) -> List[Dict]:
             logger.warning(f"No containers found for plant {plant_id}")
             return []
         
+        # OPTIMIZATION: Fetch all locations once instead of calling get_location_by_id for each container
+        all_locations = get_all_locations()
+        locations_dict = {loc.get('location_id', ''): loc for loc in all_locations}
+        
         contexts = []
         
         # For each container, get location details and create context
         for container in plant_containers:
-            location = get_location_by_id(container['location_id'])
+            location_id = container.get('location_id', '')
+            location = locations_dict.get(location_id)
             
             if location:
                 # Create combined context for this plant-container-location combination
@@ -59,9 +63,9 @@ def get_plant_location_context(plant_id: str) -> List[Dict]:
                 }
                 contexts.append(context)
             else:
-                logger.warning(f"Location {container['location_id']} not found for container {container['container_id']}")
+                logger.warning(f"Location {location_id} not found for container {container['container_id']}")
         
-        logger.info(f"Generated {len(contexts)} location contexts for plant {plant_id}")
+        logger.info(f"Generated {len(contexts)} location contexts for plant {plant_id} (optimized - 1 API call)")
         return contexts
         
     except Exception as e:

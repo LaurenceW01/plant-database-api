@@ -67,85 +67,48 @@ def create_log():
         }), 400
     
     try:
-        # Direct log creation implementation
-        from utils.plant_log_operations import initialize_log_sheet
-        from config.config import sheets_client, SPREADSHEET_ID, LOG_SHEET_NAME
-        from models.field_config import get_all_log_field_names
+        # Use the proper create_log_entry function which includes plant validation and photo upload
+        from utils.plant_log_operations import create_log_entry
+        from utils.upload_token_manager import generate_upload_url
         
-        # Initialize log sheet if needed
-        initialize_log_sheet()
+        # Create log entry using the comprehensive function
+        result = create_log_entry(
+            plant_name=plant_name,
+            photo_url=photo_url or "",
+            raw_photo_url=raw_photo_url or "",
+            diagnosis=diagnosis or "",
+            treatment=treatment_recommendation or (treatment or ""),  # Support legacy field name
+            symptoms=symptoms_observed or (symptoms or ""),  # Support legacy field name  
+            user_notes=user_notes or "",
+            confidence_score=float(confidence_score) if confidence_score else 0.0,
+            analysis_type=analysis_type or "general_care",
+            follow_up_required=follow_up_required and follow_up_required.lower() in ['true', '1', 'yes'],
+            follow_up_date=follow_up_date or "",
+            log_title=log_title or "",
+            location=location or ""
+        )
         
-        # Prepare log entry data
-        headers = get_all_log_field_names()
-        log_data = {
-            'log_id': log_id,
-            'plant_name': plant_name,
-            'log_date': log_date
-        }
-        
-        # Add all optional fields with correct field names
-        if plant_id:
-            log_data['plant_id'] = plant_id
-        if location:
-            log_data['location'] = location
-        if log_title:
-            log_data['log_title'] = log_title
-        if photo_url:
-            log_data['photo_url'] = photo_url
-        if raw_photo_url:
-            log_data['raw_photo_url'] = raw_photo_url
-        if diagnosis:
-            log_data['diagnosis'] = diagnosis
-        if treatment_recommendation:
-            log_data['treatment_recommendation'] = treatment_recommendation
-        if symptoms_observed:
-            log_data['symptoms_observed'] = symptoms_observed
-        if user_notes:
-            log_data['user_notes'] = user_notes
-        if confidence_score:
-            log_data['confidence_score'] = confidence_score
-        if analysis_type:
-            log_data['analysis_type'] = analysis_type
-        if follow_up_required:
-            log_data['follow-up_required'] = follow_up_required
-        if follow_up_date:
-            log_data['follow-up_date'] = follow_up_date
-            
-        # Support legacy field names for backward compatibility
-        if symptoms and not symptoms_observed:
-            log_data['symptoms_observed'] = symptoms
-        if treatment and not treatment_recommendation:
-            log_data['treatment_recommendation'] = treatment
-            
-        # MANDATORY: Add last_updated timestamp for all log entries
-        from utils.plant_log_operations import get_houston_timestamp_iso
-        log_data['last_updated'] = get_houston_timestamp_iso()
-        
-        # Fill missing fields with empty strings
-        for field in headers:
-            if field not in log_data:
-                log_data[field] = ""
-        
-        # Convert to row format for sheets
-        row_data = [log_data.get(field, "") for field in headers]
-        
-        # Append to log sheet
-        result = sheets_client.values().append(
-            spreadsheetId=SPREADSHEET_ID,
-            range=f'{LOG_SHEET_NAME}!A:A',
-            valueInputOption='USER_ENTERED',
-            insertDataOption='INSERT_ROWS',
-            body={'values': [row_data]}
-        ).execute()
-        
-        response_tuple = (jsonify({
-            "success": True,
-            "message": f"Created log entry for {plant_name}",
-            "log_id": log_id,
-            "log_date": log_date,
-            "phase2_direct": True,
-            "endpoint_type": "direct_implementation"
-        }), 200)
+        if result.get('success'):
+            response_tuple = (jsonify({
+                "success": True,
+                "message": f"Created log entry for {plant_name}",
+                "log_id": result.get('log_id'),
+                "log_date": result.get('log_data', {}).get('log_date'),
+                "plant_id": result.get('plant_id'),
+                "upload_url": result.get('upload_url'),
+                "upload_token": result.get('upload_token'),
+                "phase2_direct": True,
+                "endpoint_type": "comprehensive_implementation"
+            }), 200)
+        else:
+            response_tuple = (jsonify({
+                "success": False,
+                "error": result.get('error', 'Failed to create log entry'),
+                "suggestions": result.get('suggestions', []),
+                "create_new_option": result.get('create_new_option', False),
+                "phase2_direct": True,
+                "endpoint_type": "comprehensive_implementation"
+            }), 400)
         
     except Exception as e:
         logging.error(f"Error creating log entry: {e}")
@@ -274,57 +237,40 @@ def create_simple_log():
             )
             return jsonify(error_response), 400
         
-        # Direct simple log creation implementation
-        from utils.plant_log_operations import initialize_log_sheet
-        from config.config import sheets_client, SPREADSHEET_ID, LOG_SHEET_NAME
-        from models.field_config import get_all_log_field_names
+        # Use the proper create_log_entry function for simple logs too
+        from utils.plant_log_operations import create_log_entry
         
-        # Initialize log sheet if needed
-        initialize_log_sheet()
+        # Create simple log entry using the comprehensive function
+        result = create_log_entry(
+            plant_name=plant_name,
+            user_notes=entry or "",
+            analysis_type="general_care",
+            log_title="Simple Log Entry"
+        )
         
-        # Prepare simple log entry data
-        headers = get_all_log_field_names()
-        log_data = {
-            'log_id': log_id,
-            'plant_name': plant_name,
-            'log_date': log_date
-        }
-        
-        # Add the entry/user_notes to user_notes field
-        if entry:
-            log_data['user_notes'] = entry
-            
-        # MANDATORY: Add last_updated timestamp for all log entries
-        from utils.plant_log_operations import get_houston_timestamp_iso
-        log_data['last_updated'] = get_houston_timestamp_iso()
-        
-        # Fill missing fields with empty strings
-        for field in headers:
-            if field not in log_data:
-                log_data[field] = ""
-        
-        # Convert to row format for sheets
-        row_data = [log_data.get(field, "") for field in headers]
-        
-        # Append to log sheet
-        result = sheets_client.values().append(
-            spreadsheetId=SPREADSHEET_ID,
-            range=f'{LOG_SHEET_NAME}!A:A',
-            valueInputOption='USER_ENTERED',
-            insertDataOption='INSERT_ROWS',
-            body={'values': [row_data]}
-        ).execute()
-        
-        response_tuple = (jsonify({
-            "success": True,
-            "message": f"Created simple log entry for {plant_name}",
-            "log_id": log_id,
-            "log_date": log_date,
-            "entry": entry,
-            "phase2_direct": True,
-            "endpoint_type": "direct_implementation",
-                        "simple_log_creation": True
-        }), 200)
+        if result.get('success'):
+            response_tuple = (jsonify({
+                "success": True,
+                "message": f"Created simple log entry for {plant_name}",
+                "log_id": result.get('log_id'),
+                "log_date": result.get('log_data', {}).get('log_date'),
+                "plant_id": result.get('plant_id'),
+                "entry": entry,
+                "upload_url": result.get('upload_url'),
+                "upload_token": result.get('upload_token'),
+                "phase2_direct": True,
+                "endpoint_type": "comprehensive_implementation",
+                "simple_log_creation": True
+            }), 200)
+        else:
+            response_tuple = (jsonify({
+                "success": False,
+                "error": result.get('error', 'Failed to create simple log entry'),
+                "suggestions": result.get('suggestions', []),
+                "create_new_option": result.get('create_new_option', False),
+                "phase2_direct": True,
+                "endpoint_type": "comprehensive_implementation"
+            }), 400)
         
     except Exception as e:
         logging.error(f"Error creating simple log entry: {e}")
@@ -364,4 +310,6 @@ def create_log_for_plant(plant_name):
             "Treatment": "(optional)"
         }
     }), 400
+
+
 
