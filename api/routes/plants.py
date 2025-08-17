@@ -42,7 +42,7 @@ def add_plant_new():
             "received_args": dict(flask_request.args)
         }), 400
     
-    # WORKAROUND: Simulate POST request body by temporarily storing data
+    # WORKAROUND: Simulate POST request body by storing in both request and g objects
     # This allows the existing add_plant logic to work without modification
     simulated_json = {
         'plant_name': plant_name
@@ -54,9 +54,17 @@ def add_plant_new():
     original_method = flask_request.method
     original_get_json = flask_request.get_json
     
+    # Store original g data if any
+    original_normalized_data = getattr(g, 'normalized_request_data', None)
+    original_original_data = getattr(g, 'original_request_data', None)
+    
     # Mock the request.get_json() to return our simulated data
     flask_request.get_json = lambda: simulated_json
     flask_request.method = 'POST'  # Temporarily set to POST for compatibility
+    
+    # Set g object data for field normalization middleware
+    g.normalized_request_data = simulated_json.copy()
+    g.original_request_data = simulated_json.copy()
     
     try:
         # Import the core business logic function
@@ -68,6 +76,17 @@ def add_plant_new():
         # Restore original request properties
         flask_request.get_json = original_get_json
         flask_request.method = original_method
+        
+        # Restore original g object data
+        if original_normalized_data is not None:
+            g.normalized_request_data = original_normalized_data
+        elif hasattr(g, 'normalized_request_data'):
+            delattr(g, 'normalized_request_data')
+            
+        if original_original_data is not None:
+            g.original_request_data = original_original_data
+        elif hasattr(g, 'original_request_data'):
+            delattr(g, 'original_request_data')
     
     # Mark as Phase 2 direct implementation in response
     if hasattr(response, 'get_json'):

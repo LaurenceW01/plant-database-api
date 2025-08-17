@@ -19,40 +19,85 @@ logs_bp = Blueprint('logs', __name__, url_prefix='/api/logs')
 @logs_bp.route('/create', methods=['GET'])  # WORKAROUND: was POST
 def create_log():
     """
-    Phase 2 direct implementation: Create plant log entry with AI-friendly endpoint name.
+    CHATGPT WORKAROUND: Temporarily converted from POST to GET due to ChatGPT platform issue.
     
-    Features:
-    - JSON input with comprehensive field normalization
-    - Upload token generation for follow-up photo uploads
-    - Comprehensive field support and enhanced responses  
-    - Works with both "Plant Name" and "plant_name" formats
-    
-    Provides semantic alignment: createPlantLog operationId → /api/logs/create URL
-    This is the primary, intuitive endpoint for log creation.
-    Implements proper separation of concerns (logs separate from plants).
+    Original: Phase 2 direct implementation: Create plant log entry with AI-friendly endpoint name.
     """
-    # Apply field normalization middleware (already handled by @app.before_request)
-    from utils.field_normalization_middleware import (
-        get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
-        validate_required_fields
-    )
+    from flask import request as flask_request, jsonify, g
     
-    # Get normalized field values
-    plant_name = get_plant_name()
+    # WORKAROUND: Extract parameters from query string
+    plant_name = flask_request.args.get('plant_name') or flask_request.args.get('Plant Name')
+    entry = flask_request.args.get('entry') or flask_request.args.get('Entry')
+    observation = flask_request.args.get('observation') or flask_request.args.get('Observation')
+    action = flask_request.args.get('action') or flask_request.args.get('Action')
     
-    # Validate required fields
+    # Validate required fields  
     if not plant_name:
-        error_response = create_error_response_with_field_suggestions(
-            "Plant name is required for creating a log entry",
-            ['Plant Name']
+        return jsonify({
+            "error": "Plant name is required for creating a log entry",
+            "message": "Use ?plant_name=YourPlantName&entry=YourLogEntry in the URL",
+            "workaround": "GET endpoint due to ChatGPT POST issue",
+            "received_args": dict(flask_request.args)
+        }), 400
+    
+    # WORKAROUND: Simulate POST request body
+    simulated_json = {
+        'plant_name': plant_name
+    }
+    if entry:
+        simulated_json['entry'] = entry
+    if observation:
+        simulated_json['observation'] = observation  
+    if action:
+        simulated_json['action'] = action
+    
+    # Store original data
+    original_method = flask_request.method
+    original_get_json = flask_request.get_json
+    original_normalized_data = getattr(g, 'normalized_request_data', None)
+    original_original_data = getattr(g, 'original_request_data', None)
+    
+    # Mock request and g objects
+    flask_request.get_json = lambda: simulated_json
+    flask_request.method = 'POST'
+    g.normalized_request_data = simulated_json.copy()
+    g.original_request_data = simulated_json.copy()
+    
+    try:
+        # Apply field normalization middleware (already handled by @app.before_request)
+        from utils.field_normalization_middleware import (
+            get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
+            validate_required_fields
         )
-        return jsonify(error_response), 400
-    
-    # Import the original create_plant_log_simple function
-    from api.main import create_plant_log_simple
-    
-    # Call the underlying function and add Phase 2 markers
-    response_tuple = create_plant_log_simple()
+        
+        # Validate required fields (redundant but kept for consistency)
+        if not plant_name:
+            error_response = create_error_response_with_field_suggestions(
+                "Plant name is required for creating a log entry",
+                ['Plant Name']
+            )
+            return jsonify(error_response), 400
+        
+        # Import the original create_plant_log_simple function
+        from api.main import create_plant_log_simple
+        
+        # Call the underlying function and add Phase 2 markers
+        response_tuple = create_plant_log_simple()
+    finally:
+        # Restore original request properties
+        flask_request.get_json = original_get_json
+        flask_request.method = original_method
+        
+        # Restore original g object data
+        if original_normalized_data is not None:
+            g.normalized_request_data = original_normalized_data
+        elif hasattr(g, 'normalized_request_data'):
+            delattr(g, 'normalized_request_data')
+            
+        if original_original_data is not None:
+            g.original_request_data = original_original_data
+        elif hasattr(g, 'original_request_data'):
+            delattr(g, 'original_request_data')
     
     # Handle both tuple and direct response formats
     if isinstance(response_tuple, tuple):
@@ -127,32 +172,81 @@ def search_logs():
 @logs_bp.route('/create-simple', methods=['GET'])  # WORKAROUND: was POST
 def create_simple_log():
     """
-    Phase 2 direct implementation: Create simple plant log entry.
-    Provides semantic alignment: createSimpleLog operationId → /api/logs/create-simple URL
-    This endpoint provides a simplified interface for basic log creation.
+    CHATGPT WORKAROUND: Temporarily converted from POST to GET due to ChatGPT platform issue.
+    
+    Original: Phase 2 direct implementation: Create simple plant log entry.
     """
-    # Apply field normalization middleware (already handled by @app.before_request)
-    from utils.field_normalization_middleware import (
-        get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
-        validate_required_fields
-    )
+    from flask import request as flask_request, jsonify, g
     
-    # Get normalized field values
-    plant_name = get_plant_name()
+    # WORKAROUND: Extract parameters from query string
+    plant_name = flask_request.args.get('plant_name') or flask_request.args.get('Plant Name')
+    entry = flask_request.args.get('entry') or flask_request.args.get('Entry')
     
-    # Validate required fields
+    # Validate required fields  
     if not plant_name:
-        error_response = create_error_response_with_field_suggestions(
-            "Plant name is required for creating a simple log entry",
-            ['Plant Name']
+        return jsonify({
+            "error": "Plant name is required for creating a simple log entry",
+            "message": "Use ?plant_name=YourPlantName&entry=YourLogEntry in the URL",
+            "workaround": "GET endpoint due to ChatGPT POST issue",
+            "received_args": dict(flask_request.args)
+        }), 400
+    
+    # WORKAROUND: Simulate POST request body
+    simulated_json = {
+        'plant_name': plant_name
+    }
+    if entry:
+        simulated_json['entry'] = entry
+    
+    # Store original data and mock request/g objects
+    original_method = flask_request.method
+    original_get_json = flask_request.get_json
+    original_normalized_data = getattr(g, 'normalized_request_data', None)
+    original_original_data = getattr(g, 'original_request_data', None)
+    
+    flask_request.get_json = lambda: simulated_json
+    flask_request.method = 'POST'
+    g.normalized_request_data = simulated_json.copy()
+    g.original_request_data = simulated_json.copy()
+    
+    try:
+        # Apply field normalization middleware (already handled by @app.before_request)
+        from utils.field_normalization_middleware import (
+            get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
+            validate_required_fields
         )
-        return jsonify(error_response), 400
-    
-    # Import the original create_plant_log_simple function
-    from api.main import create_plant_log_simple
-    
-    # Call the underlying function and add Phase 2 markers
-    response_tuple = create_plant_log_simple()
+        
+        # Get normalized field values
+        plant_name = get_plant_name()
+        
+        # Validate required fields  
+        if not plant_name:
+            error_response = create_error_response_with_field_suggestions(
+                "Plant name is required for creating a simple log entry",
+                ['Plant Name']
+            )
+            return jsonify(error_response), 400
+        
+        # Import the original create_plant_log_simple function
+        from api.main import create_plant_log_simple
+        
+        # Call the underlying function and add Phase 2 markers
+        response_tuple = create_plant_log_simple()
+    finally:
+        # Restore original request properties
+        flask_request.get_json = original_get_json
+        flask_request.method = original_method
+        
+        # Restore original g object data
+        if original_normalized_data is not None:
+            g.normalized_request_data = original_normalized_data
+        elif hasattr(g, 'normalized_request_data'):
+            delattr(g, 'normalized_request_data')
+            
+        if original_original_data is not None:
+            g.original_request_data = original_original_data
+        elif hasattr(g, 'original_request_data'):
+            delattr(g, 'original_request_data')
     
     # Handle both tuple and direct response formats
     if isinstance(response_tuple, tuple):
