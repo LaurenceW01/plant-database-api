@@ -151,9 +151,9 @@ def ensure_required_fields(data: Dict[str, Any],
         suggestions = []
         for missing in missing_fields:
             if missing == 'plant_name':
-                suggestions.append("Try: 'Plant Name', 'plant_name', 'plantName', or 'name'")
+                suggestions.append("Try: 'plant_name', 'Plant Name', 'plantName', or 'name'")
             elif missing == 'user_notes':
-                suggestions.append("Try: 'Entry', 'entry', 'User Notes', 'message', or 'text'")
+                suggestions.append("Try: 'user_notes', 'Entry', 'entry', 'message', or 'text'")
             elif missing == 'location_id':
                 suggestions.append("Try: 'Location ID', 'location_id', or 'locationId'")
         
@@ -344,7 +344,7 @@ def handle_log_request_fields(request_data: Optional[Dict[str, Any]]) -> Dict[st
     normalized = normalize_request_fields(request_data)
     
     # Ensure we have either Plant Name or Plant ID for log operations
-    has_plant_identifier = any(normalized.get(field) for field in ['Plant Name', 'Plant ID'])
+    has_plant_identifier = any(normalized.get(field) for field in ['plant_name', 'plant_id'])
     
     if not has_plant_identifier:
         # Check if plant identifier is in a different format
@@ -352,9 +352,9 @@ def handle_log_request_fields(request_data: Optional[Dict[str, Any]]) -> Dict[st
             if 'plant' in key.lower() and normalized[key]:
                 # Found a plant-related field, assume it's an identifier
                 if 'id' in key.lower():
-                    normalized['Plant ID'] = normalized[key]
+                    normalized['plant_id'] = normalized[key]
                 else:
-                    normalized['Plant Name'] = normalized[key]
+                    normalized['plant_name'] = normalized[key]
                 break
     
     return normalized
@@ -376,7 +376,7 @@ if __name__ == '__main__':
     print("Normalized:", normalized)
     
     # Test validation
-    errors = ensure_required_fields(normalized, ['Plant Name', 'Entry'], 'test_endpoint')
+    errors = ensure_required_fields(normalized, ['plant_name', 'user_notes'], 'test_endpoint')
     print("Validation errors:", errors)
     
     # Test stats

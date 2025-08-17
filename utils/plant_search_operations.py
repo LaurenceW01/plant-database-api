@@ -28,7 +28,7 @@ def search_plants(query: str) -> List[Dict]:
         
         for plant in all_plants:
             # Search in plant name
-            plant_name = plant.get(get_canonical_field_name('Plant Name'), '').lower()
+            plant_name = plant.get(get_canonical_field_name('plant_name'), '').lower()
             if query_lower in plant_name:
                 matching_plants.append(plant)
                 continue

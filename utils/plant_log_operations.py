@@ -210,25 +210,25 @@ def create_log_entry(
             else:
                 log_title = "General Care Log"
         
-        # Prepare log entry data (use original headers for writing to spreadsheet)
+        # Prepare log entry data (use lowercase_underscore headers for writing to spreadsheet)
         log_data = {
-            'Log ID': log_id,
-            'Plant Name': canonical_plant_name,
-            'Plant ID': str(plant_id) if plant_id else "",
-            'Location': location,
-            'Log Date': log_date,
-            'Log Title': log_title,
-            'Photo URL': photo_url,
-            'Raw Photo URL': raw_photo_url,
-            'Diagnosis': diagnosis,
-            'Treatment Recommendation': treatment,
-            'Symptoms Observed': symptoms,
-            'User Notes': user_notes,
-            'Confidence Score': str(confidence_score),
-            'Analysis Type': analysis_type,
-            'Follow-up Required': 'TRUE' if follow_up_required else 'FALSE',
-            'Follow-up Date': follow_up_date,
-            'Last Updated': get_houston_timestamp_iso()
+            'log_id': log_id,
+            'plant_name': canonical_plant_name,
+            'plant_id': str(plant_id) if plant_id else "",
+            'location': location,
+            'log_date': log_date,
+            'log_title': log_title,
+            'photo_url': photo_url,
+            'raw_photo_url': raw_photo_url,
+            'diagnosis': diagnosis,
+            'treatment_recommendation': treatment,
+            'symptoms_observed': symptoms,
+            'user_notes': user_notes,
+            'confidence_score': str(confidence_score),
+            'analysis_type': analysis_type,
+            'follow_up_required': 'TRUE' if follow_up_required else 'FALSE',
+            'follow_up_date': follow_up_date,
+            'last_updated': get_houston_timestamp_iso()
         }
         
         # Validate all field data
@@ -306,14 +306,14 @@ def update_log_entry_photo(log_id: str, photo_url: str, raw_photo_url: str) -> D
         
         # Find headers
         headers = values[0] if values else []
-        if 'Log ID' not in headers:
-            return {"success": False, "error": "Log ID column not found in sheet"}
+        if 'log_id' not in headers:
+            return {"success": False, "error": "log_id column not found in sheet"}
         
         # Find the row with matching log ID
-        log_id_col = headers.index('Log ID')
-        photo_url_col = headers.index('Photo URL') if 'Photo URL' in headers else -1
-        raw_photo_url_col = headers.index('Raw Photo URL') if 'Raw Photo URL' in headers else -1
-        last_updated_col = headers.index('Last Updated') if 'Last Updated' in headers else -1
+        log_id_col = headers.index('log_id')
+        photo_url_col = headers.index('photo_url') if 'photo_url' in headers else -1
+        raw_photo_url_col = headers.index('raw_photo_url') if 'raw_photo_url' in headers else -1
+        last_updated_col = headers.index('last_updated') if 'last_updated' in headers else -1
         
         target_row = None
         for i, row in enumerate(values[1:], start=2):  # Start from row 2 (skip header)
@@ -485,7 +485,7 @@ def get_log_entry_by_id(log_id: str) -> Dict[str, Any]:
         
         # Find the entry with matching log ID
         for row in values[1:]:  # Skip header row
-            if len(row) > 0 and row[0] == log_id:  # Log ID is column 0
+            if len(row) > 0 and row[0] == log_id:  # log_id is column 0
                 entry = {}
                 for i, header in enumerate(headers):
                     entry[header] = row[i] if i < len(row) else ""
@@ -622,12 +622,16 @@ def search_log_entries(
                 continue
             
             if query:
-                # Search in diagnosis, treatment, symptoms, and notes
+                # Search in all relevant fields including log_id, log_title, plant_name, diagnosis, treatment, symptoms, and notes
                 searchable_text = ' '.join([
+                    entry.get('log_id', ''),
+                    entry.get('log_title', ''),
+                    entry.get('plant_name', ''),
                     entry.get('diagnosis', ''),
                     entry.get('treatment_recommendation', ''),
                     entry.get('symptoms_observed', ''),
-                    entry.get('user_notes', '')
+                    entry.get('user_notes', ''),
+                    entry.get('location', '')
                 ]).lower()
                 
                 if query.lower() not in searchable_text:
@@ -732,10 +736,10 @@ def create_plant_log_simple_api():
         
         # Use field normalization
         plant_name = get_plant_name()
-        user_notes = get_normalized_field('user_notes', '') or get_normalized_field('User Notes', '')
-        diagnosis = get_normalized_field('Diagnosis', '') or get_normalized_field('diagnosis', '')
-        treatment = get_normalized_field('Treatment', '') or get_normalized_field('treatment', '')
-        symptoms = get_normalized_field('Symptoms', '') or get_normalized_field('symptoms', '')
+        user_notes = get_normalized_field('user_notes', '')
+        diagnosis = get_normalized_field('diagnosis', '')
+        treatment = get_normalized_field('treatment', '')
+        symptoms = get_normalized_field('symptoms', '')
         
         if not plant_name:
             return jsonify({'success': False, 'error': 'Plant name is required'}), 400

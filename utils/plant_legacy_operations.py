@@ -23,7 +23,7 @@ def update_plant_legacy(plant_data: Dict) -> bool:
         header = values[0] if values else []
         
         # Use field_config to get canonical field names
-        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_name_field = get_canonical_field_name('plant_name')
         plant_name = plant_data.get(plant_name_field)
         plant_row = None
         
@@ -34,7 +34,7 @@ def update_plant_legacy(plant_data: Dict) -> bool:
                     break
         
         # Handle photo URLs - store both the IMAGE formula and raw URL
-        photo_url_field = get_canonical_field_name('Photo URL')
+        photo_url_field = get_canonical_field_name('photo_url')
         photo_url = plant_data.get(photo_url_field, '')
         photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
         raw_photo_url = photo_url  # Store the raw URL directly
@@ -46,13 +46,13 @@ def update_plant_legacy(plant_data: Dict) -> bool:
         new_row = []
         
         for field_name in field_names:
-            if field_name == get_canonical_field_name('ID'):
+            if field_name == get_canonical_field_name('id'):
                 new_row.append(str(len(values) if plant_row is None else values[plant_row][0]))
             elif field_name == photo_url_field:
                 new_row.append(photo_formula)  # Photo URL as image formula
-            elif field_name == get_canonical_field_name('Raw Photo URL'):
+            elif field_name == get_canonical_field_name('raw_photo_url'):
                 new_row.append(raw_photo_url)  # Raw Photo URL stored directly
-            elif field_name == get_canonical_field_name('Last Updated'):
+            elif field_name == get_canonical_field_name('last_updated'):
                 new_row.append(timestamp)
             else:
                 new_row.append(plant_data.get(field_name, ''))

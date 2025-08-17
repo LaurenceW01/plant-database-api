@@ -118,7 +118,7 @@ def get_plant_name_field() -> Optional[str]:
         return plant_name.strip()
     
     # Try other variations as fallback
-    for field_name in ['Plant Name', 'plantName', 'name', 'plant-name']:
+    for field_name in ['plant_name', 'Plant Name', 'plantName', 'name', 'plant-name']:
         value = get_normalized_field(field_name)
         if value:
             return value.strip()
@@ -160,40 +160,40 @@ class FieldNormalizationConfig:
     
     # Field mappings for common patterns
     COMMON_FIELD_MAPPINGS = {
-        'plant_name': 'Plant Name',
-        'plantName': 'Plant Name', 
-        'name': 'Plant Name',
-        'plant-name': 'Plant Name',
+        'plant_name': 'plant_name',
+        'plantName': 'plant_name', 
+        'name': 'plant_name',
+        'plant-name': 'plant_name',
         
-        'location': 'Location',
-        'loc': 'Location',
-        'position': 'Location',
+        'location': 'location',
+        'loc': 'location',
+        'position': 'location',
         
-        'entry': 'Entry',
-        'log_entry': 'Entry',
-        'logEntry': 'Entry',
-        'message': 'Entry',
-        'text': 'Entry',
+        'entry': 'user_notes',
+        'log_entry': 'user_notes',
+        'logEntry': 'user_notes',
+        'message': 'user_notes',
+        'text': 'user_notes',
         
-        'diagnosis': 'Diagnosis',
-        'treatment': 'Treatment',
-        'symptoms': 'Symptoms',
+        'diagnosis': 'diagnosis',
+        'treatment': 'treatment',
+        'symptoms': 'symptoms',
         
-        'light_requirements': 'Light Requirements',
-        'lightRequirements': 'Light Requirements',
-        'light': 'Light Requirements',
+        'light_requirements': 'light_requirements',
+        'lightRequirements': 'light_requirements',
+        'light': 'light_requirements',
         
-        'water_requirements': 'Water Requirements',
-        'waterRequirements': 'Water Requirements', 
-        'water': 'Water Requirements',
-        'watering': 'Water Requirements',
+        'water_requirements': 'watering_needs',
+        'waterRequirements': 'watering_needs', 
+        'water': 'watering_needs',
+        'watering': 'watering_needs',
     }
     
     # Required fields for different endpoint types
     REQUIRED_FIELDS = {
-        'add_plant': ['Plant Name'],
-        'create_log': ['Plant Name'],
-        'analyze_plant': ['plant_name'],  # Uses original format for now
+        'add_plant': ['plant_name'],
+        'create_log': ['plant_name'],
+        'analyze_plant': ['plant_name'],
     }
 
 
@@ -241,12 +241,12 @@ def create_error_response_with_field_suggestions(error_message: str, missing_fie
     if missing_fields:
         suggestions = {}
         for field in missing_fields:
-            if field == 'Plant Name':
-                suggestions[field] = ["Plant Name", "plant_name", "plantName", "name"]
-            elif field == 'Entry':
-                suggestions[field] = ["Entry", "entry", "log_entry", "message", "text"]
-            elif field == 'Location':
-                suggestions[field] = ["Location", "location", "loc", "position"]
+            if field == 'plant_name':
+                suggestions[field] = ["plant_name", "Plant Name", "plantName", "name"]
+            elif field == 'user_notes':
+                suggestions[field] = ["user_notes", "Entry", "entry", "log_entry", "message", "text"]
+            elif field == 'location':
+                suggestions[field] = ["location", "Location", "loc", "position"]
         
         if suggestions:
             response['field_suggestions'] = suggestions
@@ -261,7 +261,7 @@ def get_field_with_fallbacks(canonical_name: str, *fallback_names) -> Optional[s
     Get a field value trying canonical name first, then fallbacks.
     
     Args:
-        canonical_name: The canonical field name (e.g., 'Plant Name')
+        canonical_name: The canonical field name (e.g., 'plant_name')
         *fallback_names: Alternative field names to try
         
     Returns:

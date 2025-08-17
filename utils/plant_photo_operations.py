@@ -31,8 +31,8 @@ def upload_and_link_plant_photo(file, plant_id: str, plant_name: str) -> Dict[st
         raw_photo_url = upload_result.get('raw_photo_url', '')
         
         update_data = {
-            'Photo URL': f'=IMAGE("{photo_url}")' if photo_url and not photo_url.startswith('=IMAGE("') else photo_url,
-            'Raw Photo URL': raw_photo_url
+            'photo_url': f'=IMAGE("{photo_url}")' if photo_url and not photo_url.startswith('=IMAGE("') else photo_url,
+            'raw_photo_url': raw_photo_url
         }
         
         db_update_result = update_plant(plant_id, update_data)
@@ -77,8 +77,8 @@ def migrate_photo_urls():
         header = values[0] if values else []
         
         # Find Photo URL and Raw Photo URL columns
-        photo_url_field = get_canonical_field_name('Photo URL')
-        raw_photo_url_field = get_canonical_field_name('Raw Photo URL')
+        photo_url_field = get_canonical_field_name('photo_url')
+        raw_photo_url_field = get_canonical_field_name('raw_photo_url')
         
         try:
             photo_col_idx = header.index(photo_url_field)
@@ -126,7 +126,7 @@ def migrate_photo_urls():
         invalidate_plant_list_cache()
         
         # Update Last Updated field for tracking
-        last_updated_field = get_canonical_field_name('Last Updated')
+        last_updated_field = get_canonical_field_name('last_updated')
         if last_updated_field in header:
             timestamp = get_houston_timestamp()
             logger.info(f"Photo URL migration completed at {timestamp}")
@@ -164,7 +164,7 @@ def _generate_ai_care_information(plant_name: str, location: str = "") -> Dict[s
                 'Description': f"A {plant_name} plant suitable for Houston gardening.",
                 'Care Notes': f"Care guide for {plant_name}: Please research specific care requirements for this plant based on Houston's climate and growing conditions.",
                 'Watering Needs': "Water when soil feels dry to touch",
-                'Light Requirements': "Provide appropriate light conditions for plant type"
+                'light_requirements': "Provide appropriate light conditions for plant type"
             }
         
         # Create location context
@@ -265,19 +265,19 @@ def _parse_care_guide(response: str) -> Dict[str, str]:
     """
     # Mapping from possible section names to spreadsheet field names
     section_map = {
-        'Description': 'Description',
-        'Light': 'Light Requirements', 
-        'Soil': 'Soil Preferences',
-        'Soil pH Type': 'Soil pH Type',
-        'Soil pH Range': 'Soil pH Range',
-        'Watering': 'Watering Needs',
-        'Temperature': 'Frost Tolerance',
-        'Pruning': 'Pruning Instructions',
-        'Mulching': 'Mulching Needs',
-        'Fertilizing': 'Fertilizing Schedule',
-        'Winter Care': 'Winterizing Instructions',
-        'Spacing': 'Spacing Requirements',
-        'Care Notes': 'Care Notes'
+        'Description': 'description',
+        'Light': 'light_requirements', 
+        'Soil': 'soil_preferences',
+        'Soil pH Type': 'soil_ph_type',
+        'Soil pH Range': 'soil_ph_range',
+        'Watering': 'watering_needs',
+        'Temperature': 'frost_tolerance',
+        'Pruning': 'pruning_instructions',
+        'Mulching': 'mulching_needs',
+        'Fertilizing': 'fertilizing_schedule',
+        'Winter Care': 'winterizing_instructions',
+        'Spacing': 'spacing_requirements',
+        'Care Notes': 'care_notes'
     }
 
     care_details = {}
@@ -334,10 +334,10 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
         from .plant_cache_operations import invalidate_plant_list_cache
         
         # Validate that Plant Name is provided
-        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_name_field = get_canonical_field_name('plant_name')
         plant_name = plant_data_dict.get(plant_name_field) if plant_name_field else None
         if not plant_name:
-            return {"success": False, "error": "'Plant Name' is required"}
+            return {"success": False, "error": "'plant_name' is required"}
         
         # Get next available ID
         next_id = get_next_id()
@@ -346,34 +346,34 @@ def add_plant_with_fields(plant_data_dict: Dict[str, str]) -> Dict[str, Union[bo
         
         # Prepare plant data using field_config
         plant_data = {
-            get_canonical_field_name('ID'): next_id,
-            get_canonical_field_name('Last Updated'): get_houston_timestamp()
+            get_canonical_field_name('id'): next_id,
+            get_canonical_field_name('last_updated'): get_houston_timestamp()
         }
         
         # Process all provided fields
         for field_name, field_value in plant_data_dict.items():
             canonical_field = get_canonical_field_name(field_name)
             if canonical_field:
-                if canonical_field == get_canonical_field_name('Photo URL'):
+                if canonical_field == get_canonical_field_name('photo_url'):
                     # Handle photo URL specially - store both IMAGE formula and raw URL
                     if field_value and not field_value.startswith('=IMAGE("'):
                         photo_formula = f'=IMAGE("{field_value}")' if field_value else ''
                         plant_data[canonical_field] = photo_formula
-                        plant_data[get_canonical_field_name('Raw Photo URL')] = field_value
+                        plant_data[get_canonical_field_name('raw_photo_url')] = field_value
                     else:
                         # Already wrapped, use as-is
                         plant_data[canonical_field] = field_value
                         # Extract raw URL from existing IMAGE formula if needed
                         if field_value.startswith('=IMAGE("') and field_value.endswith('")'):
                             raw_url = field_value[8:-2]  # Remove =IMAGE(" and ")
-                            plant_data[get_canonical_field_name('Raw Photo URL')] = raw_url
+                            plant_data[get_canonical_field_name('raw_photo_url')] = raw_url
                 else:
                     plant_data[canonical_field] = field_value
         
         # Check if we need to generate AI care information (minimal data provided)
         care_fields_to_check = [
-            'Description', 'Light Requirements', 'Watering Needs', 'Soil Preferences',
-            'Pruning Instructions', 'Fertilizing Schedule', 'Care Notes'
+            'description', 'light_requirements', 'watering_needs', 'soil_preferences',
+            'pruning_instructions', 'fertilizing_schedule', 'care_notes'
         ]
         
         provided_care_fields = sum(1 for field in care_fields_to_check 
@@ -445,7 +445,7 @@ def add_test_photo_url():
         test_photo_url = "https://example.com/test-plant-photo.jpg"
         
         # Update the first plant (row 1) with a test photo URL
-        success = update_plant_field(1, 'Photo URL', test_photo_url)
+        success = update_plant_field(1, 'photo_url', test_photo_url)
         
         if success:
             logger.info(f"Successfully added test photo URL to first plant: {test_photo_url}")

@@ -147,7 +147,7 @@ def analyze_location_performance(location_id):
         
         # Calculate basic performance metrics
         total_containers = len(containers)
-        unique_plants = len(set(c.get('Plant ID', '') for c in containers if c.get('Plant ID', '')))
+        unique_plants = len(set(c.get('plant_id', '') for c in containers if c.get('plant_id', '')))
         
         # Calculate utilization score
         max_sun_hours = 12  # Theoretical maximum

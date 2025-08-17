@@ -42,7 +42,7 @@ def generate_location_recommendations(location_id: str) -> Dict:
         # Generate cross-reference recommendations
         recommendations = {
             'location_analysis': {
-                'location_name': location.get('Location Name', 'Unknown'),
+                'location_name': location.get('location_name', 'Unknown'),
                 'sun_exposure_profile': _generate_sun_exposure_analysis(location),
                 'microclimate_assessment': _assess_microclimate_benefits(location),
                 'container_compatibility': _assess_container_location_compatibility(location, containers)
@@ -70,11 +70,11 @@ def _generate_sun_exposure_analysis(location: Dict) -> Dict:
     Returns:
         Dict: Detailed sun exposure analysis
     """
-    morning = float(location.get('Morning Sun Hours', '0') or '0')
-    afternoon = float(location.get('Afternoon Sun Hours', '0') or '0')
-    evening = float(location.get('Evening Sun Hours', '0') or '0')
-    total = float(location.get('Total Sun Hours', '0') or '0')
-    pattern = location.get('Shade Pattern', 'Unknown')
+    morning = float(location.get('morning_sun_hours', '0') or '0')
+    afternoon = float(location.get('afternoon_sun_hours', '0') or '0')
+    evening = float(location.get('evening_sun_hours', '0') or '0')
+    total = float(location.get('total_sun_hours', '0') or '0')
+    pattern = location.get('shade_pattern', 'Unknown')
     
     # Determine peak intensity period
     peak_period = 'morning' if morning >= afternoon and morning >= evening else \
@@ -118,7 +118,7 @@ def _assess_microclimate_benefits(location: Dict) -> Dict:
     Returns:
         Dict: Microclimate assessment
     """
-    microclimate = location.get('Microclimate Conditions', '').lower()
+    microclimate = location.get('microclimate_conditions', '').lower()
     
     benefits = []
     considerations = []
@@ -165,8 +165,8 @@ def _assess_container_location_compatibility(location: Dict, containers: List[Di
     
     concerning_combinations = []
     recommendations = []
-    afternoon_sun = float(location.get('Afternoon Sun Hours', '0') or '0')
-    total_sun = float(location.get('Total Sun Hours', '0') or '0')
+    afternoon_sun = float(location.get('afternoon_sun_hours', '0') or '0')
+    total_sun = float(location.get('total_sun_hours', '0') or '0')
     
     # Check for problematic combinations
     for container in containers:
@@ -176,7 +176,7 @@ def _assess_container_location_compatibility(location: Dict, containers: List[Di
         # Plastic containers in high afternoon sun
         if material == 'plastic' and afternoon_sun > 3:
             concerning_combinations.append({
-                'container_id': container.get('Container ID'),
+                'container_id': container.get('container_id'),
                 'issue': 'Plastic container in high afternoon sun',
                 'risk_level': 'medium',
                 'impact': 'Root heating, increased water needs'
@@ -185,7 +185,7 @@ def _assess_container_location_compatibility(location: Dict, containers: List[Di
         # Small containers in very high sun
         if size == 'small' and total_sun > 7:
             concerning_combinations.append({
-                'container_id': container.get('Container ID'),
+                'container_id': container.get('container_id'),
                 'issue': 'Small container in very high sun',
                 'risk_level': 'high',
                 'impact': 'Rapid moisture loss, frequent watering needed'
@@ -237,10 +237,10 @@ def _calculate_optimal_watering_strategy(location: Dict, containers: List[Dict])
         }
     
     # Analyze location factors
-    afternoon_sun = float(location.get('Afternoon Sun Hours', '0') or '0')
-    evening_sun = float(location.get('Evening Sun Hours', '0') or '0')
-    total_sun = float(location.get('Total Sun Hours', '0') or '0')
-    microclimate = location.get('Microclimate Conditions', '').lower()
+    afternoon_sun = float(location.get('afternoon_sun_hours', '0') or '0')
+    evening_sun = float(location.get('evening_sun_hours', '0') or '0')
+    total_sun = float(location.get('total_sun_hours', '0') or '0')
+    microclimate = location.get('microclimate_conditions', '').lower()
     
     # Determine optimal timing
     if evening_sun > 3:
@@ -316,9 +316,9 @@ def _generate_plant_placement_recommendations(location: Dict, containers: List[D
     Returns:
         Dict: Plant placement recommendations
     """
-    total_sun = float(location.get('Total Sun Hours', '0') or '0')
-    afternoon_sun = float(location.get('Afternoon Sun Hours', '0') or '0')
-    microclimate = location.get('Microclimate Conditions', '').lower()
+    total_sun = float(location.get('total_sun_hours', '0') or '0')
+    afternoon_sun = float(location.get('afternoon_sun_hours', '0') or '0')
+    microclimate = location.get('microclimate_conditions', '').lower()
     
     recommendations = []
     ideal_plants = []
@@ -460,7 +460,7 @@ def _assess_overall_care_complexity(location: Dict, containers: List[Dict]) -> D
     if complexity_counts['medium'] > 2:
         management_recommendations.append('Regular monitoring schedule recommended for multiple medium-complexity setups')
     
-    total_sun = float(location.get('Total Sun Hours', '0') or '0')
+    total_sun = float(location.get('total_sun_hours', '0') or '0')
     if total_sun > 7:
         management_recommendations.append('High sun exposure requires consistent watering schedule')
     
@@ -485,8 +485,8 @@ def _identify_complexity_factors(location: Dict, containers: List[Dict]) -> List
     """
     factors = []
     
-    total_sun = float(location.get('Total Sun Hours', '0') or '0')
-    afternoon_sun = float(location.get('Afternoon Sun Hours', '0') or '0')
+    total_sun = float(location.get('total_sun_hours', '0') or '0')
+    afternoon_sun = float(location.get('afternoon_sun_hours', '0') or '0')
     
     if total_sun > 8:
         factors.append('Very high sun exposure')

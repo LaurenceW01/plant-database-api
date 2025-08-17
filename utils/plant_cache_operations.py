@@ -54,7 +54,7 @@ def get_plant_names_from_database() -> List[str]:
         
         headers = values[0]
         # Use field_config to get canonical field name
-        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_name_field = get_canonical_field_name('plant_name')
         name_idx = headers.index(plant_name_field) if plant_name_field in headers else 1
         
         # Extract plant names from all rows except header
@@ -253,7 +253,7 @@ def enhanced_plant_matching(plant_identification: str) -> Dict:
             }
         
         # Extract plant names for matching
-        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_name_field = get_canonical_field_name('plant_name')
         plant_names = [plant.get(plant_name_field, '') for plant in all_plants if plant.get(plant_name_field)]
         
         # Find the best match using enhanced fuzzy matching

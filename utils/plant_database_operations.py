@@ -210,7 +210,7 @@ def find_plant_by_id_or_name(identifier: str) -> Tuple[Optional[int], Optional[L
         header = values[0] if values else []
         
         # Use field_config to get canonical field name
-        plant_name_field = get_canonical_field_name('Plant Name')
+        plant_name_field = get_canonical_field_name('plant_name')
         name_idx = header.index(plant_name_field) if plant_name_field in header else 1
         
         try:
@@ -344,7 +344,7 @@ def update_plant_field(plant_row: int, field_name: str, new_value: str) -> bool:
             logger.error(f"Field {canonical_field_name} not found in sheet")
             return False
             
-        if canonical_field_name == get_canonical_field_name('Photo URL'):
+        if canonical_field_name == get_canonical_field_name('photo_url'):
             # Handle photo URL specially - store as IMAGE formula and update Raw Photo URL
             if new_value and not new_value.startswith('=IMAGE("'):
                 photo_formula = f'=IMAGE("{new_value}")' if new_value else ''
@@ -360,7 +360,7 @@ def update_plant_field(plant_row: int, field_name: str, new_value: str) -> bool:
             ).execute()
             
             # Also update Raw Photo URL column
-            raw_photo_url_field = get_canonical_field_name('Raw Photo URL')
+            raw_photo_url_field = get_canonical_field_name('raw_photo_url')
             try:
                 raw_col_idx = header.index(raw_photo_url_field)
                 raw_range_name = f'Plants!{chr(65 + raw_col_idx)}{plant_row + 1}'
@@ -415,7 +415,7 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
             return {"success": False, "error": "Could not generate plant ID"}
         
         # Prepare plant data using field_config
-        # Wrap the photo_url in =IMAGE() for the 'Photo URL' field (if not already wrapped)
+        # Wrap the photo_url in =IMAGE() for the 'photo_url' field (if not already wrapped)
         if photo_url and not photo_url.startswith('=IMAGE("'):
             photo_formula = f'=IMAGE("{photo_url}")' if photo_url else ''
             raw_photo_url = photo_url  # Store the raw URL directly
@@ -427,13 +427,13 @@ def add_plant(plant_name: str, description: str = "", location: str = "", photo_
             else:
                 raw_photo_url = photo_url
         plant_data = {
-            get_canonical_field_name('ID'): next_id,
-            get_canonical_field_name('Plant Name'): plant_name,
-            get_canonical_field_name('Description'): description,
-            get_canonical_field_name('Location'): location,
-            get_canonical_field_name('Photo URL'): photo_formula,
-            get_canonical_field_name('Raw Photo URL'): raw_photo_url,
-            get_canonical_field_name('Last Updated'): get_houston_timestamp()
+            get_canonical_field_name('id'): next_id,
+            get_canonical_field_name('plant_name'): plant_name,
+            get_canonical_field_name('description'): description,
+            get_canonical_field_name('location'): location,
+            get_canonical_field_name('photo_url'): photo_formula,
+            get_canonical_field_name('raw_photo_url'): raw_photo_url,
+            get_canonical_field_name('last_updated'): get_houston_timestamp()
         }
         
         # Add empty values for all other fields

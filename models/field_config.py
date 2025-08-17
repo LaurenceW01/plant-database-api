@@ -9,304 +9,304 @@ from typing import Optional
 # List of all database field names as they appear in the Google Sheet
 FIELD_NAMES = [
     # Unique identifier for each plant
-    'ID',
+    'id',
     # The name of the plant (required field)
-    'Plant Name',
+    'plant_name',
     # Description of the plant
-    'Description',
+    'description',
     # Location(s) of the plant in the garden
-    'Location',
+    'location',
     # Light requirements for the plant
-    'Light Requirements',
+    'light_requirements',
     # Frost tolerance information
-    'Frost Tolerance',
+    'frost_tolerance',
     # Watering needs for the plant
-    'Watering Needs',
+    'watering_needs',
     # Soil preferences for the plant
-    'Soil Preferences',
+    'soil_preferences',
     # Soil pH type (high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity)
-    'Soil pH Type',
+    'soil_ph_type',
     # Soil pH range (e.g., "5.5 - 6.5")
-    'Soil pH Range',
+    'soil_ph_range',
     # Pruning instructions for the plant
-    'Pruning Instructions',
+    'pruning_instructions',
     # Mulching needs for the plant
-    'Mulching Needs',
+    'mulching_needs',
     # Fertilizing schedule for the plant
-    'Fertilizing Schedule',
+    'fertilizing_schedule',
     # Winterizing instructions for the plant
-    'Winterizing Instructions',
+    'winterizing_instructions',
     # Spacing requirements for the plant
-    'Spacing Requirements',
+    'spacing_requirements',
     # Additional care notes
-    'Care Notes',
+    'care_notes',
     # Photo URL (as an IMAGE formula in the sheet)
-    'Photo URL',
+    'photo_url',
     # Raw Photo URL (direct link to the image)
-    'Raw Photo URL',
+    'raw_photo_url',
     # Last updated timestamp
-    'Last Updated',
+    'last_updated',
 ]
 
 # Plant Log field names as they appear in the Google Sheet
 LOG_FIELD_NAMES = [
     # Unique identifier for each log entry (LOG-YYYYMMDD-001 format)
-    'Log ID',
+    'log_id',
     # Name of the plant (EXACT match to existing plant database - enforced validation)
-    'Plant Name',
+    'plant_name',
     # Backup reference to plant ID from main database
-    'Plant ID',
+    'plant_id',
     # Location where the plant issue occurred (garden area, room, greenhouse, etc.)
-    'Location',
+    'location',
     # Human-readable log date ("January 15, 2024 at 2:30 PM")
-    'Log Date',
+    'log_date',
     # Title for the log entry (auto-generated or user-provided)
-    'Log Title',
+    'log_title',
     # Photo URL (uploaded image location as IMAGE formula)
-    'Photo URL',
+    'photo_url',
     # Raw Photo URL (direct image link)
-    'Raw Photo URL',
+    'raw_photo_url',
     # GPT-generated plant health diagnosis in journal format
-    'Diagnosis',
+    'diagnosis',
     # GPT-generated treatment recommendations in journal format
-    'Treatment Recommendation',
+    'treatment_recommendation',
     # Combined user and GPT observations of symptoms
-    'Symptoms Observed',
+    'symptoms_observed',
     # User observations and follow-up comments
-    'User Notes',
+    'user_notes',
     # GPT analysis confidence score (0.0-1.0)
-    'Confidence Score',
+    'confidence_score',
     # Type of analysis (health_assessment|identification|general_care|follow_up)
-    'Analysis Type',
+    'analysis_type',
     # Boolean flag indicating if follow-up is required
-    'Follow-up Required',
+    'follow-up_required',
     # Date when follow-up should occur
-    'Follow-up Date',
+    'follow-up_date',
     # Last updated timestamp for the log entry
-    'Last Updated',
+    'last_updated',
 ]
 
 # User-friendly aliases for each field (all lowercased for matching)
 FIELD_ALIASES = {
     # ID field aliases
-    'id': 'ID',
-    'identifier': 'ID',
+    'id': 'id',
+    'identifier': 'id',
     # Plant Name field aliases
-    'name': 'Plant Name',
-    'plant': 'Plant Name',
-    'plant name': 'Plant Name',
-    'plant___name': 'Plant Name',  # ChatGPT triple underscore pattern
-    'plant_name': 'Plant Name',    # Single underscore pattern
+    'name': 'plant_name',
+    'plant': 'plant_name',
+    'plant name': 'plant_name',
+    'plant___name': 'plant_name',  # ChatGPT triple underscore pattern
+    'plant_name': 'plant_name',    # Single underscore pattern
     # Description field aliases
-    'desc': 'Description',
-    'description': 'Description',
+    'desc': 'description',
+    'description': 'description',
     # Location field aliases
-    'location': 'Location',
-    'where': 'Location',
-    'place': 'Location',
+    'location': 'location',
+    'where': 'location',
+    'place': 'location',
     # Light Requirements field aliases
-    'light': 'Light Requirements',
-    'light requirements': 'Light Requirements',
-    'light___requirements': 'Light Requirements',  # ChatGPT triple underscore pattern
-    'light_requirements': 'Light Requirements',    # Single underscore pattern
-    'sun': 'Light Requirements',
-    'sunlight': 'Light Requirements',
+    'light': 'light_requirements',
+    'light requirements': 'light_requirements',
+    'light___requirements': 'light_requirements',  # ChatGPT triple underscore pattern
+    'light_requirements': 'light_requirements',    # Single underscore pattern
+    'sun': 'light_requirements',
+    'sunlight': 'light_requirements',
     # Frost Tolerance field aliases
-    'frost': 'Frost Tolerance',
-    'frost tolerance': 'Frost Tolerance',
-    'frost___tolerance': 'Frost Tolerance',  # ChatGPT triple underscore pattern
-    'frost_tolerance': 'Frost Tolerance',    # Single underscore pattern
-    'cold': 'Frost Tolerance',
-    'temperature': 'Frost Tolerance',
+    'frost': 'frost_tolerance',
+    'frost tolerance': 'frost_tolerance',
+    'frost___tolerance': 'frost_tolerance',  # ChatGPT triple underscore pattern
+    'frost_tolerance': 'frost_tolerance',    # Single underscore pattern
+    'cold': 'frost_tolerance',
+    'temperature': 'frost_tolerance',
     # Watering Needs field aliases
-    'water': 'Watering Needs',
-    'watering': 'Watering Needs',
-    'watering needs': 'Watering Needs',
-    'watering___needs': 'Watering Needs',  # ChatGPT triple underscore pattern
-    'watering_needs': 'Watering Needs',    # Single underscore pattern
+    'water': 'watering_needs',
+    'watering': 'watering_needs',
+    'watering needs': 'watering_needs',
+    'watering___needs': 'watering_needs',  # ChatGPT triple underscore pattern
+    'watering_needs': 'watering_needs',    # Single underscore pattern
     # Soil Preferences field aliases
-    'soil': 'Soil Preferences',
-    'soil preferences': 'Soil Preferences',
-    'soil___preferences': 'Soil Preferences',  # ChatGPT triple underscore pattern
-    'soil_preferences': 'Soil Preferences',    # Single underscore pattern
+    'soil': 'soil_preferences',
+    'soil preferences': 'soil_preferences',
+    'soil___preferences': 'soil_preferences',  # ChatGPT triple underscore pattern
+    'soil_preferences': 'soil_preferences',    # Single underscore pattern
     # Soil pH Type field aliases
-    'soil ph type': 'Soil pH Type',
-    'soil_ph_type': 'Soil pH Type',
-    'soil___ph___type': 'Soil pH Type',  # ChatGPT triple underscore pattern
-    'ph type': 'Soil pH Type',
-    'soil ph': 'Soil pH Type',
-    'ph': 'Soil pH Type',
-    'acidity': 'Soil pH Type',
-    'alkalinity': 'Soil pH Type',
+    'soil ph type': 'soil_ph_type',
+    'soil_ph_type': 'soil_ph_type',
+    'soil___ph___type': 'soil_ph_type',  # ChatGPT triple underscore pattern
+    'ph type': 'soil_ph_type',
+    'soil ph': 'soil_ph_type',
+    'ph': 'soil_ph_type',
+    'acidity': 'soil_ph_type',
+    'alkalinity': 'soil_ph_type',
     # Soil pH Range field aliases
-    'soil ph range': 'Soil pH Range',
-    'soil_ph_range': 'Soil pH Range',
-    'soil___ph___range': 'Soil pH Range',  # ChatGPT triple underscore pattern
-    'ph range': 'Soil pH Range',
-    'ph level': 'Soil pH Range',
-    'ph levels': 'Soil pH Range',
+    'soil ph range': 'soil_ph_range',
+    'soil_ph_range': 'soil_ph_range',
+    'soil___ph___range': 'soil_ph_range',  # ChatGPT triple underscore pattern
+    'ph range': 'soil_ph_range',
+    'ph level': 'soil_ph_range',
+    'ph levels': 'soil_ph_range',
     # Pruning Instructions field aliases
-    'prune': 'Pruning Instructions',
-    'pruning': 'Pruning Instructions',
-    'pruning instructions': 'Pruning Instructions',
-    'pruning___instructions': 'Pruning Instructions',  # ChatGPT triple underscore pattern
-    'pruning_instructions': 'Pruning Instructions',    # Single underscore pattern
+    'prune': 'pruning_instructions',
+    'pruning': 'pruning_instructions',
+    'pruning instructions': 'pruning_instructions',
+    'pruning___instructions': 'pruning_instructions',  # ChatGPT triple underscore pattern
+    'pruning_instructions': 'pruning_instructions',    # Single underscore pattern
     # Mulching Needs field aliases
-    'mulch': 'Mulching Needs',
-    'mulching': 'Mulching Needs',
-    'mulching needs': 'Mulching Needs',
+    'mulch': 'mulching_needs',
+    'mulching': 'mulching_needs',
+    'mulching needs': 'mulching_needs',
     # Fertilizing Schedule field aliases
-    'fertilize': 'Fertilizing Schedule',
-    'fertilizing': 'Fertilizing Schedule',
-    'fertilizing schedule': 'Fertilizing Schedule',
-    'fertilizing___schedule': 'Fertilizing Schedule',  # ChatGPT triple underscore pattern
-    'fertilizing_schedule': 'Fertilizing Schedule',    # Single underscore pattern
+    'fertilize': 'fertilizing_schedule',
+    'fertilizing': 'fertilizing_schedule',
+    'fertilizing schedule': 'fertilizing_schedule',
+    'fertilizing___schedule': 'fertilizing_schedule',  # ChatGPT triple underscore pattern
+    'fertilizing_schedule': 'fertilizing_schedule',    # Single underscore pattern
     # Winterizing Instructions field aliases
-    'winter': 'Winterizing Instructions',
-    'winterizing': 'Winterizing Instructions',
-    'winterizing instructions': 'Winterizing Instructions',
-    'winter care': 'Winterizing Instructions',
+    'winter': 'winterizing_instructions',
+    'winterizing': 'winterizing_instructions',
+    'winterizing instructions': 'winterizing_instructions',
+    'winter care': 'winterizing_instructions',
     # Spacing Requirements field aliases
-    'spacing': 'Spacing Requirements',
-    'spacing requirements': 'Spacing Requirements',
-    'spacing___requirements': 'Spacing Requirements',  # ChatGPT triple underscore pattern
-    'spacing_requirements': 'Spacing Requirements',    # Single underscore pattern
+    'spacing': 'spacing_requirements',
+    'spacing requirements': 'spacing_requirements',
+    'spacing___requirements': 'spacing_requirements',  # ChatGPT triple underscore pattern
+    'spacing_requirements': 'spacing_requirements',    # Single underscore pattern
     # Care Notes field aliases
-    'notes': 'Care Notes',
-    'care notes': 'Care Notes',
-    'care___notes': 'Care Notes',  # ChatGPT triple underscore pattern
-    'care_notes': 'Care Notes',    # Single underscore pattern
-    'care instructions': 'Care Notes',
-    'instructions': 'Care Notes',
+    'notes': 'care_notes',
+    'care notes': 'care_notes',
+    'care___notes': 'care_notes',  # ChatGPT triple underscore pattern
+    'care_notes': 'care_notes',    # Single underscore pattern
+    'care instructions': 'care_notes',
+    'instructions': 'care_notes',
     # Photo URL field aliases
-    'photo': 'Photo URL',
-    'photo url': 'Photo URL',
-    'image': 'Photo URL',
-    'picture': 'Photo URL',
-    'url': 'Photo URL',
-    'image url': 'Photo URL',
-    'photo link': 'Photo URL',
+    'photo': 'photo_url',
+    'photo url': 'photo_url',
+    'image': 'photo_url',
+    'picture': 'photo_url',
+    'url': 'photo_url',
+    'image url': 'photo_url',
+    'photo link': 'photo_url',
     # Raw Photo URL field aliases
-    'raw photo url': 'Raw Photo URL',
-    'direct photo url': 'Raw Photo URL',
-    'raw image url': 'Raw Photo URL',
+    'raw photo url': 'raw_photo_url',
+    'direct photo url': 'raw_photo_url',
+    'raw image url': 'raw_photo_url',
     # Last Updated field aliases
-    'last updated': 'Last Updated',
-    'updated': 'Last Updated',
+    'last updated': 'last_updated',
+    'updated': 'last_updated',
 }
 
 # User-friendly aliases for plant log fields (all lowercased for matching)
 LOG_FIELD_ALIASES = {
     # Log ID field aliases
-    'log id': 'Log ID',
-    'id': 'Log ID',
-    'log_id': 'Log ID',
+    'log id': 'log_id',
+    'id': 'log_id',
+    'log_id': 'log_id',
     # Plant Name field aliases (same as main plant fields)
-    'name': 'Plant Name',
-    'plant': 'Plant Name',
-    'plant name': 'Plant Name',
-    'plant_name': 'Plant Name',
+    'name': 'plant_name',
+    'plant': 'plant_name',
+    'plant name': 'plant_name',
+    'plant_name': 'plant_name',
     # Plant ID field aliases
-    'plant id': 'Plant ID',
-    'plant_id': 'Plant ID',
-    'plantid': 'Plant ID',
+    'plant id': 'plant_id',
+    'plant_id': 'plant_id',
+    'plantid': 'plant_id',
     # Log Date field aliases
-    'date': 'Log Date',
-    'log date': 'Log Date',
-    'log_date': 'Log Date',
-    'timestamp': 'Log Date',
+    'date': 'log_date',
+    'log date': 'log_date',
+    'log_date': 'log_date',
+    'timestamp': 'log_date',
     # Log Title field aliases
-    'title': 'Log Title',
-    'log title': 'Log Title',
-    'log_title': 'Log Title',
+    'title': 'log_title',
+    'log title': 'log_title',
+    'log_title': 'log_title',
     # Photo URL field aliases (same as main plant fields)
-    'photo': 'Photo URL',
-    'photo url': 'Photo URL',
-    'image': 'Photo URL',
-    'picture': 'Photo URL',
+    'photo': 'photo_url',
+    'photo url': 'photo_url',
+    'image': 'photo_url',
+    'picture': 'photo_url',
     # Raw Photo URL field aliases
-    'raw photo url': 'Raw Photo URL',
-    'raw_photo_url': 'Raw Photo URL',
-    'direct photo url': 'Raw Photo URL',
-    'raw image url': 'Raw Photo URL',
+    'raw photo url': 'raw_photo_url',
+    'raw_photo_url': 'raw_photo_url',
+    'direct photo url': 'raw_photo_url',
+    'raw image url': 'raw_photo_url',
     # Diagnosis field aliases
-    'diagnosis': 'Diagnosis',
-    'assessment': 'Diagnosis',
-    'health assessment': 'Diagnosis',
+    'diagnosis': 'diagnosis',
+    'assessment': 'diagnosis',
+    'health assessment': 'diagnosis',
     # Treatment Recommendation field aliases
-    'treatment': 'Treatment Recommendation',
-    'treatment recommendation': 'Treatment Recommendation',
-    'treatment_recommendation': 'Treatment Recommendation',
-    'recommendation': 'Treatment Recommendation',
-    'care plan': 'Treatment Recommendation',
+    'treatment': 'treatment_recommendation',
+    'treatment recommendation': 'treatment_recommendation',
+    'treatment_recommendation': 'treatment_recommendation',
+    'recommendation': 'treatment_recommendation',
+    'care plan': 'treatment_recommendation',
     # Symptoms Observed field aliases
-    'symptoms': 'Symptoms Observed',
-    'symptoms observed': 'Symptoms Observed',
-    'symptoms_observed': 'Symptoms Observed',
-    'observations': 'Symptoms Observed',
+    'symptoms': 'symptoms_observed',
+    'symptoms observed': 'symptoms_observed',
+    'symptoms_observed': 'symptoms_observed',
+    'observations': 'symptoms_observed',
     # User Notes field aliases
-    'notes': 'User Notes',
-    'user notes': 'User Notes',
-    'user_notes': 'User Notes',
-    'comments': 'User Notes',
-    'my notes': 'User Notes',
+    'notes': 'user_notes',
+    'user notes': 'user_notes',
+    'user_notes': 'user_notes',
+    'comments': 'user_notes',
+    'my notes': 'user_notes',
     # Confidence Score field aliases
-    'confidence': 'Confidence Score',
-    'confidence score': 'Confidence Score',
-    'confidence_score': 'Confidence Score',
-    'score': 'Confidence Score',
+    'confidence': 'confidence_score',
+    'confidence score': 'confidence_score',
+    'confidence_score': 'confidence_score',
+    'score': 'confidence_score',
     # Analysis Type field aliases
-    'type': 'Analysis Type',
-    'analysis type': 'Analysis Type',
-    'analysis_type': 'Analysis Type',
-    'log type': 'Analysis Type',
+    'type': 'analysis_type',
+    'analysis type': 'analysis_type',
+    'analysis_type': 'analysis_type',
+    'log type': 'analysis_type',
     # Follow-up Required field aliases
-    'followup': 'Follow-up Required',
-    'follow-up': 'Follow-up Required',
-    'follow-up required': 'Follow-up Required',
-    'followup_required': 'Follow-up Required',
-    'follow_up_required': 'Follow-up Required',
-    'needs followup': 'Follow-up Required',
+    'followup': 'follow_up_required',
+    'follow-up': 'follow_up_required',
+    'follow-up required': 'follow_up_required',
+    'followup_required': 'follow_up_required',
+    'follow_up_required': 'follow_up_required',
+    'needs followup': 'follow_up_required',
     # Follow-up Date field aliases
-    'followup date': 'Follow-up Date',
-    'follow-up date': 'Follow-up Date',
-    'followup_date': 'Follow-up Date',
-    'follow_up_date': 'Follow-up Date',
-    'next check': 'Follow-up Date',
+    'followup date': 'follow_up_date',
+    'follow-up date': 'follow_up_date',
+    'followup_date': 'follow_up_date',
+    'follow_up_date': 'follow_up_date',
+    'next check': 'follow_up_date',
 }
 
 # Field categories for organization and validation
 FIELD_CATEGORIES = {
     # Basic information fields
     'basic': [
-        'ID',
-        'Plant Name',
-        'Description',
-        'Location',
+        'id',
+        'plant_name',
+        'description',
+        'location',
     ],
     # Care requirement fields
     'care': [
-        'Light Requirements',
-        'Frost Tolerance',
-        'Watering Needs',
-        'Soil Preferences',
-        'Soil pH Type',
-        'Soil pH Range',
-        'Pruning Instructions',
-        'Mulching Needs',
-        'Fertilizing Schedule',
-        'Winterizing Instructions',
-        'Spacing Requirements',
-        'Care Notes',
+        'light_requirements',
+        'frost_tolerance',
+        'watering_needs',
+        'soil_preferences',
+        'soil_ph_type',
+        'soil_ph_range',
+        'pruning_instructions',
+        'mulching_needs',
+        'fertilizing_schedule',
+        'winterizing_instructions',
+        'spacing_requirements',
+        'care_notes',
     ],
     # Media fields
     'media': [
-        'Photo URL',
-        'Raw Photo URL',
+        'photo_url',
+        'raw_photo_url',
     ],
     # Metadata fields
     'metadata': [
-        'Last Updated',
+        'last_updated',
     ],
 }
 
@@ -314,37 +314,37 @@ FIELD_CATEGORIES = {
 LOG_FIELD_CATEGORIES = {
     # Essential identification fields
     'identification': [
-        'Log ID',
-        'Plant Name',
-        'Plant ID',
-        'Log Date',
-        'Log Title',
+        'log_id',
+        'plant_name',
+        'plant_id',
+        'log_date',
+        'log_title',
     ],
     # Photo and media fields
     'media': [
-        'Photo URL',
-        'Raw Photo URL',
+        'photo_url',
+        'raw_photo_url',
     ],
     # Analysis and diagnosis fields
     'analysis': [
-        'Diagnosis',
-        'Treatment Recommendation',
-        'Symptoms Observed',
-        'Confidence Score',
-        'Analysis Type',
+        'diagnosis',
+        'treatment_recommendation',
+        'symptoms_observed',
+        'confidence_score',
+        'analysis_type',
     ],
     # User interaction fields
     'user_data': [
-        'User Notes',
+        'user_notes',
     ],
     # Follow-up tracking fields
     'followup': [
-        'Follow-up Required',
-        'Follow-up Date',
+        'follow_up_required',
+        'follow_up_date',
     ],
     # Metadata fields
     'metadata': [
-        'Last Updated',
+        'last_updated',
     ],
 }
 
@@ -481,13 +481,13 @@ def validate_log_field_data(field_name: str, value: str) -> tuple[bool, str]:
     """
     if not value or not value.strip():
         # Check required fields
-        required_fields = ['Log ID', 'Plant Name', 'Log Date']
+        required_fields = ['log_id', 'plant_name', 'log_date']
         if field_name in required_fields:
             return False, f"{field_name} is required"
         return True, ""  # Optional fields can be empty
     
     # Validate specific field types
-    if field_name == 'Confidence Score':
+    if field_name == 'confidence_score':
         try:
             score = float(value)
             if not (0.0 <= score <= 1.0):
@@ -495,17 +495,17 @@ def validate_log_field_data(field_name: str, value: str) -> tuple[bool, str]:
         except ValueError:
             return False, "Confidence Score must be a valid number"
     
-    elif field_name == 'Analysis Type':
+    elif field_name == 'analysis_type':
         valid_types = ['health_assessment', 'identification', 'general_care', 'follow_up']
         if value.lower() not in valid_types:
             return False, f"Analysis Type must be one of: {', '.join(valid_types)}"
     
-    elif field_name == 'Follow-up Required':
+    elif field_name == 'follow_up_required':
         valid_values = ['true', 'false', 'yes', 'no', '1', '0']
         if value.lower() not in valid_values:
             return False, "Follow-up Required must be true/false or yes/no"
     
-    elif field_name in ['Photo URL', 'Raw Photo URL']:
+    elif field_name in ['photo_url', 'raw_photo_url']:
         # Basic URL validation - should start with http:// or https://
         if not (value.startswith('http://') or value.startswith('https://') or value.startswith('=IMAGE(')):
             return False, f"{field_name} must be a valid URL or IMAGE formula"

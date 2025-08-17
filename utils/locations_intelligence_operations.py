@@ -208,7 +208,7 @@ def _calculate_container_statistics(containers: List[Dict]) -> Dict:
         }
     
     # Count unique plants
-    unique_plants = len(set(container.get('Plant ID', '') for container in containers if container.get('Plant ID', '')))
+    unique_plants = len(set(container.get('plant_id', '') for container in containers if container.get('plant_id', '')))
     
     # Aggregate container types
     type_counts = {}
@@ -268,8 +268,8 @@ def _generate_location_care_intelligence(location: Dict, containers: List[Dict])
             'seasonal_considerations': []
         }
     
-    total_sun_hours = float(location.get('Total Sun Hours', '0') or '0')
-    afternoon_sun_hours = float(location.get('Afternoon Sun Hours', '0') or '0')
+    total_sun_hours = float(location.get('total_sun_hours', '0') or '0')
+    afternoon_sun_hours = float(location.get('afternoon_sun_hours', '0') or '0')
     
     # Watering strategy based on containers and sun exposure
     plastic_containers = sum(1 for c in containers if c.get('container_material', '').lower() == 'plastic')
@@ -312,7 +312,7 @@ def _get_seasonal_considerations(location: Dict, containers: List[Dict]) -> List
     """
     considerations = []
     
-    afternoon_sun_hours = float(location.get('Afternoon Sun Hours', '0') or '0')
+    afternoon_sun_hours = float(location.get('afternoon_sun_hours', '0') or '0')
     
     # Summer considerations
     if afternoon_sun_hours > 3:
@@ -324,7 +324,7 @@ def _get_seasonal_considerations(location: Dict, containers: List[Dict]) -> List
         considerations.append(f'Summer: Monitor {plastic_count} plastic containers for overheating')
     
     # Winter considerations
-    if location.get('Microclimate Conditions', '').lower().find('exposed') != -1:
+    if location.get('microclimate_conditions', '').lower().find('exposed') != -1:
         considerations.append('Winter: Protect containers from freezing winds')
     
     return considerations
@@ -348,7 +348,7 @@ def _identify_location_optimization_opportunities(location: Dict, containers: Li
     # Container material optimization
     plastic_in_high_sun = [c for c in containers 
                           if c.get('container_material', '').lower() == 'plastic' 
-                          and float(location.get('Afternoon Sun Hours', '0') or '0') > 3]
+                          and float(location.get('afternoon_sun_hours', '0') or '0') > 3]
     
     if plastic_in_high_sun:
         opportunities.append({
@@ -392,7 +392,7 @@ def _analyze_plant_distribution(containers: List[Dict]) -> Dict:
     # Get plant names
     plant_mapping = _get_cached_plants()
     
-    plant_ids = [c.get('Plant ID', '') for c in containers if c.get('Plant ID', '')]
+    plant_ids = [c.get('plant_id', '') for c in containers if c.get('plant_id', '')]
     unique_plant_ids = list(set(plant_ids))
     
     plant_names = []

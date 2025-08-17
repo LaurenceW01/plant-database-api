@@ -77,7 +77,7 @@ paths:
                   summary: "Full plant data: GET /api/plants/search"
                   value:
                     count: 2
-                    plants: [{"ID": "31", "Plant Name": "Trailing Vinca"}, {"ID": "134", "Plant Name": "Vinca"}]
+                    plants: [{"id": "31", "plant_name": "Trailing Vinca"}, {"id": "134", "plant_name": "Vinca"}]
                 names_only_all:
                   summary: "All plant names: GET /api/plants/search"
                   value:
@@ -201,43 +201,43 @@ paths:
                     type: object
                     description: Complete plant object with all spreadsheet fields
                     properties:
-                      ID:
+                      id:
                         type: string
-                      Plant Name:
+                      plant_name:
                         type: string
-                      Description:
+                      description:
                         type: string
-                      Location:
+                      location:
                         type: string
-                      Light Requirements:
+                      light_requirements:
                         type: string
-                      Watering Needs:
+                      watering_needs:
                         type: string
-                      Soil Preferences:
+                      soil_preferences:
                         type: string
-                      Soil pH Type:
+                      soil_ph_type:
                         type: string
-                      Soil pH Range:
+                      soil_ph_range:
                         type: string
-                      Frost Tolerance:
+                      frost_tolerance:
                         type: string
-                      Fertilizing Schedule:
+                      fertilizing_schedule:
                         type: string
-                      Pruning Instructions:
+                      pruning_instructions:
                         type: string
-                      Mulching Needs:
+                      mulching_needs:
                         type: string
-                      Winterizing Instructions:
+                      winterizing_instructions:
                         type: string
-                      Spacing Requirements:
+                      spacing_requirements:
                         type: string
-                      Care Notes:
+                      care_notes:
                         type: string
-                      Photo URL:
+                      photo_url:
                         type: string
-                      Raw Photo URL:
+                      raw_photo_url:
                         type: string
-                      Last Updated:
+                      last_updated:
                         type: string
                     additionalProperties: true
                   metadata:
@@ -301,67 +301,67 @@ paths:
           description: Plant ID or name
           schema:
             type: string
-        - name: Description
+        - name: description
           in: query
           required: false
           schema:
             type: string
           description: "Plant description"
-        - name: Location
+        - name: location
           in: query
           required: false
           schema:
             type: string
           description: "Plant location"
-        - name: Light_Requirements
+        - name: light_requirements
           in: query
           required: false
           schema:
             type: string
           description: "Light requirements for the plant"
-        - name: Watering_Needs
+        - name: watering_needs
           in: query
           required: false
           schema:
             type: string
           description: "Watering needs for the plant"
-        - name: Soil_Preferences
+        - name: soil_preferences
           in: query
           required: false
           schema:
             type: string
           description: "Soil preferences for the plant"
-        - name: Frost_Tolerance
+        - name: frost_tolerance
           in: query
           required: false
           schema:
             type: string
           description: "Frost tolerance information"
-        - name: Fertilizing_Schedule
+        - name: fertilizing_schedule
           in: query
           required: false
           schema:
             type: string
           description: "Fertilizing schedule"
-        - name: Pruning_Instructions
+        - name: pruning_instructions
           in: query
           required: false
           schema:
             type: string
           description: "Pruning instructions"
-        - name: Mulching_Needs
+        - name: mulching_needs
           in: query
           required: false
           schema:
             type: string
           description: "Mulching needs"
-        - name: Winterizing_Instructions
+        - name: winterizing_instructions
           in: query
           required: false
           schema:
             type: string
           description: "Winterizing instructions"
-        - name: Care_Notes
+        - name: care_notes
           in: query
           required: false
           schema:
@@ -396,67 +396,67 @@ paths:
             type: string
           description: "Plant ID or name to update"
           example: "Vinca"
-        - name: Description
+        - name: description
           in: query
           required: false
           schema:
             type: string
           description: "Plant description"
-        - name: Location
+        - name: location
           in: query
           required: false
           schema:
             type: string
           description: "Plant location"
-        - name: Light_Requirements
+        - name: light_requirements
           in: query
           required: false
           schema:
             type: string
           description: "Light requirements for the plant"
-        - name: Watering_Needs
+        - name: watering_needs
           in: query
           required: false
           schema:
             type: string
           description: "Watering needs for the plant"
-        - name: Soil_Preferences
+        - name: soil_preferences
           in: query
           required: false
           schema:
             type: string
           description: "Soil preferences for the plant"
-        - name: Frost_Tolerance
+        - name: frost_tolerance
           in: query
           required: false
           schema:
             type: string
           description: "Frost tolerance information"
-        - name: Fertilizing_Schedule
+        - name: fertilizing_schedule
           in: query
           required: false
           schema:
             type: string
           description: "Fertilizing schedule"
-        - name: Pruning_Instructions
+        - name: pruning_instructions
           in: query
           required: false
           schema:
             type: string
           description: "Pruning instructions"
-        - name: Mulching_Needs
+        - name: mulching_needs
           in: query
           required: false
           schema:
             type: string
           description: "Mulching needs"
-        - name: Winterizing_Instructions
+        - name: winterizing_instructions
           in: query
           required: false
           schema:
             type: string
           description: "Winterizing instructions"
-        - name: Care_Notes
+        - name: care_notes
           in: query
           required: false
           schema:
@@ -548,11 +548,11 @@ paths:
                     items:
                       type: object
                       properties:
-                        Plant Name:
+                        plant_name:
                           type: string
-                        Location:
+                        location:
                           type: string
-                        Description:
+                        description:
                           type: string
 
   # =============================================
@@ -685,56 +685,56 @@ paths:
       description: "CHATGPT WORKAROUND: Create a comprehensive plant health log entry with photo upload token (converted to GET due to ChatGPT POST issue)"
       security: []
       parameters:
-        - name: Plant_Name
+        - name: plant_name
           in: query
           required: true
           schema:
             type: string
           description: "Name of the plant (required)"
           example: "Tomato Plant #1"
-        - name: Log_Title
+        - name: log_title
           in: query
           required: false
           schema:
             type: string
           description: "Title for the log entry"
           example: "Weekly Health Check"
-        - name: Diagnosis
+        - name: diagnosis
           in: query
           required: false
           schema:
             type: string
           description: "Plant diagnosis"
           example: "Minor nitrogen deficiency"
-        - name: Treatment
+        - name: treatment
           in: query
           required: false
           schema:
             type: string
           description: "Treatment applied"
           example: "Apply balanced fertilizer"
-        - name: Symptoms
+        - name: symptoms
           in: query
           required: false
           schema:
             type: string
           description: "Observed symptoms"
           example: "Yellow leaf edges"
-        - name: User_Notes
+        - name: user_notes
           in: query
           required: false
           schema:
             type: string
           description: "Additional notes"
           example: "Plant seems otherwise healthy"
-        - name: Follow_up_Required
+        - name: follow_up_required
           in: query
           required: false
           schema:
             type: boolean
             default: false
           description: "Whether follow-up is required"
-        - name: Follow_up_Date
+        - name: follow_up_date
           in: query
           required: false
           schema:
@@ -765,13 +765,13 @@ paths:
       description: "CHATGPT WORKAROUND: Create a simple plant log entry with basic information (converted to GET due to ChatGPT POST issue)"
       security: []
       parameters:
-        - name: Plant_Name
+        - name: plant_name
           in: query
           required: true
           schema:
             type: string
           description: "Name of the plant (required)"
-        - name: User_Notes
+        - name: user_notes
           in: query
           required: false
           schema:
@@ -1396,60 +1396,60 @@ components:
     Plant:
       type: object
       properties:
-        Plant Name:
+        plant_name:
           type: string
-        Description:
+        description:
           type: string
-        Location:
+        location:
           type: string
-        Light Requirements:
+        light_requirements:
           type: string
-        Watering Needs:
+        watering_needs:
           type: string
-        Soil Preferences:
+        soil_preferences:
           type: string
-        Soil pH Type:
+        soil_ph_type:
           type: string
           description: "Soil pH type (high alkalinity, medium alkalinity, slightly alkaline, neutral, slightly acidic, medium acidity, high acidity)"
-        Soil pH Range:
+        soil_ph_range:
           type: string
           description: "Soil pH range in numerical format like '5.5 - 6.5' or '6.0 - 7.0'"
-        Frost Tolerance:
+        frost_tolerance:
           type: string
-        Fertilizing Schedule:
+        fertilizing_schedule:
           type: string
-        Pruning Instructions:
+        pruning_instructions:
           type: string
-        Mulching Needs:
+        mulching_needs:
           type: string
-        Winterizing Instructions:
+        winterizing_instructions:
           type: string
-        Spacing Requirements:
+        spacing_requirements:
           type: string
-        Care Notes:
+        care_notes:
           type: string
-        Photo URL:
+        photo_url:
           type: string
-        Raw Photo URL:
+        raw_photo_url:
           type: string
-        Last Updated:
+        last_updated:
           type: string
       additionalProperties: true
 
     LogEntry:
       type: object
       properties:
-        Plant Name:
+        plant_name:
           type: string
-        Log Title:
+        log_title:
           type: string
-        Diagnosis:
+        diagnosis:
           type: string
-        Treatment:
+        treatment:
           type: string
-        Symptoms:
+        symptoms:
           type: string
-        User Notes:
+        user_notes:
           type: string
 
     WeatherData:

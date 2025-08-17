@@ -55,8 +55,8 @@ def _get_cached_plants() -> Dict[str, str]:
         # Create ID -> name mapping
         plant_mapping = {}
         for plant in plants:
-            if isinstance(plant, dict) and 'ID' in plant and 'Plant Name' in plant:
-                plant_mapping[plant['ID']] = plant['Plant Name']
+            if isinstance(plant, dict) and 'id' in plant and 'plant_name' in plant:
+                plant_mapping[plant['id']] = plant['plant_name']
         
         # Cache the results
         _plants_cache = plant_mapping

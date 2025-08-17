@@ -15,20 +15,20 @@ def add_plant_api():
         plant_name = get_plant_name()
         
         plant_data = {
-            'Plant Name': plant_name,
-            'Description': get_normalized_field('description', ''),
-            'Light Requirements': get_normalized_field('light_requirements', ''),
-            'Watering Needs': get_normalized_field('watering_needs', ''),
-            'Soil Preferences': get_normalized_field('soil_preferences', ''),
-            'Frost Tolerance': get_normalized_field('frost_tolerance', ''),
-            'Pruning Instructions': get_normalized_field('pruning_instructions', ''),
-            'Fertilizing Schedule': get_normalized_field('fertilizing_schedule', ''),
-            'Location': get_normalized_field('location', ''),
-            'Care Notes': get_normalized_field('care_notes', '')
+            'plant_name': plant_name,
+            'description': get_normalized_field('description', ''),
+            'light_requirements': get_normalized_field('light_requirements', ''),
+            'watering_needs': get_normalized_field('watering_needs', ''),
+            'soil_preferences': get_normalized_field('soil_preferences', ''),
+            'frost_tolerance': get_normalized_field('frost_tolerance', ''),
+            'pruning_instructions': get_normalized_field('pruning_instructions', ''),
+            'fertilizing_schedule': get_normalized_field('fertilizing_schedule', ''),
+            'location': get_normalized_field('location', ''),
+            'care_notes': get_normalized_field('care_notes', '')
         }
         
         # Validate required fields
-        if not plant_data['Plant Name']:
+        if not plant_data['plant_name']:
             return jsonify({'error': 'Plant name is required'}), 400
         
         # Add plant to database
@@ -38,7 +38,7 @@ def add_plant_api():
             # Generate upload token for photo
             upload_token = generate_upload_token(
                 plant_id=result.get('plant_id', result.get('id')),
-                plant_name=plant_data['Plant Name'],
+                plant_name=plant_data['plant_name'],
                 token_type='plant_upload',
                 operation='add',
                 expiration_hours=24
@@ -172,7 +172,7 @@ def extract_plant_names_only(plants_data: List[Dict]) -> List[str]:
     from models.field_config import get_canonical_field_name
     
     # Get the canonical field name for 'Plant Name'
-    name_field = get_canonical_field_name('Plant Name')
+    name_field = get_canonical_field_name('plant_name')
     
     # Extract plant names and filter out empty ones
     plant_names = []

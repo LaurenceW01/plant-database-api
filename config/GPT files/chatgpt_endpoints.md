@@ -110,7 +110,7 @@ GET    /api/weather/forecast/daily    // ✅ Daily weather forecast (supports bo
 
 ### Field Names - Flexible & Forgiving
 The API now accepts **ANY** reasonable field name variation:
-- **Standard**: `Plant Name`, `Care Notes`, `Light Requirements`
+- **Standard**: `plant_name`, `care_notes`, `light_requirements`
 - **ChatGPT Patterns**: `Plant___Name`, `Care___Notes`, `Light___Requirements`  
 - **Underscore**: `plant_name`, `care_notes`, `light_requirements`
 - **CamelCase**: `plantName`, `careNotes`, `lightRequirements`
@@ -315,10 +315,10 @@ Content-Type: application/json
 
 {
   "plant_name": "Basil",
-  "Location": "Herb Garden",
+  "location": "Herb Garden",
   "light_requirements": "Full Sun",
-  "Watering Needs": "Water daily",
-  "Care Notes": "Harvest regularly"
+  "watering_needs": "Water daily",
+  "care_notes": "Harvest regularly"
 }
 
 // Response includes upload_url for photo
@@ -338,8 +338,8 @@ PUT /api/plants/update/Basil
 Content-Type: application/json
 
 {
-  "Care Notes": "Updated care instructions",
-  "Watering Needs": "Water when dry"
+  "care_notes": "Updated care instructions",
+  "watering_needs": "Water when dry"
 }
 
 // OPTION 2: ID in request body (ChatGPT-friendly) 
@@ -464,12 +464,12 @@ Content-Type: application/json
 
 {
   "plant_name": "Tomato Plant #1",
-  "Log Title": "Weekly Health Check",
-  "Diagnosis": "Minor nitrogen deficiency", 
-  "Treatment": "Apply balanced fertilizer",
-  "Symptoms": "Yellow leaf edges",
-  "Follow-up Required": true,
-  "Follow-up Date": "2024-01-22"
+  "log_title": "Weekly Health Check",
+  "diagnosis": "Minor nitrogen deficiency", 
+  "treatment": "Apply balanced fertilizer",
+  "symptoms": "Yellow leaf edges",
+  "follow_up_required": true,
+  "follow_up_date": "2024-01-22"
 }
 
 // Response includes upload token
@@ -550,7 +550,7 @@ in that evening sun location."
 **Purpose**: Retrieve ALL available fields from the plant spreadsheet for comprehensive plant data analysis.
 
 **Key Features**:
-- Returns complete plant object with all spreadsheet fields (ID, Plant Name, Description, Location, Light Requirements, Watering Needs, Soil Preferences, Frost Tolerance, etc.)
+- Returns complete plant object with all spreadsheet fields (id, plant_name, description, location, light_requirements, watering_needs, soil_preferences, frost_tolerance, etc.)
 - Supports both plant IDs (e.g., "1") and plant names (e.g., "Vinca")
 - Includes metadata about field counts and completeness
 - Perfect for comprehensive plant analysis and data export
@@ -567,21 +567,21 @@ GET /api/plants/get-all-fields/Vinca
 {
   "success": true,
   "plant": {
-    "ID": "1",
+    "id": "1",
     "plant_name": "Vinca",
-    "Description": "Flowering annual",
-    "Location": "Front patio",
+    "description": "Flowering annual",
+    "location": "Front patio",
     "light_requirements": "Full sun",
-    "Watering Needs": "Daily",
-    "Soil Preferences": "Well-draining",
-    "Frost Tolerance": "None",
-    "Fertilizing Schedule": "Monthly",
+    "watering_needs": "Daily",
+    "soil_preferences": "Well-draining",
+    "frost_tolerance": "None",
+    "fertilizing_schedule": "Monthly",
     // ... all other fields
   },
   "metadata": {
     "total_fields": 20,
     "non_empty_fields": 15,
-    "field_names": ["ID", "Plant Name", "Description", ...]
+    "field_names": ["id", "plant_name", "description", ...]
   }
 }
 ```
