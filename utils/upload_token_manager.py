@@ -193,11 +193,11 @@ def generate_upload_url(token: str, base_url: str = None) -> str:
     
     # Use different paths for different token types
     if token_type == 'plant_upload':
-        return f"{base_url}/upload/plant/{token}"
+        return f"{base_url}/api/photos/upload-for-plant/{token}"
     elif token_type == 'log_upload':
-        return f"{base_url}/upload/log/{token}"
+        return f"{base_url}/api/photos/upload-for-log/{token}"
     else:  # unknown
-        return f"{base_url}/upload/{token}"
+        return f"{base_url}/api/photos/upload/{token}"
 
 def cleanup_expired_tokens() -> int:
     """
