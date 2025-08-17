@@ -26,6 +26,16 @@ def convert_to_hierarchical_structure(plants_data):
     """
     from collections import defaultdict
     
+    # OPTIMIZATION: Fetch all locations once instead of calling get_location_name_by_id for each container
+    try:
+        from utils.locations_database_operations import get_all_locations
+        all_locations = get_all_locations()
+        locations_dict = {loc.get('location_id', ''): loc.get('location_name', f'Location {loc.get("location_id", "")}') for loc in all_locations}
+        logging.info(f"OPTIMIZATION: Loaded {len(locations_dict)} locations for hierarchical conversion")
+    except Exception as e:
+        logging.error(f"Error loading locations for optimization: {e}")
+        locations_dict = {}
+    
     # Group containers by plant_id and location_id
     plants_locations = defaultdict(lambda: defaultdict(list))
     plant_info = {}
@@ -53,8 +63,8 @@ def convert_to_hierarchical_structure(plants_data):
             if location_data and str(location_data.get('location_id', '')) == str(container_location_id):
                 location_name = location_data.get('location_name', f'Location {container_location_id}')
             else:
-                # Need to look up location name from location_id
-                location_name = get_location_name_by_id(container_location_id)
+                # OPTIMIZATION: Use cached locations instead of API call
+                location_name = locations_dict.get(container_location_id, f'Location {container_location_id}')
             
             location_names[container_location_id] = location_name
             
