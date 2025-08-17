@@ -121,7 +121,10 @@ def search_logs():
         }), 500
 
 
-@logs_bp.route('/create-simple', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['POST'] → methods=['GET']
+@logs_bp.route('/create-simple', methods=['GET'])  # WORKAROUND: was POST
 def create_simple_log():
     """
     Phase 2 direct implementation: Create simple plant log entry.

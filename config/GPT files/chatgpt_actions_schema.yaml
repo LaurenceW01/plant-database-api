@@ -94,19 +94,24 @@ paths:
                     note: "Plant names matching \"vinca\""
 
   /api/plants/add:
-    post:
+    get:
       operationId: addPlant
       summary: Add a new plant
-      description: Add a new plant to the database with photo upload token
+      description: "CHATGPT WORKAROUND: Add a new plant (converted to GET due to ChatGPT POST issue)"
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - plant_name
+      parameters:
+        - name: plant_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Name of the plant to add"
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Location where plant is planted"
               properties:
                 plant_name:
                   type: string
@@ -424,14 +429,14 @@ paths:
                   note:
                     type: string
 
-  /api/plants/get-context/{plant_id}:
+  :
     post:
       operationId: getPlantContext
       summary: Get plant context with location intelligence  
       description: Get comprehensive location and container context for a plant
       security: []
       parameters:
-        - name: plant_id
+        - name: plant_id/api/plants/get-context/{plant_id}
           in: path
           required: true
           description: Plant ID or plant name (e.g., "1" or "Vinca")

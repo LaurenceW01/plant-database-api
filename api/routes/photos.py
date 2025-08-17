@@ -13,7 +13,10 @@ import logging
 photos_bp = Blueprint('photos', __name__, url_prefix='/api/photos')
 
 
-@photos_bp.route('/upload-for-plant/<token>', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['POST'] → methods=['GET']
+@photos_bp.route('/upload-for-plant/<token>', methods=['GET'])  # WORKAROUND: was POST
 def upload_photo_for_plant_new(token):
     """
     Phase 2 direct implementation: Upload photo for plant using token.
@@ -49,7 +52,10 @@ def upload_photo_for_plant_new(token):
         }), 500
 
 
-@photos_bp.route('/upload-for-log/<token>', methods=['POST'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT POST requests work again
+# Changed: methods=['POST'] → methods=['GET']
+@photos_bp.route('/upload-for-log/<token>', methods=['GET'])  # WORKAROUND: was POST
 def upload_photo_for_log_new(token):
     """
     Phase 2 direct implementation: Upload photo for log entry using token.

@@ -117,7 +117,10 @@ def get_plant_new(id_or_name):
     return response
 
 
-@plants_bp.route('/update/<id_or_name>', methods=['PUT'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT PUT requests work again
+# Changed: methods=['PUT'] → methods=['GET']
+@plants_bp.route('/update/<id_or_name>', methods=['GET'])  # WORKAROUND: was PUT
 def update_plant_new(id_or_name):
     """
     Phase 2 direct implementation: Update plant with action-based URL.
@@ -144,7 +147,10 @@ def update_plant_new(id_or_name):
     return response
 
 
-@plants_bp.route('/update', methods=['PUT'])
+# ========== CHATGPT WORKAROUND - TEMPORARY ==========
+# TODO: Revert when ChatGPT PUT requests work again
+# Changed: methods=['PUT'] → methods=['GET']
+@plants_bp.route('/update', methods=['GET'])  # WORKAROUND: was PUT
 def update_plant_flexible():
     """
     Flexible update endpoint that accepts plant ID in JSON body.
