@@ -1,5 +1,9 @@
 # Query Pattern Recognition & Response Examples
 
+## 🔄 CHATGPT WORKAROUND UPDATED
+
+**📢 API CHANGE NOTICE:** All API calls in examples below now use GET methods with query parameters due to ChatGPT POST/PUT workaround. Functionality remains identical.
+
 **For GPT Reference: Recognize these patterns and respond with location-aware data**
 
 ## Pattern 1: Plant + Location Mentioned
@@ -193,8 +197,8 @@ GET /api/garden/filter?container_material=ceramic&plant_name=vinca
 3. Integrate results into specific, actionable response
 
 **For Individual Plant Focus:**
-1. `POST /api/plants/search` with `{"q": "{plant_name}"}` → Get ALL plants matching the name
-2. `POST /api/plants/get-context/{id}` → Get location details for EACH found plant
+1. `GET /api/plants/search?q={plant_name}` → Get ALL plants matching the name (🔄 converted from POST)
+2. `GET /api/plants/get-context/{id}` → Get location details for EACH found plant (🔄 converted from POST)
 3. `/api/weather/current` → Get current conditions
 4. Integrate all three into specific, actionable response
 

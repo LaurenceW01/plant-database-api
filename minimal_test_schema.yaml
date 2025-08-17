@@ -6,6 +6,8 @@ info:
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
+  - url: https://webhook.site
+    description: External webhook testing service
 
 paths:
   /api/health:
@@ -102,3 +104,39 @@ paths:
                         type: string
                       origin:
                         type: string
+
+  /{webhook_id}:
+    post:
+      operationId: testWebhookPost
+      summary: Test POST to webhook.site
+      description: Test ChatGPT POST capability using external webhook service
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Webhook.site unique ID (replace with actual webhook ID)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                test_data:
+                  type: string
+                  description: Test data for webhook
+                chatgpt_test:
+                  type: boolean
+                  description: Flag indicating this is a ChatGPT test
+      responses:
+        '200':
+          description: Webhook received successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean

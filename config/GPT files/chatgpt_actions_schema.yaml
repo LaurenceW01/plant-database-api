@@ -15,32 +15,35 @@ paths:
   # =============================================
   
   /api/plants/search:
-    post:
+    get:
       operationId: searchPlants
       summary: "Search plants"
-      description: "Search for plants by name, description, or location. Use names_only=true to get just plant names for AI analysis (e.g., toxicity reports)."
+      description: "CHATGPT WORKAROUND: Search for plants by name, description, or location (converted to GET due to ChatGPT POST issue). Use names_only=true to get just plant names for AI analysis (e.g., toxicity reports)."
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                q:
-                  type: string
-                  description: "Search query to find plants"
-                  example: "vinca"
-                limit:
-                  type: integer
-                  description: "Maximum number of plants to return"
-                  default: 20
-                  example: 5
-                names_only:
-                  type: boolean
-                  description: "If true, returns only plant names as strings instead of full plant objects. Perfect for AI analysis tasks like toxicity reports."
-                  default: false
-                  example: true
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Search query to find plants"
+          example: "vinca"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: "Maximum number of plants to return"
+          example: 5
+        - name: names_only
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: "If true, returns only plant names as strings instead of full plant objects. Perfect for AI analysis tasks like toxicity reports."
+          example: true
       responses:
         '200':
           description: "Plants found matching search query"
@@ -71,12 +74,12 @@ paths:
                     description: "Context about the search results"
               examples:
                 full_search:
-                  summary: "Full plant data: POST /api/plants/search"
+                  summary: "Full plant data: GET /api/plants/search"
                   value:
                     count: 2
                     plants: [{"ID": "31", "Plant Name": "Trailing Vinca"}, {"ID": "134", "Plant Name": "Vinca"}]
                 names_only_all:
-                  summary: "All plant names: POST /api/plants/search"
+                  summary: "All plant names: GET /api/plants/search"
                   value:
                     count: 150
                     plants: ["Basil", "Tomato", "Rose", "Vinca"]
@@ -84,7 +87,7 @@ paths:
                     usage_note: "Use these names with other plant endpoints for detailed information"
                     note: "All plant names in database"
                 names_only_search:
-                  summary: "Names matching search: POST /api/plants/search"
+                  summary: "Names matching search: GET /api/plants/search"
                   value:
                     count: 2
                     plants: ["Trailing Vinca", "Vinca"]
@@ -112,33 +115,6 @@ paths:
           schema:
             type: string
           description: "Location where plant is planted"
-              properties:
-                plant_name:
-                  type: string
-                  description: Name of the plant (required)
-                  example: "Basil"
-                description:
-                  type: string
-                  example: "Sweet basil for cooking"
-                location:
-                  type: string
-                  example: "Herb Garden"
-                light_requirements:
-                  type: string
-                  example: "Full Sun"
-                watering_needs:
-                  type: string
-                  example: "Water daily"
-                care_notes:
-                  type: string
-                  example: "Harvest regularly"
-                # Backward compatibility - also accept title case
-                Plant Name:
-                  type: string
-                  description: "[DEPRECATED] Use plant_name instead"
-                Light Requirements:
-                  type: string
-                  description: "[DEPRECATED] Use light_requirements instead"
       responses:
         '201':
           description: Plant added successfully with upload token
@@ -313,10 +289,10 @@ paths:
                     type: string
 
   /api/plants/update/{id}:
-    put:
+    get:
       operationId: updatePlant
       summary: Update plant information
-      description: Update existing plant with new information
+      description: "CHATGPT WORKAROUND: Update existing plant with new information (converted to GET due to ChatGPT PUT issue)"
       security: []
       parameters:
         - name: id
@@ -325,36 +301,72 @@ paths:
           description: Plant ID or name
           schema:
             type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                Description:
-                  type: string
-                Location:
-                  type: string
-                "Light Requirements":
-                  type: string
-                "Watering Needs":
-                  type: string
-                "Soil Preferences":
-                  type: string
-                "Frost Tolerance":
-                  type: string
-                "Fertilizing Schedule":
-                  type: string
-                "Pruning Instructions":
-                  type: string
-                "Mulching Needs":
-                  type: string
-                "Winterizing Instructions":
-                  type: string
-                "Care Notes":
-                  type: string
-              additionalProperties: true
+        - name: Description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant description"
+        - name: Location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant location"
+        - name: Light_Requirements
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Light requirements for the plant"
+        - name: Watering_Needs
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Watering needs for the plant"
+        - name: Soil_Preferences
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Soil preferences for the plant"
+        - name: Frost_Tolerance
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Frost tolerance information"
+        - name: Fertilizing_Schedule
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Fertilizing schedule"
+        - name: Pruning_Instructions
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Pruning instructions"
+        - name: Mulching_Needs
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Mulching needs"
+        - name: Winterizing_Instructions
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Winterizing instructions"
+        - name: Care_Notes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Additional care notes"
       responses:
         '200':
           description: Plant updated successfully
@@ -371,47 +383,85 @@ paths:
                     type: string
 
   /api/plants/update:
-    put:
+    get:
       operationId: updatePlantFlexible
-      summary: Update plant with ID in body (ChatGPT-friendly)
-      description: Alternative update endpoint that accepts plant ID in request body instead of URL path
+      summary: Update plant with ID in query (ChatGPT-friendly)
+      description: "CHATGPT WORKAROUND: Alternative update endpoint that accepts plant ID in query parameters (converted to GET due to ChatGPT PUT issue)"
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Plant ID or name to update
-                  example: "Vinca"
-                Description:
-                  type: string
-                Location:
-                  type: string
-                "Light Requirements":
-                  type: string
-                "Watering Needs":
-                  type: string
-                "Soil Preferences":
-                  type: string
-                "Frost Tolerance":
-                  type: string
-                "Fertilizing Schedule":
-                  type: string
-                "Pruning Instructions":
-                  type: string
-                "Mulching Needs":
-                  type: string
-                "Winterizing Instructions":
-                  type: string
-                "Care Notes":
-                  type: string
-              additionalProperties: true
-              required:
-                - id
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Plant ID or name to update"
+          example: "Vinca"
+        - name: Description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant description"
+        - name: Location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant location"
+        - name: Light_Requirements
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Light requirements for the plant"
+        - name: Watering_Needs
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Watering needs for the plant"
+        - name: Soil_Preferences
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Soil preferences for the plant"
+        - name: Frost_Tolerance
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Frost tolerance information"
+        - name: Fertilizing_Schedule
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Fertilizing schedule"
+        - name: Pruning_Instructions
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Pruning instructions"
+        - name: Mulching_Needs
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Mulching needs"
+        - name: Winterizing_Instructions
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Winterizing instructions"
+        - name: Care_Notes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Additional care notes"
       responses:
         '200':
           description: Plant updated successfully
@@ -429,14 +479,14 @@ paths:
                   note:
                     type: string
 
-  :
-    post:
+  /api/plants/get-context/{plant_id}:
+    get:
       operationId: getPlantContext
       summary: Get plant context with location intelligence  
       description: Get comprehensive location and container context for a plant
       security: []
       parameters:
-        - name: plant_id/api/plants/get-context/{plant_id}
+        - name: plant_id
           in: path
           required: true
           description: Plant ID or plant name (e.g., "1" or "Vinca")
@@ -510,33 +560,40 @@ paths:
   # =============================================
 
   /api/plants/diagnose:
-    post:
+    get:
       operationId: diagnosePlant
       summary: AI-powered plant diagnosis
-      description: Get AI-powered plant health diagnosis with location intelligence
+      description: "CHATGPT WORKAROUND: Get AI-powered plant health diagnosis with location intelligence (converted to GET due to ChatGPT POST issue)"
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                plant_name:
-                  type: string
-                  description: Name of the plant
-                  example: "Rose"
-                user_notes:
-                  type: string
-                  description: Observations about the plant
-                  example: "Plant has yellow leaves and brown spots"
-                location:
-                  type: string
-                  description: Plant location for context
-                  example: "Garden bed 2"
-                analysis_type:
-                  type: string
-                  default: "general_care"
+      parameters:
+        - name: plant_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Name of the plant"
+          example: "Rose"
+        - name: user_notes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Observations about the plant"
+          example: "Plant has yellow leaves and brown spots"
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant location for context"
+          example: "Garden bed 2"
+        - name: analysis_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "general_care"
+          description: "Type of analysis to perform"
       responses:
         '200':
           description: AI diagnosis with recommendations
@@ -558,37 +615,45 @@ paths:
                         type: boolean
 
   /api/plants/enhance-analysis:
-    post:
+    get:
       operationId: enhanceAnalysis
       summary: Enhance plant analysis with database knowledge
-      description: Enhance existing analysis with location and database context
+      description: "CHATGPT WORKAROUND: Enhance existing analysis with location and database context (converted to GET due to ChatGPT POST issue)"
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - plant_identification
-              properties:
-                gpt_analysis:
-                  type: string
-                  description: Your image analysis text
-                  example: "This tomato plant shows yellowing leaves..."
-                plant_identification:
-                  type: string
-                  description: Plant name you identified
-                  example: "Tomato Plant"
-                user_question:
-                  type: string
-                  description: User's question if any
-                location:
-                  type: string
-                  description: Plant location
-                analysis_type:
-                  type: string
-                  default: "health_assessment"
+      parameters:
+        - name: plant_identification
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Plant name you identified"
+          example: "Tomato Plant"
+        - name: gpt_analysis
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Your image analysis text"
+          example: "This tomato plant shows yellowing leaves..."
+        - name: user_question
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "User's question if any"
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant location"
+        - name: analysis_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "health_assessment"
+          description: "Type of analysis to perform"
       responses:
         '200':
           description: Enhanced analysis with database knowledge
@@ -614,46 +679,68 @@ paths:
   # =============================================
 
   /api/logs/create:
-    post:
+    get:
       operationId: createLog
       summary: Create plant health log entry
-      description: Create a comprehensive plant health log entry with photo upload token
+      description: "CHATGPT WORKAROUND: Create a comprehensive plant health log entry with photo upload token (converted to GET due to ChatGPT POST issue)"
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - Plant Name
-              properties:
-                Plant Name:
-                  type: string
-                  description: Name of the plant (required)
-                  example: "Tomato Plant #1"
-                Log Title:
-                  type: string
-                  example: "Weekly Health Check"
-                Diagnosis:
-                  type: string
-                  example: "Minor nitrogen deficiency"
-                Treatment:
-                  type: string
-                  example: "Apply balanced fertilizer"
-                Symptoms:
-                  type: string
-                  example: "Yellow leaf edges"
-                User Notes:
-                  type: string
-                  example: "Plant seems otherwise healthy"
-                Follow-up Required:
-                  type: boolean
-                  default: false
-                Follow-up Date:
-                  type: string
-                  format: date
-                  example: "2024-01-22"
+      parameters:
+        - name: Plant_Name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Name of the plant (required)"
+          example: "Tomato Plant #1"
+        - name: Log_Title
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Title for the log entry"
+          example: "Weekly Health Check"
+        - name: Diagnosis
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant diagnosis"
+          example: "Minor nitrogen deficiency"
+        - name: Treatment
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Treatment applied"
+          example: "Apply balanced fertilizer"
+        - name: Symptoms
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Observed symptoms"
+          example: "Yellow leaf edges"
+        - name: User_Notes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Additional notes"
+          example: "Plant seems otherwise healthy"
+        - name: Follow_up_Required
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: "Whether follow-up is required"
+        - name: Follow_up_Date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Follow-up date (YYYY-MM-DD format)"
+          example: "2024-01-22"
       responses:
         '201':
           description: Log entry created successfully
@@ -672,27 +759,25 @@ paths:
                     type: string
 
   /api/logs/create-simple:
-    post:
+    get:
       operationId: createSimpleLog
       summary: Create simple plant log entry
-      description: Create a simple plant log entry with basic information
+      description: "CHATGPT WORKAROUND: Create a simple plant log entry with basic information (converted to GET due to ChatGPT POST issue)"
       security: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - Plant Name
-              properties:
-                Plant Name:
-                  type: string
-                  description: Name of the plant (required)
-                User Notes:
-                  type: string
-                  description: Simple notes about the plant
-                  example: "Plant looks healthy today"
+      parameters:
+        - name: Plant_Name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Name of the plant (required)"
+        - name: User_Notes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Simple notes about the plant"
+          example: "Plant looks healthy today"
       responses:
         '201':
           description: Simple log entry created
@@ -764,10 +849,10 @@ paths:
   # =============================================
 
   /api/photos/upload-for-plant/{token}:
-    post:
+    get:
       operationId: uploadPhotoForPlant
-      summary: Upload photo for plant using token
-      description: Upload a photo for a plant using a secure token
+      summary: Get upload instructions for plant photo
+      description: "CHATGPT WORKAROUND: Get photo upload instructions (converted to GET due to ChatGPT POST file upload limitation). ChatGPT cannot upload files directly."
       security: []
       parameters:
         - name: token
@@ -776,17 +861,6 @@ paths:
           description: Upload token from plant creation/update
           schema:
             type: string
-      requestBody:
-        required: false
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: Image file to upload
       responses:
         '200':
           description: Photo uploaded successfully
@@ -803,10 +877,10 @@ paths:
                     type: string
 
   /api/photos/upload-for-log/{token}:
-    post:
+    get:
       operationId: uploadPhotoForLog
-      summary: Upload photo for log entry using token
-      description: Upload a photo for a log entry using a secure token
+      summary: Get upload instructions for log photo
+      description: "CHATGPT WORKAROUND: Get photo upload instructions for log entry (converted to GET due to ChatGPT POST file upload limitation). ChatGPT cannot upload files directly."
       security: []
       parameters:
         - name: token
@@ -815,17 +889,6 @@ paths:
           description: Upload token from log creation
           schema:
             type: string
-      requestBody:
-        required: false
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: Image file to upload
       responses:
         '200':
           description: Photo uploaded successfully

@@ -1,9 +1,15 @@
 # Plant Database API Documentation - Core Operations
 
+## 🔄 CHATGPT WORKAROUND ACTIVE
+
+**⚠️ IMPORTANT NOTICE:** Due to a temporary ChatGPT platform issue with POST/PUT requests, all endpoints have been converted to GET methods with query parameters. This is a temporary workaround - all functionality remains the same, just use query parameters instead of JSON request bodies.
+
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
 **Status**: 27 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
+
+**Workaround Status**: All POST/PUT endpoints converted to GET with parameter simulation.
 
 ---
 
@@ -11,58 +17,52 @@ All endpoints include AI-powered analysis, field normalization, and location int
 
 ### Plant Management (7 operations)
 ```javascript
-POST   /api/plants/add              // ✅ Add new plant with upload token
-POST   /api/plants/search           // ✅ Search plants (use JSON body: {"q": "vinca", "limit": 5})
+GET    /api/plants/add              // ✅ Add new plant with upload token (WORKAROUND: converted from POST)
+GET    /api/plants/search           // ✅ Search plants (WORKAROUND: converted from POST, use query params)
 GET    /api/plants/get/{id}         // ✅ Get specific plant details  
 GET    /api/plants/get-all-fields/{id} // ✅ Get ALL plant fields from spreadsheet
-PUT    /api/plants/update/{id}      // ✅ Update plant with ID in URL path
-PUT    /api/plants/update           // ✅ Update plant with ID in request body (ChatGPT-friendly)
-POST   /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
+GET    /api/plants/update/{id}      // ✅ Update plant with ID in URL path (WORKAROUND: converted from PUT)
+GET    /api/plants/update           // ✅ Update plant with ID in query params (WORKAROUND: converted from PUT)
+GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
 GET    /api/plants/by-location/{location_name} // ✅ Get plants by location (supports IDs and names)
 ```
 
-**✅ CORRECT: Plant Search Method**
+**🔄 CHATGPT WORKAROUND: Plant Search Method**
 ```javascript
-// ✅ CORRECT: Use POST with JSON body
-POST /api/plants/search
-Content-Type: application/json
-{"q": "vinca", "limit": 5}
+// 🔄 WORKAROUND: Now uses GET with query parameters (converted from POST due to ChatGPT platform issue)
+GET /api/plants/search?q=vinca&limit=5
 
 // ✅ NEW: Get plant names only for AI analysis (e.g., toxicity reports)
-POST /api/plants/search
-Content-Type: application/json
-{"names_only": true}
+GET /api/plants/search?names_only=true
 
 // ✅ COMBINED: Search with names only
-POST /api/plants/search
-Content-Type: application/json
-{"q": "herb", "names_only": true, "limit": 10}
+GET /api/plants/search?q=herb&names_only=true&limit=10
 
-// Also supported: POST with query parameters
-POST /api/plants/search?q=vinca&limit=5&names_only=true
+// Example URL with spaces encoded:
+GET /api/plants/search?q=tomato%20plant&limit=3&names_only=false
 ```
 
-**For ChatGPT:** The `searchPlants` operation uses POST method with JSON body, which is the natural behavior for OpenAPI clients. Send parameters in the request body as JSON.
+**⚠️ IMPORTANT FOR CHATGPT:** Due to a temporary ChatGPT platform issue with POST requests, all endpoints now use GET methods with query parameters instead of JSON request bodies. This is a temporary workaround - functionality remains the same.
 
 **NEW: Names Only Parameter** - Use `names_only: true` to get just plant names as strings instead of full plant objects. Perfect for AI analysis tasks like toxicity reports, pest identification, or plant compatibility analysis.
 
 ### AI-Powered Analysis (2 operations)
 ```javascript
-POST   /api/plants/diagnose         // ✅ AI plant diagnosis with location intelligence
-POST   /api/plants/enhance-analysis // ✅ Enhanced analysis with database knowledge
+GET    /api/plants/diagnose         // ✅ AI plant diagnosis with location intelligence (WORKAROUND: converted from POST)
+GET    /api/plants/enhance-analysis // ✅ Enhanced analysis with database knowledge (WORKAROUND: converted from POST)
 ```
 
 ### Health Logging (3 operations)
 ```javascript  
-POST   /api/logs/create             // ✅ Create plant log with upload token
-POST   /api/logs/create-simple      // ✅ Create simple log with field normalization  
+GET    /api/logs/create             // ✅ Create plant log with upload token (WORKAROUND: converted from POST)
+GET    /api/logs/create-simple      // ✅ Create simple log with field normalization (WORKAROUND: converted from POST)
 GET    /api/logs/search             // ✅ Search logs with comprehensive results
 ```
 
 ### Photo Upload (2 operations)
 ```javascript
-POST   /api/photos/upload-for-plant/{token}  // ✅ Upload photo for plant
-POST   /api/photos/upload-for-log/{token}    // ✅ Upload photo for log entry
+GET    /api/photos/upload-for-plant/{token}  // ✅ Get upload instructions for plant (WORKAROUND: converted from POST)
+GET    /api/photos/upload-for-log/{token}    // ✅ Get upload instructions for log entry (WORKAROUND: converted from POST)
 ```
 
 ### 🚀 Advanced Query System (1 operation)
@@ -607,6 +607,6 @@ GET /api/plants/get-all-fields/Vinca
 🔴 **Error Handling**: All endpoints provide comprehensive error messages with guidance
 
 For detailed workflow guides and advanced patterns, see:
-- `LOCATION_AWARE_WORKFLOW_GUIDE.md` - Step-by-step care workflows
-- `PHASE2_ADVANCED_INTELLIGENCE.md` - Advanced garden intelligence features
-- `QUERY_PATTERNS_AND_EXAMPLES.md` - Response templates and examples
+- `chatgpt_location_aware_workflow_guide.md` - Step-by-step care workflows
+- `chatgpt_phase2_advanced_intelligence.md` - Advanced garden intelligence features
+- `chatgpt_query_patterns_and_examples.md` - Response templates and examples

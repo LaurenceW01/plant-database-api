@@ -1,10 +1,14 @@
 # Phase 2: Advanced Garden Intelligence - ChatGPT Integration Guide
 
+## 🔄 CHATGPT WORKAROUND UPDATED
+
+**📢 IMPORTANT:** This guide has been updated for the ChatGPT POST/PUT workaround. All endpoints now use GET methods with query parameters.
+
 ## Overview
 
 Phase 2 adds **comprehensive garden analysis and optimization capabilities** to the existing location-aware plant care system. This enables ChatGPT to provide garden-wide intelligence, optimization recommendations, and advanced planning support.
 
-**⚠️ Note**: This guide has been updated to align with the streamlined 24-operation ChatGPT schema. Some advanced endpoints have been simplified while preserving core functionality.
+**🔄 WORKAROUND NOTE**: This guide has been updated to align with the ChatGPT GET-based workaround and the streamlined 24-operation ChatGPT schema. All functionality preserved with query parameter usage.
 
 **✅ Data Integrity Fixed (Aug 2025)**: Container-location mapping now works correctly. The care optimization endpoint provides accurate usage distribution (21/37 locations with containers) instead of previously incorrect "all empty" data. Field name consistency issues resolved.
 
@@ -30,7 +34,7 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 **Note**: This is a streamlined version focusing on core location intelligence.
 
 ### 2. Enhanced Plant Context (Available)
-**Endpoint**: `POST /api/plants/get-context/{plant_id}`
+**Endpoint**: `GET /api/plants/get-context/{plant_id}` (🔄 WORKAROUND: converted from POST)
 
 **When to Use**:
 - User asks about a specific plant across all its locations

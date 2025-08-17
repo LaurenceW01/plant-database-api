@@ -165,15 +165,69 @@ def get_plant_new(id_or_name):
 @plants_bp.route('/update/<id_or_name>', methods=['GET'])  # WORKAROUND: was PUT
 def update_plant_new(id_or_name):
     """
+    CHATGPT WORKAROUND: Temporarily converted from PUT to GET due to ChatGPT platform issue.
+    
     Phase 2 direct implementation: Update plant with action-based URL.
     Provides semantic alignment: updatePlant operationId → /api/plants/update/{id} URL
     This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
     """
-    # Import the original update function
-    from api.main import update_plant
+    # WORKAROUND: Convert GET query params to PUT body format
+    from flask import request as flask_request, g
     
-    # Direct implementation using existing update logic
-    response = update_plant(id_or_name)
+    # Extract all parameters from query string that could be plant fields
+    simulated_json = {}
+    for key in flask_request.args.keys():
+        value = flask_request.args.get(key)
+        if value:  # Only include non-empty values
+            simulated_json[key] = value
+    
+    # Validate that we have at least some update data
+    if not simulated_json:
+        return jsonify({
+            "error": "No update parameters provided",
+            "message": "Use query parameters to specify fields to update (e.g., ?plant_name=NewName&location=NewLocation)",
+            "workaround": "GET endpoint due to ChatGPT PUT issue",
+            "received_args": dict(flask_request.args)
+        }), 400
+    
+    # WORKAROUND: Simulate PUT request body by storing in both request and g objects
+    # This allows the existing update_plant logic to work without modification
+    
+    # Store original data and mock request/g objects
+    original_method = flask_request.method
+    original_get_json = flask_request.get_json
+    original_normalized_data = getattr(g, 'normalized_request_data', None)
+    original_original_data = getattr(g, 'original_request_data', None)
+    
+    # Mock the request.get_json() to return our simulated data
+    flask_request.get_json = lambda: simulated_json
+    flask_request.method = 'PUT'  # Temporarily set to PUT for compatibility
+    
+    # Set g object data for field normalization middleware
+    g.normalized_request_data = simulated_json.copy()
+    g.original_request_data = simulated_json.copy()
+    
+    try:
+        # Import the original update function
+        from api.main import update_plant
+        
+        # Direct implementation using existing update logic
+        response = update_plant(id_or_name)
+    finally:
+        # Restore original request properties
+        flask_request.get_json = original_get_json
+        flask_request.method = original_method
+        
+        # Restore original g object data
+        if original_normalized_data is not None:
+            g.normalized_request_data = original_normalized_data
+        elif hasattr(g, 'normalized_request_data'):
+            delattr(g, 'normalized_request_data')
+            
+        if original_original_data is not None:
+            g.original_request_data = original_original_data
+        elif hasattr(g, 'original_request_data'):
+            delattr(g, 'original_request_data')
     
     # Mark as Phase 2 direct implementation in response
     if hasattr(response, 'get_json'):
@@ -182,6 +236,7 @@ def update_plant_new(id_or_name):
             if isinstance(data, dict):
                 data['phase2_direct'] = True
                 data['endpoint_type'] = 'direct_implementation'
+                data['workaround'] = 'GET converted from PUT'
                 return jsonify(data), response.status_code
         except:
             pass
@@ -195,48 +250,86 @@ def update_plant_new(id_or_name):
 @plants_bp.route('/update', methods=['GET'])  # WORKAROUND: was PUT
 def update_plant_flexible():
     """
-    Flexible update endpoint that accepts plant ID in JSON body.
-    This provides ChatGPT-friendly alternative when ID is in request body instead of URL path.
+    CHATGPT WORKAROUND: Temporarily converted from PUT to GET due to ChatGPT platform issue.
+    
+    Flexible update endpoint that accepts plant ID in query parameters.
+    This provides ChatGPT-friendly alternative when ID is in request parameters instead of URL path.
     """
     import logging
     from utils.field_normalization_middleware import get_normalized_field
     from api.main import update_plant
-    from flask import request, g
+    from flask import request as flask_request, g
     
     logger = logging.getLogger(__name__)
     
-    # Log the incoming request
-    original_data = request.get_json() if request.is_json else {}
-    logger.info(f"🔄 UPDATE_PLANT_FLEXIBLE called with {len(original_data)} fields")
-    logger.info(f"📝 Original request fields: {list(original_data.keys())}")
+    # WORKAROUND: Convert GET query params to PUT body format
+    # Extract all parameters from query string that could be plant fields
+    simulated_json = {}
+    for key in flask_request.args.keys():
+        value = flask_request.args.get(key)
+        if value:  # Only include non-empty values
+            simulated_json[key] = value
     
-    # Log normalized data if available
-    if hasattr(g, 'normalized_request_data') and g.normalized_request_data:
-        logger.info(f"✅ Normalized fields: {list(g.normalized_request_data.keys())}")
+    logger.info(f"🔄 UPDATE_PLANT_FLEXIBLE called with {len(simulated_json)} fields")
+    logger.info(f"📝 Request parameters: {list(simulated_json.keys())}")
+    
+    # Validate that we have parameters
+    if not simulated_json:
+        return jsonify({
+            "error": "No update parameters provided",
+            "message": "Use query parameters to specify fields to update, including plant ID (e.g., ?id=123&plant_name=NewName)",
+            "workaround": "GET endpoint due to ChatGPT PUT issue",
+            "received_args": dict(flask_request.args)
+        }), 400
+    
+    # WORKAROUND: Simulate PUT request body by storing in both request and g objects
+    # This allows the existing update_plant logic to work without modification
+    
+    # Store original data and mock request/g objects
+    original_method = flask_request.method
+    original_get_json = flask_request.get_json
+    original_normalized_data = getattr(g, 'normalized_request_data', None)
+    original_original_data = getattr(g, 'original_request_data', None)
+    
+    # Mock the request.get_json() to return our simulated data
+    flask_request.get_json = lambda: simulated_json
+    flask_request.method = 'PUT'  # Temporarily set to PUT for compatibility
+    
+    # Set g object data for field normalization middleware
+    g.normalized_request_data = simulated_json.copy()
+    g.original_request_data = simulated_json.copy()
+    
+    try:
+        # Get plant ID from simulated request body using field normalization
+        plant_id = get_normalized_field('id') or get_normalized_field('plant_id')
         
-        # Show field transformations
-        if hasattr(g, 'original_request_data'):
-            orig_fields = set(g.original_request_data.keys())
-            norm_fields = set(g.normalized_request_data.keys())
-            if orig_fields != norm_fields:
-                logger.info(f"🔄 Field transformations applied")
-                for orig_field in g.original_request_data.keys():
-                    if orig_field.lower() != 'id':  # Skip ID field
-                        norm_field = orig_field.lower().replace('___', '_').replace(' ', '_')
-                        if norm_field in g.normalized_request_data:
-                            logger.info(f"   {orig_field} -> {norm_field}")
-    
-    # Get plant ID from request body
-    plant_id = get_normalized_field('id') or get_normalized_field('plant_id')
-    
-    if not plant_id:
-        logger.error("❌ No plant ID found in request body")
-        return jsonify({'error': 'Plant ID is required in request body (use "id", "plant_id", or "Plant ID" field)'}), 400
-    
-    logger.info(f"🎯 Plant ID identified: {plant_id}")
-    
-    # Call the same update logic but extract ID from body
-    response = update_plant(plant_id)
+        if not plant_id:
+            logger.error("❌ No plant ID found in request parameters")
+            return jsonify({
+                'error': 'Plant ID is required in query parameters (use "id", "plant_id", or "Plant_ID" parameter)',
+                'workaround': 'GET endpoint due to ChatGPT PUT issue',
+                'received_args': dict(flask_request.args)
+            }), 400
+        
+        logger.info(f"🎯 Plant ID identified: {plant_id}")
+        
+        # Call the same update logic but extract ID from simulated body
+        response = update_plant(plant_id)
+    finally:
+        # Restore original request properties
+        flask_request.get_json = original_get_json
+        flask_request.method = original_method
+        
+        # Restore original g object data
+        if original_normalized_data is not None:
+            g.normalized_request_data = original_normalized_data
+        elif hasattr(g, 'normalized_request_data'):
+            delattr(g, 'normalized_request_data')
+            
+        if original_original_data is not None:
+            g.original_request_data = original_original_data
+        elif hasattr(g, 'original_request_data'):
+            delattr(g, 'original_request_data')
     
     # Mark as flexible endpoint in response
     if hasattr(response, 'get_json'):
@@ -244,7 +337,8 @@ def update_plant_flexible():
             data = response.get_json()
             if isinstance(data, dict):
                 data['endpoint_type'] = 'flexible_update'
-                data['note'] = 'Used plant ID from request body'
+                data['note'] = 'Used plant ID from query parameters'
+                data['workaround'] = 'GET converted from PUT'
                 return jsonify(data), response.status_code
         except:
             pass

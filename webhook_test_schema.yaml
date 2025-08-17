@@ -1,0 +1,45 @@
+openapi: 3.1.0
+info:
+  title: Webhook POST Test
+  description: Test ChatGPT POST capability using webhook.site
+  version: 1.0.0
+servers:
+  - url: https://webhook.site
+    description: External webhook testing service
+
+paths:
+  /{YOUR_WEBHOOK_UUID_HERE}:
+    post:
+      operationId: testWebhookPost
+      summary: Test POST to webhook.site
+      description: Test ChatGPT POST capability using external webhook service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                test_message:
+                  type: string
+                  description: Test message from ChatGPT
+                timestamp:
+                  type: string
+                  description: Current timestamp
+                source:
+                  type: string
+                  description: Source identifier
+      responses:
+        '200':
+          description: Webhook received successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  uuid:
+                    type: string
+                  content:
+                    type: object

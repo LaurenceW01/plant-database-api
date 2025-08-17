@@ -1,8 +1,12 @@
 # Garden Filter System Guide
 
+## 🔄 CHATGPT WORKAROUND: Perfect Timing!
+
+**✅ ADVANTAGE:** The Garden Filter System uses GET query parameters, making it IDEAL during the ChatGPT POST/PUT workaround period. This system continues to work perfectly without any changes needed.
+
 ## 🚀 Reliable Plant Filtering Overview
 
-The Garden Filter System provides a simple, reliable way to filter plants using GET query parameters. This approach is consistent with other working endpoints and avoids the complexity of JSON body requests.
+The Garden Filter System provides a simple, reliable way to filter plants using GET query parameters. This approach is consistent with our new workaround pattern and avoids the complexity of JSON body requests.
 
 ### The Solution It Provides
 - **Reliable**: GET-based filtering using query parameters

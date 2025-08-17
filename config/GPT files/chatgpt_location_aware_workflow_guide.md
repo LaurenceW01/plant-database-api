@@ -1,6 +1,10 @@
 # Location-Aware Plant Care Workflow Guide
 
+## 🔄 CHATGPT WORKAROUND COMPATIBLE
+
 **📍 CRITICAL: Always use location-specific endpoints when plant care is requested**
+
+**🔄 WORKAROUND STATUS:** All workflows in this guide use GET-based endpoints and are fully compatible with the ChatGPT POST/PUT workaround. No changes needed to existing workflows.
 
 This guide provides detailed workflows for delivering precise, location-aware plant care advice using the Phase 1 Locations & Containers integration.
 
