@@ -27,24 +27,47 @@ def add_plant_new():
     This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
     """
     # WORKAROUND: Convert GET query params to POST body format
-    from flask import request as flask_request
+    from flask import request as flask_request, g
     
-    # Simulate JSON request body from query parameters
+    # Extract parameters from query string
     plant_name = flask_request.args.get('plant_name') or flask_request.args.get('Plant Name')
+    location = flask_request.args.get('location')
     
     # Validate required fields  
     if not plant_name:
         return jsonify({
             "error": "Plant name is required for adding a plant",
             "message": "Use ?plant_name=YourPlantName in the URL",
-            "workaround": "GET endpoint due to ChatGPT POST issue"
+            "workaround": "GET endpoint due to ChatGPT POST issue",
+            "received_args": dict(flask_request.args)
         }), 400
     
-    # Import the core business logic function
-    from api.main import add_plant
+    # WORKAROUND: Simulate POST request body by temporarily storing data
+    # This allows the existing add_plant logic to work without modification
+    simulated_json = {
+        'plant_name': plant_name
+    }
+    if location:
+        simulated_json['location'] = location
     
-    # Direct implementation using existing add_plant logic with field normalization
-    response = add_plant()
+    # Temporarily override the request method and store JSON data
+    original_method = flask_request.method
+    original_get_json = flask_request.get_json
+    
+    # Mock the request.get_json() to return our simulated data
+    flask_request.get_json = lambda: simulated_json
+    flask_request.method = 'POST'  # Temporarily set to POST for compatibility
+    
+    try:
+        # Import the core business logic function
+        from api.main import add_plant
+        
+        # Direct implementation using existing add_plant logic with field normalization
+        response = add_plant()
+    finally:
+        # Restore original request properties
+        flask_request.get_json = original_get_json
+        flask_request.method = original_method
     
     # Mark as Phase 2 direct implementation in response
     if hasattr(response, 'get_json'):
