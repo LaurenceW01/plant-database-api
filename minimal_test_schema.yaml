@@ -31,6 +31,16 @@ paths:
       operationId: testMinimalPost
       summary: Test POST endpoint
       description: Ultra-minimal POST test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dummy:
+                  type: string
+                  description: Dummy field to satisfy requestBody requirement
       responses:
         '200':
           description: Success

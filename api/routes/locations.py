@@ -795,14 +795,33 @@ def simple_put_test():
 @locations_bp.route('/test/minimal-post', methods=['POST'])
 def minimal_post_test():
     """
-    Absolutely minimal POST endpoint for OpenAI schema debugging.
-    No request body, no parameters, just success response.
+    Minimal POST endpoint with requestBody for ChatGPT schema compliance.
+    Accepts a dummy parameter as required by OpenAI schema validation.
     """
     logging.info("🔬 MINIMAL POST TEST ENDPOINT CALLED")
     logging.info(f"🔬 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logging.info(f"🔬 Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
     logging.info(f"🔬 ALL HEADERS: {dict(request.headers)}")
     
-    return {"success": True, "message": "Minimal POST works"}
+    # Get request data (with dummy parameter)
+    try:
+        request_data = request.get_json(force=True, silent=True)
+        logging.info(f"🔬 Request Data: {request_data}")
+        dummy_value = request_data.get('dummy', 'no dummy provided') if request_data else 'no json data'
+    except Exception as e:
+        request_data = None
+        dummy_value = f'json parsing error: {e}'
+        logging.info(f"🔬 No JSON data or parsing error: {e}")
+    
+    response = {
+        "success": True, 
+        "message": "Minimal POST works with requestBody", 
+        "received_dummy": dummy_value,
+        "full_request_data": request_data
+    }
+    
+    logging.info(f"🔬 Minimal POST response: {response}")
+    return jsonify(response)
 
 
 @locations_bp.route('/test/minimal-get', methods=['GET'])
