@@ -833,3 +833,77 @@ def minimal_get_test():
     logging.info(f"🔬 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
     
     return {"success": True, "message": "Minimal GET works"}
+
+
+@locations_bp.route('/test/super-open-post', methods=['POST', 'OPTIONS'])
+def super_open_post_test():
+    """
+    Super permissive POST endpoint for ChatGPT debugging.
+    No authentication, no validation, accepts anything.
+    """
+    from flask import request, jsonify
+    import json
+    from datetime import datetime
+    
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        logging.info("🌐 SUPER OPEN POST - OPTIONS preflight request")
+        response = jsonify({'message': 'OPTIONS allowed'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = '*'
+        return response
+    
+    # Log everything about the request
+    logging.info("🌐 SUPER OPEN POST TEST ENDPOINT CALLED")
+    logging.info(f"🌐 Method: {request.method}")
+    logging.info(f"🌐 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logging.info(f"🌐 Content-Type: {request.headers.get('Content-Type', 'Unknown')}")
+    logging.info(f"🌐 Origin: {request.headers.get('Origin', 'Unknown')}")
+    logging.info(f"🌐 All Headers: {dict(request.headers)}")
+    
+    # Try to get request data multiple ways
+    request_data = None
+    data_source = "none"
+    
+    try:
+        request_data = request.get_json(force=True, silent=True)
+        if request_data:
+            data_source = "get_json"
+            logging.info(f"🌐 JSON Data: {request_data}")
+    except Exception as e:
+        logging.info(f"🌐 JSON parsing failed: {e}")
+    
+    if not request_data:
+        try:
+            request_data = request.get_data(as_text=True)
+            if request_data:
+                data_source = "raw_data"
+                logging.info(f"🌐 Raw Data: {request_data}")
+        except Exception as e:
+            logging.info(f"🌐 Raw data failed: {e}")
+    
+    # Create comprehensive response
+    response_data = {
+        "success": True,
+        "message": "Super open POST endpoint - accepts everything",
+        "timestamp": datetime.utcnow().isoformat(),
+        "received_data": request_data,
+        "data_source": data_source,
+        "request_info": {
+            "method": request.method,
+            "user_agent": request.headers.get('User-Agent', 'Unknown'),
+            "content_type": request.headers.get('Content-Type', 'Unknown'),
+            "origin": request.headers.get('Origin', 'Unknown')
+        }
+    }
+    
+    logging.info(f"🌐 Super open POST response: {response_data}")
+    
+    # Create response with permissive CORS headers
+    response = jsonify(response_data)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = '*'
+    
+    return response

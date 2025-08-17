@@ -53,3 +53,52 @@ paths:
                     type: boolean
                   message:
                     type: string
+
+  /api/test/super-open-post:
+    post:
+      operationId: testSuperOpenPost
+      summary: Super open POST endpoint
+      description: Completely permissive POST endpoint for debugging ChatGPT issues
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                anything:
+                  type: string
+                  description: Accepts any data for debugging
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                  received_data:
+                    oneOf:
+                      - type: object
+                      - type: string
+                      - type: 'null'
+                  data_source:
+                    type: string
+                  request_info:
+                    type: object
+                    properties:
+                      method:
+                        type: string
+                      user_agent:
+                        type: string
+                      content_type:
+                        type: string
+                      origin:
+                        type: string
