@@ -187,16 +187,18 @@ def register_legacy_components(app, limiter):
     # Register any remaining plant log routes that weren't modularized
     try:
         from api.main import register_plant_log_routes, require_api_key
-        register_plant_log_routes(app, limiter, require_api_key)
-        logging.info("✅ Legacy plant log routes registered")
+        # DISABLED: Legacy routes conflict with new blueprint routes
+        # register_plant_log_routes(app, limiter, require_api_key)
+        logging.info("🚫 Legacy plant log routes DISABLED (blueprint routes used instead)")
     except ImportError:
         logging.warning("⚠️ Legacy plant log routes not available")
     
     # Register any remaining plant routes that weren't modularized  
     try:
         from api.main import register_plant_routes, require_api_key
-        register_plant_routes(app, limiter, require_api_key)
-        logging.info("✅ Legacy plant routes registered")
+        # DISABLED: Legacy routes conflict with new blueprint routes  
+        # register_plant_routes(app, limiter, require_api_key)
+        logging.info("🚫 Legacy plant routes DISABLED (blueprint routes used instead)")
     except ImportError:
         logging.warning("⚠️ Legacy plant routes not available")
 
