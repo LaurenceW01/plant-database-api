@@ -100,7 +100,7 @@ paths:
       description: Add a new plant to the database with photo upload token
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -321,7 +321,7 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -372,7 +372,7 @@ paths:
       description: Alternative update endpoint that accepts plant ID in request body instead of URL path
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -511,7 +511,7 @@ paths:
       description: Get AI-powered plant health diagnosis with location intelligence
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -559,7 +559,7 @@ paths:
       description: Enhance existing analysis with location and database context
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -615,7 +615,7 @@ paths:
       description: Create a comprehensive plant health log entry with photo upload token
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -673,7 +673,7 @@ paths:
       description: Create a simple plant log entry with basic information
       security: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
@@ -772,7 +772,7 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
+        required: false
         content:
           multipart/form-data:
             schema:
@@ -811,7 +811,7 @@ paths:
           schema:
             type: string
       requestBody:
-        required: true
+        required: false
         content:
           multipart/form-data:
             schema:

@@ -790,3 +790,27 @@ def simple_put_test():
     
     logging.info("🔧 Simple PUT test completed successfully")
     return jsonify(response), 200
+
+
+@locations_bp.route('/test/minimal-post', methods=['POST'])
+def minimal_post_test():
+    """
+    Absolutely minimal POST endpoint for OpenAI schema debugging.
+    No request body, no parameters, just success response.
+    """
+    logging.info("🔬 MINIMAL POST TEST ENDPOINT CALLED")
+    logging.info(f"🔬 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logging.info(f"🔬 ALL HEADERS: {dict(request.headers)}")
+    
+    return {"success": True, "message": "Minimal POST works"}
+
+
+@locations_bp.route('/test/minimal-get', methods=['GET'])
+def minimal_get_test():
+    """
+    Minimal GET endpoint for comparison.
+    """
+    logging.info("🔬 MINIMAL GET TEST ENDPOINT CALLED")
+    logging.info(f"🔬 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    
+    return {"success": True, "message": "Minimal GET works"}
