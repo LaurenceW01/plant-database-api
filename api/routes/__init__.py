@@ -10,13 +10,15 @@ from .logs import logs_bp
 from .analysis import analysis_bp
 from .locations import locations_bp
 from .photos import photos_bp
+from .plant_maintenance import plant_maintenance_bp
 
 __all__ = [
     'plants_bp',
     'logs_bp', 
     'analysis_bp',
     'locations_bp',
-    'photos_bp'
+    'photos_bp',
+    'plant_maintenance_bp'
 ]
 
 def register_all_blueprints(app):
@@ -26,4 +28,5 @@ def register_all_blueprints(app):
     app.register_blueprint(analysis_bp) 
     app.register_blueprint(locations_bp)
     app.register_blueprint(photos_bp)
+    app.register_blueprint(plant_maintenance_bp)
 

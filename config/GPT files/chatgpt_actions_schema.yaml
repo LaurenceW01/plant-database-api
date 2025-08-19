@@ -11,7 +11,7 @@ servers:
 
 paths:
   # =============================================
-  # CORE PLANT MANAGEMENT (5 operations)
+  # CORE PLANT MANAGEMENT (6 operations)
   # =============================================
   
   /api/plants/search:
@@ -554,6 +554,149 @@ paths:
                           type: string
                         description:
                           type: string
+
+  /api/plants/maintenance:
+    get:
+      operationId: maintainPlant
+      summary: "Plant maintenance operations"
+      description: "CHATGPT WORKAROUND: Move plants between locations and update container details using natural language commands (converted to GET due to ChatGPT POST issue). Supports plant moves, location additions/removals, and container updates."
+      security: []
+      parameters:
+        - name: plant_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Exact plant name from AI"
+          example: "Tropical Hibiscus"
+        - name: destination_location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "New location name (null/empty for removal or container only change)"
+          example: "Pool Path"
+        - name: source_location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Current location (for ambiguity resolution or container change)"
+          example: "Patio"
+        - name: container_size
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "New container size"
+          example: "Large"
+        - name: container_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "New container type"
+          example: "Ceramic Pot"
+        - name: container_material
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "New container material"
+          example: "Ceramic"
+      responses:
+        '200':
+          description: "Plant maintenance operation completed successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Plant moved successfully"
+                  data:
+                    type: object
+                    properties:
+                      plant_name:
+                        type: string
+                        example: "Tropical Hibiscus"
+                      old_locations:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Patio"]
+                      new_locations:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Pool Path"]
+                      container_updates:
+                        type: object
+                        properties:
+                          size:
+                            type: string
+                          type:
+                            type: string
+                          material:
+                            type: string
+                        example: {"size": "Large"}
+                      operation_type:
+                        type: string
+                        example: "move"
+        '400':
+          description: "Bad request - validation error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Plant name is required"
+        '404':
+          description: "Plant or location not found"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Plant not found"
+        '422':
+          description: "Ambiguity error - user needs to provide more information"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Multiple locations found"
+                  options:
+                    type: object
+                    properties:
+                      locations:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Front Patio", "Back Patio", "Side Patio"]
+                      message:
+                        type: string
+                        example: "Please specify which patio location"
 
   # =============================================
   # AI-POWERED ANALYSIS (2 operations)

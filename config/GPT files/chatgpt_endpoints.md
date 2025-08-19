@@ -6,16 +6,16 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 27 essential endpoints operational - streamlined for ChatGPT's 30 operation limit.
+**Status**: 30 essential endpoints operational - utilizing ChatGPT's full 30 operation limit.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 **Workaround Status**: All POST/PUT endpoints converted to GET with parameter simulation.
 
 ---
 
-## Quick Reference - All 27 Operations
+## Quick Reference - All 30 Operations
 
-### Plant Management (7 operations)
+### Plant Management (8 operations)
 ```javascript
 GET    /api/plants/add              // ✅ Add new plant with upload token (WORKAROUND: converted from POST)
 GET    /api/plants/search           // ✅ Search plants (WORKAROUND: converted from POST, use query params)
@@ -25,6 +25,7 @@ GET    /api/plants/update/{id}      // ✅ Update plant with ID in URL path (WOR
 GET    /api/plants/update           // ✅ Update plant with ID in query params (WORKAROUND: converted from PUT)
 GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
 GET    /api/plants/by-location/{location_name} // ✅ Get plants by location (supports IDs and names)
+GET    /api/plants/maintenance      // ✅ 🆕 Plant maintenance - move plants, update containers
 ```
 
 **🔄 CHATGPT WORKAROUND: Plant Search Method**
@@ -45,6 +46,61 @@ GET /api/plants/search?q=tomato%20plant&limit=3&names_only=false
 **⚠️ IMPORTANT FOR CHATGPT:** Due to a temporary ChatGPT platform issue with POST requests, all endpoints now use GET methods with query parameters instead of JSON request bodies. This is a temporary workaround - functionality remains the same.
 
 **NEW: Names Only Parameter** - Use `names_only: true` to get just plant names as strings instead of full plant objects. Perfect for AI analysis tasks like toxicity reports, pest identification, or plant compatibility analysis.
+
+**🆕 CHATGPT WORKAROUND: Plant Maintenance Method**
+```javascript
+// 🔄 WORKAROUND: Plant maintenance operations (converted from POST due to ChatGPT platform issue)
+
+// Move plant between locations
+GET /api/plants/maintenance?plant_name=Tropical%20Hibiscus&source_location=patio&destination_location=pool%20path
+
+// Add plant to new location
+GET /api/plants/maintenance?plant_name=Rose&destination_location=front%20garden
+
+// Remove plant from location
+GET /api/plants/maintenance?plant_name=Basil&source_location=kitchen
+
+// Update container details
+GET /api/plants/maintenance?plant_name=Snake%20Plant&container_size=Large&container_type=Ceramic&container_material=Pot
+
+// Move and update container in one operation
+GET /api/plants/maintenance?plant_name=Fern&source_location=bedroom&destination_location=office&container_size=Medium&container_material=Plastic
+```
+
+**Plant Maintenance Parameters:**
+- `plant_name` (required): Exact plant name
+- `destination_location` (optional): New location (for moves/additions)
+- `source_location` (optional): Current location (for moves/removals, ambiguity resolution)
+- `container_size` (optional): New container size
+- `container_type` (optional): New container type  
+- `container_material` (optional): New container material
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Plant moved successfully", 
+  "data": {
+    "plant_name": "Tropical Hibiscus",
+    "old_locations": ["patio"],
+    "new_locations": ["pool path"],
+    "container_updates": {"size": "Large"},
+    "operation_type": "move"
+  }
+}
+```
+
+**Ambiguity Response (422):**
+```json
+{
+  "success": false,
+  "error": "Multiple locations found",
+  "options": {
+    "locations": ["front patio", "back patio", "side patio"],
+    "message": "Please specify which patio location"
+  }
+}
+```
 
 ### AI-Powered Analysis (2 operations)
 ```javascript
@@ -600,7 +656,7 @@ GET /api/plants/get-all-fields/Vinca
 
 ## Important Notes
 
-🔴 **ChatGPT Limitations**: This schema contains exactly 25 operations (under the 30 limit)
+🔴 **ChatGPT Limitations**: This schema contains exactly 30 operations (at the 30 limit)
 🔴 **Field Compatibility**: Field names are flexible - use any format (spaces, underscores, camelCase)
 🔴 **Token Expiration**: All upload tokens expire in 24 hours
 🔴 **Location Intelligence**: Use context endpoints for precise, location-aware advice
@@ -608,5 +664,7 @@ GET /api/plants/get-all-fields/Vinca
 
 For detailed workflow guides and advanced patterns, see:
 - `chatgpt_location_aware_workflow_guide.md` - Step-by-step care workflows
+- `chatgpt_plant_maintenance_workflow.md` - Plant maintenance operations (move, add, remove, update containers)
 - `chatgpt_phase2_advanced_intelligence.md` - Advanced garden intelligence features
+- `chatgpt_advanced_query_system_guide.md` - Advanced filtering and query patterns
 - `chatgpt_query_patterns_and_examples.md` - Response templates and examples
