@@ -4,7 +4,7 @@ info:
   description: |
     Essential plant database operations with AI-powered analysis and location intelligence.
     Streamlined to 30 operations for ChatGPT compatibility.
-  version: 2.4.5
+  version: 2.4.6
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
