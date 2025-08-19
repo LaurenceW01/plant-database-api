@@ -527,16 +527,16 @@ def format_log_entries_as_journal(log_entries: List[Dict]) -> List[Dict]:
         follow_up_date = entry.get('follow_up_date', '')
         
         # Build journal entry text
-        journal_text = f"📅 {date}\n🌱 {title}\n\n"
+        journal_text = f"{date}\n{title}\n\n"
         
         if photo_url:
-            journal_text += f"📸 Photo: {photo_url}\n\n"
+            journal_text += f"Photo: {photo_url}\n\n"
         
         if symptoms:
-            journal_text += f"🔍 What I Observed:\n{symptoms}\n\n"
+            journal_text += f"What I Observed:\n{symptoms}\n\n"
         
         if user_notes:
-            journal_text += f"📝 My Notes:\n{user_notes}\n\n"
+            journal_text += f"My Notes:\n{user_notes}\n\n"
         
         if diagnosis:
             confidence_text = ""
@@ -546,13 +546,13 @@ def format_log_entries_as_journal(log_entries: List[Dict]) -> List[Dict]:
                     confidence_text = f" (Confidence: {conf_pct}%)"
                 except:
                     pass
-            journal_text += f"🤖 AI Analysis{confidence_text}:\n{diagnosis}\n\n"
+            journal_text += f"AI Analysis{confidence_text}:\n{diagnosis}\n\n"
         
         if treatment:
-            journal_text += f"💡 Recommended Treatment:\n{treatment}\n\n"
+            journal_text += f"Recommended Treatment:\n{treatment}\n\n"
         
         if follow_up.upper() == 'TRUE' and follow_up_date:
-            journal_text += f"📅 Follow-up: {follow_up_date}\n"
+            journal_text += f"Follow-up: {follow_up_date}\n"
         
         journal_entry = {
             "log_id": entry.get('log_id', ''),

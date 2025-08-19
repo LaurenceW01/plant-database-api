@@ -22,26 +22,26 @@ def normalize_request_middleware():
     
     This runs before every request and stores normalized data in Flask's g object.
     """
-    print(f"🔧 normalize_request_middleware() START for {request.method} {request.path}")  # Debug print
+    print(f"normalize_request_middleware() START for {request.method} {request.path}")  # Debug print
     
     # Use silent=True to handle ChatGPT requests with Content-Type: application/json but no body
     if request.is_json and request.get_json(silent=True):
-        print(f"🔧 Request has JSON data, proceeding with normalization...")  # Debug print
+        print(f"Request has JSON data, proceeding with normalization...")  # Debug print
         from utils.compatibility_helpers import normalize_request_fields
         
         try:
-            print(f"🔧 Getting JSON data...")  # Debug print
+            print(f"Getting JSON data...")  # Debug print
             original_data = request.get_json(silent=True)
-            print(f"🔧 Got JSON data: {len(original_data)} fields")  # Debug print
+            print(f"Got JSON data: {len(original_data)} fields")  # Debug print
             
             # DEBUG: Log the raw request data size and keys
-            logging.info(f"🔍 RAW REQUEST DEBUG: Content-Length: {request.content_length}")
-            logging.info(f"🔍 RAW REQUEST DEBUG: Content-Type: {request.content_type}")
-            logging.info(f"🔍 RAW REQUEST DEBUG: request.get_json() returned {len(original_data)} fields: {list(original_data.keys())}")
+            logging.info(f"RAW REQUEST DEBUG: Content-Length: {request.content_length}")
+            logging.info(f"RAW REQUEST DEBUG: Content-Type: {request.content_type}")
+            logging.info(f"RAW REQUEST DEBUG: request.get_json() returned {len(original_data)} fields: {list(original_data.keys())}")
             
-            print(f"🔧 About to call normalize_request_fields()...")  # Debug print
+            print(f"About to call normalize_request_fields()...")  # Debug print
             normalized_data = normalize_request_fields(original_data)
-            print(f"🔧 normalize_request_fields() completed successfully")  # Debug print
+            print(f"normalize_request_fields() completed successfully")  # Debug print
             
             # Store both original and normalized data in Flask's g object
             g.original_request_data = original_data
@@ -54,22 +54,22 @@ def normalize_request_middleware():
                     if k != v
                 }
                 if transformed_fields:
-                    logging.info(f"🔄 MIDDLEWARE: Field normalization applied: {transformed_fields}")
+                    logging.info(f"MIDDLEWARE: Field normalization applied: {transformed_fields}")
                 else:
-                    logging.info(f"🔄 MIDDLEWARE: No field transformations needed")
+                    logging.info(f"MIDDLEWARE: No field transformations needed")
             else:
-                logging.info(f"🔄 MIDDLEWARE: No field normalization applied")
+                logging.info(f"MIDDLEWARE: No field normalization applied")
                     
         except Exception as e:
-            print(f"💥 EXCEPTION in field normalization: {e}")  # Debug print
+            print(f"EXCEPTION in field normalization: {e}")  # Debug print
             logging.warning(f"Field normalization failed: {e}")
             # Store original data as fallback
             g.original_request_data = request.get_json(silent=True)
             g.normalized_request_data = request.get_json(silent=True)
     else:
-        print(f"🔧 No JSON data in request, skipping normalization")  # Debug print
+        print(f"No JSON data in request, skipping normalization")  # Debug print
     
-    print(f"🔧 normalize_request_middleware() END for {request.method} {request.path}")  # Debug print
+    print(f"normalize_request_middleware() END for {request.method} {request.path}")  # Debug print
 
 
 def get_normalized_field(field_name: str, default: Any = None) -> Any:

@@ -110,13 +110,13 @@ def update_plant_api(id_or_name):
                 canonical_name = canonical_field_mappings.get(normalized_field, normalized_field)
                 if value and str(value).strip():  # Only include non-empty values
                     update_data[canonical_name] = str(value).strip()
-                    logger.info(f"   🔄 {normalized_field} -> {canonical_name}")
+                    logger.info(f"   MAPPING: {normalized_field} -> {canonical_name}")
                 else:
-                    logger.debug(f"   ⏭️  Skipping empty field: {normalized_field}")
+                    logger.debug(f"   SKIPPING empty field: {normalized_field}")
         
         # If no normalized data, try direct field access using centralized config
         if not update_data:
-            logger.warning("⚠️  No normalized data found, trying direct field access")
+            logger.warning("WARNING: No normalized data found, trying direct field access")
             from models.field_config import FIELD_NAMES, get_aliases_for_field
             
             # Try all canonical field names and their aliases
@@ -140,15 +140,15 @@ def update_plant_api(id_or_name):
                         break  # Found a value, move to next field
         
         if not update_data:
-            logger.error("❌ No valid fields provided for update")
+            logger.error("ERROR: No valid fields provided for update")
             return jsonify({'error': 'No valid fields provided for update'}), 400
         
-        logger.info(f"📋 Final update data: {list(update_data.keys())}")
-        logger.info(f"🔧 Calling database update for plant {id_or_name}")
+        logger.info(f"Final update data: {list(update_data.keys())}")
+        logger.info(f"Calling database update for plant {id_or_name}")
         
         # Update the plant
         result = update_plant(id_or_name, update_data)
-        logger.info(f"✅ Database update result: {result.get('success', False)}")
+        logger.info(f"Database update result: {result.get('success', False)}")
         
         if result.get('success'):
             return jsonify(result), 200

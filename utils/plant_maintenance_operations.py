@@ -143,7 +143,10 @@ def validate_maintenance_request(
             }
         
         # Validate that at least one operation is specified
-        has_location_change = bool(destination_location and destination_location.strip())
+        has_location_change = bool(
+            (destination_location and destination_location.strip()) or  # Add/move to destination
+            (source_location and source_location.strip() and not destination_location)  # Remove from source
+        )
         has_container_update = any([
             container_size and container_size.strip(),
             container_type and container_type.strip(),
@@ -213,7 +216,8 @@ def detect_ambiguity(
             }
         
         # Check for partial string matches in destination location
-        if destination_location and destination_location.strip():
+        # Skip this check if source location is provided, as it resolves ambiguity
+        if destination_location and destination_location.strip() and not source_location:
             partial_matches = _find_partial_location_matches(destination_location.strip())
             if len(partial_matches) > 1:
                 return {
@@ -237,15 +241,31 @@ def detect_ambiguity(
                                for loc_id in location_ids if loc_id]
             
             if destination_location and destination_location.strip():
-                # Moving plant - need to specify source location
-                return {
-                    'success': False,
-                    'error': 'Plant exists in multiple locations',
-                    'options': {
-                        'locations': current_locations,
-                        'message': f'Plant "{plant_name}" exists in multiple locations. Please specify source location.'
+                # Check if plant already exists in the destination location
+                destination_location_id = None
+                for location in all_locations:
+                    if location.get('location_name', '').strip().lower() == destination_location.strip().lower():
+                        destination_location_id = str(location.get('location_id', ''))
+                        break
+                
+                # Check if plant already has a container in the destination
+                plant_in_destination = any(str(container.get('location_id', '')) == destination_location_id 
+                                         for container in plant_containers)
+                
+                if plant_in_destination:
+                    # Plant already exists in destination - this is an update, need source location
+                    return {
+                        'success': False,
+                        'error': 'Plant exists in multiple locations',
+                        'options': {
+                            'locations': current_locations,
+                            'message': f'Plant "{plant_name}" exists in multiple locations including "{destination_location}". Please specify source location for updates.'
+                        }
                     }
-                }
+                else:
+                    # Plant doesn't exist in destination - this is an "add to new location" operation, allow it
+                    logger.info(f"Plant '{plant_name}' will be added to new location '{destination_location}'")
+                    pass  # Continue with add operation
         
         logger.info(f"No ambiguity detected for plant '{plant_name}'")
         
@@ -302,8 +322,22 @@ def execute_maintenance(
                     container_size, container_type, container_material
                 )
         elif source_location and source_location.strip():
-            # Remove operation: remove from source location
-            result = _execute_remove_operation(plant_name, source_location.strip())
+            # Check if container updates are provided
+            has_container_updates = any([
+                container_size and container_size.strip(),
+                container_type and container_type.strip(),
+                container_material and container_material.strip()
+            ])
+            
+            if has_container_updates:
+                # Update in place operation: update container at source location
+                result = _execute_update_in_place_operation(
+                    plant_name, source_location.strip(),
+                    container_size, container_type, container_material
+                )
+            else:
+                # Remove operation: remove from source location
+                result = _execute_remove_operation(plant_name, source_location.strip())
         else:
             # Container update only: update existing containers
             result = _execute_container_update_operation(
@@ -460,19 +494,23 @@ def _execute_move_operation(
             'container_material': container_material or source_container.get('container_material', '')
         }
         
-        # Add new container in destination location
-        add_result = add_container(plant_name, destination_location_id, container_details)
-        if not add_result.get('success', False):
+        # Update existing container with new location and details
+        update_data = {
+            'location_id': destination_location_id,
+            'container_size': container_size or source_container.get('container_size', ''),
+            'container_type': container_type or source_container.get('container_type', ''),
+            'container_material': container_material or source_container.get('container_material', '')
+        }
+        
+        # Remove empty values to avoid updating with blanks
+        update_data = {key: value for key, value in update_data.items() if value}
+        
+        update_result = update_container(source_container.get('container_id', ''), update_data)
+        if not update_result.get('success', False):
             return {
                 'success': False,
-                'error': f'Failed to add container in destination: {add_result.get("error", "Unknown error")}'
+                'error': f'Failed to update container: {update_result.get("error", "Unknown error")}'
             }
-        
-        # Remove old container from source location
-        remove_result = remove_container(source_container.get('container_id', ''))
-        if not remove_result.get('success', False):
-            logger.warning(f"Failed to remove source container: {remove_result.get('error', 'Unknown error')}")
-            # Don't fail the operation - the add was successful
         
         logger.info(f"Successfully moved plant '{plant_name}' from '{source_location}' to '{destination_location}'")
         
@@ -483,7 +521,8 @@ def _execute_move_operation(
             'details': {
                 'source_location': source_location,
                 'destination_location': destination_location,
-                'new_container_id': add_result.get('container_id', '')
+                'updated_container_id': source_container.get('container_id', ''),
+                'updated_fields': update_result.get('updated_fields', [])
             }
         }
         
@@ -549,6 +588,60 @@ def _execute_add_operation(
         return {
             'success': False,
             'error': f'Add operation error: {str(e)}'
+        }
+
+def _execute_update_in_place_operation(
+    plant_name: str,
+    source_location: str,
+    container_size: Optional[str],
+    container_type: Optional[str],
+    container_material: Optional[str]
+) -> Dict[str, Any]:
+    """Execute an update in place operation - update container details without changing location."""
+    try:
+        # Find the existing container in the source location
+        source_container = get_container_by_plant_and_location(plant_name, source_location)
+        if not source_container:
+            return {
+                'success': False,
+                'error': f'Plant "{plant_name}" not found in location "{source_location}"'
+            }
+        
+        # Prepare update data with only provided values
+        update_data = {}
+        if container_size and container_size.strip():
+            update_data['container_size'] = container_size.strip()
+        if container_type and container_type.strip():
+            update_data['container_type'] = container_type.strip()
+        if container_material and container_material.strip():
+            update_data['container_material'] = container_material.strip()
+        
+        # Update the container
+        update_result = update_container(source_container.get('container_id', ''), update_data)
+        if not update_result.get('success', False):
+            return {
+                'success': False,
+                'error': f'Failed to update container: {update_result.get("error", "Unknown error")}'
+            }
+        
+        logger.info(f"Successfully updated container for plant '{plant_name}' in location '{source_location}'")
+        
+        return {
+            'success': True,
+            'operation_type': 'update_in_place',
+            'container_updates': update_data,
+            'details': {
+                'location': source_location,
+                'container_id': source_container.get('container_id', ''),
+                'updated_fields': update_result.get('updated_fields', [])
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error executing update in place operation: {e}")
+        return {
+            'success': False,
+            'error': f'Update in place operation failed: {str(e)}'
         }
 
 def _execute_remove_operation(plant_name: str, source_location: str) -> Dict[str, Any]:

@@ -284,13 +284,13 @@ def update_plant(plant_id: Union[int, str], update_data: Dict) -> Dict[str, Unio
     try:
         plant_id = str(plant_id)
         
-        logger.info(f"💾 DATABASE UPDATE_PLANT called for ID: {plant_id}")
-        logger.info(f"📝 Fields to update: {list(update_data.keys())}")
+        logger.info(f"DATABASE UPDATE_PLANT called for ID: {plant_id}")
+        logger.info(f"Fields to update: {list(update_data.keys())}")
         
         # Find the plant row
         plant_row, plant_data = find_plant_by_id_or_name(plant_id)
         if not plant_row:
-            logger.error(f"❌ Plant not found: {plant_id}")
+            logger.error(f"ERROR: Plant not found: {plant_id}")
             return {"success": False, "error": "Plant not found"}
         
         # Update each field
@@ -298,18 +298,18 @@ def update_plant(plant_id: Union[int, str], update_data: Dict) -> Dict[str, Unio
         for field_name, new_value in update_data.items():
             # Validate field name using field_config
             if not is_valid_field(field_name):
-                logger.warning(f"⚠️  Invalid field name: {field_name}")
+                logger.warning(f"WARNING: Invalid field name: {field_name}")
                 continue
             
-            logger.info(f"🔄 Updating field: {field_name} = '{new_value}'")
+            logger.info(f"Updating field: {field_name} = '{new_value}'")
             success = update_plant_field(plant_row, field_name, str(new_value))
             if not success:
-                logger.error(f"❌ Failed to update field: {field_name}")
+                logger.error(f"ERROR: Failed to update field: {field_name}")
                 return {"success": False, "error": f"Failed to update field {field_name}"}
             else:
                 updated_fields.append(field_name)
         
-        logger.info(f"✅ Successfully updated {len(updated_fields)} fields: {updated_fields}")
+        logger.info(f"SUCCESS: Successfully updated {len(updated_fields)} fields: {updated_fields}")
         
         # Invalidate cache
         from utils.plant_cache_operations import invalidate_plant_list_cache
