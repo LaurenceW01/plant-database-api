@@ -363,46 +363,6 @@ def remove_plant_new(id_or_name):
     }), 501
 
 
-@plants_bp.route('/by-location/<location_name>', methods=['GET'])
-def get_plants_by_location_new(location_name):
-    """
-    Get all plants in a specific location.
-    Supports both location IDs and location names for ChatGPT compatibility.
-    """
-    try:
-        from utils.plant_cache_operations import get_plants_by_location
-        from utils.locations_database_operations import find_location_by_id_or_name
-        
-        # Convert location name to actual location name if it's an ID
-        actual_location_name = location_name
-        if location_name.isdigit():
-            # Try to find location by ID and get its name
-            location_data = find_location_by_id_or_name(location_name)
-            if location_data is not None:
-                actual_location_name = location_data.get('location_name', location_name)
-                logging.info(f"Converted location ID '{location_name}' to name '{actual_location_name}'")
-        
-        # Get plants by location
-        plants = get_plants_by_location([actual_location_name])
-        
-        return jsonify({
-            "location_identifier": location_name,
-            "resolved_location_name": actual_location_name,
-            "count": len(plants),
-            "plants": plants,
-            "phase2_direct": True,
-            "endpoint_type": "direct_implementation"
-        }), 200
-        
-    except Exception as e:
-        logging.error(f"Error getting plants by location: {e}")
-        return jsonify({
-            "error": "Failed to get plants by location",
-            "details": str(e),
-            "location_identifier": location_name,
-            "phase2_direct": True
-        }), 500
-
 
 # ========== CHATGPT WORKAROUND - TEMPORARY ==========
 # TODO: Revert when ChatGPT POST requests work again 

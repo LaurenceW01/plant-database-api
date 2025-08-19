@@ -62,7 +62,7 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 
 ## Response Format - NEW HIERARCHICAL STRUCTURE ✨
 
-**🎉 IMPROVED 2025**: The garden filter now returns a clear hierarchical structure that eliminates confusion and provides complete information.
+**🎉 IMPROVED v2.5.0**: The garden filter now returns a clear hierarchical structure that eliminates confusion and provides complete information.
 
 ### Key Improvements:
 - **No Misleading Data**: Each plant shows ALL locations where it exists
@@ -75,7 +75,7 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 {
   "count": 2,
   "total_matches": 2,
-  "debug_signature": "GET-FILTER-HIERARCHICAL-2025",
+  "debug_signature": "GET-FILTER-HIERARCHICAL-v2.5.0",
   "filters_applied": {
     "plants": {"plant_name": {"$regex": "hibiscus"}}
   },

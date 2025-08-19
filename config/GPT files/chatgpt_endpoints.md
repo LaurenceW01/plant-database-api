@@ -6,16 +6,16 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 30 essential endpoints operational - utilizing ChatGPT's full 30 operation limit.
+**Status**: 29 essential endpoints operational - streamlined for optimal performance.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 **Workaround Status**: All POST/PUT endpoints converted to GET with parameter simulation.
 
 ---
 
-## Quick Reference - All 30 Operations
+## Quick Reference - All 29 Operations
 
-### Plant Management (8 operations)
+### Plant Management (7 operations)
 ```javascript
 GET    /api/plants/add              // ✅ Add new plant with upload token (WORKAROUND: converted from POST)
 GET    /api/plants/search           // ✅ Search plants (WORKAROUND: converted from POST, use query params)
@@ -24,7 +24,6 @@ GET    /api/plants/get-all-fields/{id} // ✅ Get ALL plant fields from spreadsh
 GET    /api/plants/update/{id}      // ✅ Update plant with ID in URL path (WORKAROUND: converted from PUT)
 GET    /api/plants/update           // ✅ Update plant with ID in query params (WORKAROUND: converted from PUT)
 GET    /api/plants/get-context/{plant_id} // ✅ Get plant context (supports IDs and names)
-GET    /api/plants/by-location/{location_name} // ✅ Get plants by location (supports IDs and names)
 GET    /api/plants/maintenance      // ✅ 🆕 Plant maintenance - move plants, update containers
 ```
 
@@ -214,7 +213,7 @@ Content-Type: application/json
     "test_message": "Hello from GPT"
   },
   "test_type": "simple_post_test",
-  "version": "v2.4.0"
+  "version": "v2.5.0"
 }
 ```
 
@@ -245,7 +244,7 @@ Content-Type: application/json
   },
   "test_type": "simple_put_test",
   "method": "PUT",
-  "version": "v2.4.0"
+  "version": "v2.5.0"
 }
 ```
 
@@ -305,13 +304,13 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 ```
 
 #### NEW Hierarchical Response Format ✨
-**🎉 IMPROVED 2025**: Clear plant → locations → containers structure
+**🎉 IMPROVED v2.5.0**: Clear plant → locations → containers structure
 
 ```javascript
 {
   "count": 9,
   "total_matches": 9,
-  "debug_signature": "GET-FILTER-HIERARCHICAL-2025",
+  "debug_signature": "GET-FILTER-HIERARCHICAL-v2.5.0",
   "filters_applied": {
     "containers": {"container_size": {"$eq": "small"}},
     "locations": {"location_name": {"$regex": "patio"}}
@@ -656,7 +655,7 @@ GET /api/plants/get-all-fields/Vinca
 
 ## Important Notes
 
-🔴 **ChatGPT Limitations**: This schema contains exactly 30 operations (at the 30 limit)
+🔴 **ChatGPT Limitations**: This schema contains 29 operations (streamlined from 30)
 🔴 **Field Compatibility**: Field names are flexible - use any format (spaces, underscores, camelCase)
 🔴 **Token Expiration**: All upload tokens expire in 24 hours
 🔴 **Location Intelligence**: Use context endpoints for precise, location-aware advice

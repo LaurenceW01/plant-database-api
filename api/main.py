@@ -1,5 +1,5 @@
 """
-Plant Database API - Main Application Entry Point (v2.4.6)
+Plant Database API - Main Application Entry Point (v2.5.0)
 
 Modularized architecture with clean separation of concerns.
 Routes are organized into blueprints by functional area.

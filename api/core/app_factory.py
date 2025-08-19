@@ -96,7 +96,7 @@ def create_app(testing=False):
         response_data = {
             "status": "healthy",
             "service": "plant-database-api", 
-            "version": "v2.4.0",
+            "version": "v2.5.0",
             "message": "Plant Database API is running",
             "method": request.method,
             "endpoints": {

@@ -176,7 +176,7 @@ def get_garden_care_optimization() -> Dict:
             "efficiency_score": _calculate_efficiency_score(enhanced_metadata),
             "recommendations": _generate_optimization_recommendations(enhanced_metadata),
             "generated_at": enhanced_metadata.get('generated_at', ''),
-            "api_version": "2.4.6"
+            "api_version": "2.5.0"
         }
         
         logger.info("Generated garden care optimization analysis successfully")

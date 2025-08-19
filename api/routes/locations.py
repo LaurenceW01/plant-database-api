@@ -336,7 +336,7 @@ def get_enhanced_garden_metadata():
         if enhanced_metadata:
             return jsonify({
                 "enhanced_metadata": enhanced_metadata,
-                "api_version": "v2.4.0 - Hierarchical Query Structure",
+                "api_version": "v2.5.0 - Endpoint Rationalization",
                 "message": "Enhanced garden metadata generated successfully",
                 "phase2_direct": True
             }), 200
@@ -706,7 +706,7 @@ def filter_garden_get():
             "count": len(hierarchical_plants),
             "total_matches": total_matches,
             "plants": hierarchical_plants,
-            "debug_signature": "GET-FILTER-HIERARCHICAL-v2.4.0",
+            "debug_signature": "GET-FILTER-HIERARCHICAL-v2.5.0",
             "filters_applied": filters
         }
         
@@ -761,7 +761,7 @@ def simple_post_test():
         "timestamp": datetime.utcnow().isoformat(),
         "received_data": request_data,
         "test_type": "simple_post_test",
-        "version": "v2.4.0"
+        "version": "v2.5.0"
     }
     
     logging.info("🧪 Simple POST test completed successfully")
@@ -795,7 +795,7 @@ def simple_put_test():
         "received_data": request_data,
         "test_type": "simple_put_test",
         "method": "PUT",
-        "version": "v2.4.0"
+        "version": "v2.5.0"
     }
     
     logging.info("🔧 Simple PUT test completed successfully")

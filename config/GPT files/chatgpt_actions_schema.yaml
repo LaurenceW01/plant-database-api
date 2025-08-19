@@ -3,15 +3,15 @@ info:
   title: Plant Database API - Core Operations
   description: |
     Essential plant database operations with AI-powered analysis and location intelligence.
-    Streamlined to 30 operations for ChatGPT compatibility.
-  version: 2.4.6
+    Streamlined to 29 operations for optimal performance.
+  version: 2.5.0
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
 
 paths:
   # =============================================
-  # CORE PLANT MANAGEMENT (6 operations)
+  # CORE PLANT MANAGEMENT (8 operations)
   # =============================================
   
   /api/plants/search:
@@ -515,45 +515,6 @@ paths:
                         context:
                           type: object
 
-  /api/plants/by-location/{location_name}:
-    get:
-      operationId: getPlantsByLocation
-      summary: Get plants by location
-      description: Get all plants in a specific location (supports both location IDs and location names)
-      security: []
-      parameters:
-        - name: location_name
-          in: path
-          required: true
-          description: Location name or location ID (e.g., "arboretum" or "middle" or "23")
-          schema:
-            type: string
-            example: "arboretum"
-      responses:
-        '200':
-          description: List of plants in the specified location
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  location_identifier:
-                    type: string
-                  resolved_location_name:
-                    type: string
-                  count:
-                    type: integer
-                  plants:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        plant_name:
-                          type: string
-                        location:
-                          type: string
-                        description:
-                          type: string
 
   /api/plants/maintenance:
     get:
@@ -1382,7 +1343,7 @@ paths:
                                       type: string
                   debug_signature:
                     type: string
-                    description: "GET-FILTER-HIERARCHICAL-v2.4.0"
+                    description: "GET-FILTER-HIERARCHICAL-v2.5.0"
                   filters_applied:
                     type: object
                     description: "Summary of applied filters"
