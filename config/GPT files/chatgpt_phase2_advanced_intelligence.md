@@ -105,13 +105,13 @@ Phase 2 adds **comprehensive garden analysis and optimization capabilities** to 
 ### For Individual Plant Questions (Enhanced)
 1. **Start with Phase 1**: `POST /api/plants/get-context/{id}` (supports both IDs and names)
 2. **Enhance with available data**: `POST /api/plants/get-context/{id}` (for comprehensive context)
-3. **Add weather**: Current conditions
+3. **Add weather**: Current conditions and rainfall (/api/weather?include_rainfall=true)
 4. **Provide comprehensive advice**: Specific + available optimization recommendations
 
 ### For Location-Specific Questions (Enhanced)
 1. **Start with Phase 1**: `/api/locations/get-context/{id}`
 2. **Enhanced location data**: Available through streamlined endpoints
-3. **Add weather**: Current conditions
+3. **Add weather**: Current conditions and rainfall (/api/weather?include_rainfall=true)
 4. **Provide detailed insights**: Care recommendations with available context
 
 ### For Garden Planning & Optimization (Available)

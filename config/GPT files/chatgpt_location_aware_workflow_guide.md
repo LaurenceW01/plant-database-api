@@ -36,9 +36,9 @@ This guide provides detailed workflows for delivering precise, location-aware pl
 GET /api/garden/filter?location=patio&container_size=small
 ```
 
-**Step 2: Get Weather (optional)**
+**Step 2: Get Weather with Rainfall (optional)**
 ```javascript
-GET /api/weather/current
+GET /api/weather?include_rainfall=true&rainfall_days=7
 ```
 
 **Step 3: Provide Comprehensive Response**
@@ -94,7 +94,7 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 1. **Identify Plant**: Search for the plant mentioned
 2. **Get Location Context**: Call `POST /api/plants/get-context/{plant_id}` (supports both IDs and names)
 3. **Get Care Profile**: Call `/api/locations/get-context/{location_id}` 
-4. **Check Weather**: Call `/api/weather/current` (continue if fails)
+4. **Check Weather**: Call `/api/weather?include_rainfall=true` (continue if fails)
 5. **Provide Integrated Response** (see templates below)
 
 **Example API Sequence:**
@@ -102,7 +102,7 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 POST /api/plants/search (body: {"q": "tropical hibiscus"})
 POST /api/plants/get-context/1  // or POST /api/plants/get-context/tropical hibiscus
 GET /api/locations/get-context/1
-GET /api/weather/current
+GET /api/weather?include_rainfall=true
 ```
 
 ---
@@ -120,7 +120,7 @@ GET /api/weather/current
 1. **Find All Plant Instances**: Call `POST /api/plants/search` with `{"q": "{plant_name}"}`
 2. **Check Plant Count**: If 5+ plants found, use Garden Filter instead
 3. **Get All Location Contexts**: Call `POST /api/plants/get-context/{plant_id}` (supports both IDs and names)
-4. **Check Weather**: Call `/api/weather/current` (continue if fails)
+4. **Check Weather**: Call `/api/weather?include_rainfall=true` (continue if fails)
 5. **Provide Multi-Location Response** showing all locations and their specific care needs
 
 **Garden Filter Alternative (PREFERRED for multiple plants):**
@@ -203,10 +203,10 @@ I found your {plant_name} in {X} different locations. Here's the specific care f
 ## Critical Integration Points
 
 ### 1. Weather Integration
-ALWAYS combine location data with current weather:
+ALWAYS combine location data with current weather and rainfall:
 ```javascript
 // After getting location data, always call:
-GET /api/weather/current
+GET /api/weather?include_rainfall=true
 
 // Then integrate in response:
 "Given today's temperature of {temp}°F and {humidity}% humidity, your {plant} in {location} should be watered {timing} because {location_specific_reasoning}"

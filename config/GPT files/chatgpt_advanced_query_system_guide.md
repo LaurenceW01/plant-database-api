@@ -138,7 +138,7 @@ GET /api/garden/filter?location=patio&container_material=ceramic&container_size=
 ### When to Still Use Individual Endpoints
 - Single plant details (use `/api/plants/get/{id}`)
 - Plant context with location (use `/api/plants/get-context/{id}`)
-- Weather queries (use `/api/weather/*`)
+- Weather queries (use `/api/weather` with optional parameters)
 - Health logging (use `/api/logs/*`)
 - Photo uploads (use `/api/photos/*`)
 

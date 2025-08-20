@@ -137,11 +137,10 @@ GET    /api/garden/metadata/enhanced         // ✅ Enhanced garden metadata
 GET    /api/garden/care-optimization         // ✅ Care optimization analysis (FIXED: proper container-location linkage)
 ```
 
-### Weather Integration (3 operations)
+### Unified Weather Integration (1 operation)
 ```javascript
-GET    /api/weather/current           // ✅ Current weather conditions
-GET    /api/weather/forecast          // ✅ Hourly weather forecast  
-GET    /api/weather/forecast/daily    // ✅ Daily weather forecast (supports both query params and JSON body)
+GET    /api/weather                   // ✅ Unified weather endpoint (current + forecasts + rainfall)
+// Legacy endpoints still available: /api/weather/current, /api/weather/forecast, /api/weather/forecast/daily
 ```
 
 ---

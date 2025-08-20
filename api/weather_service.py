@@ -9,12 +9,23 @@ from utils.harris_county_rainfall import get_harris_county_rainfall
 from config.config import BARON_API_KEY, BARON_API_SECRET
 import logging
 
-# Initialize Baron Weather client
-baron_client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
+# Initialize Baron Weather client with error handling
+try:
+    baron_client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
+    logging.info("✅ Baron Weather client initialized successfully")
+except Exception as e:
+    logging.error(f"❌ Failed to initialize Baron Weather client: {e}")
+    baron_client = None
 
 def get_current_weather():
     """Get current weather conditions for Houston"""
     try:
+        if baron_client is None:
+            return jsonify({
+                'error': 'Weather service not configured. Baron Weather API credentials may be missing.',
+                'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
+            }), 503
+            
         weather_data = baron_client.get_current_weather()
         if weather_data is None:
             return jsonify({
@@ -35,6 +46,12 @@ def get_current_weather():
 def get_weather_forecast():
     """Get hourly weather forecast for Houston"""
     try:
+        if baron_client is None:
+            return jsonify({
+                'error': 'Weather service not configured. Baron Weather API credentials may be missing.',
+                'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
+            }), 503
+            
         # Handle both query parameters and JSON body parameters
         # Check query parameters first
         hours = request.args.get('hours', type=int)
@@ -73,6 +90,12 @@ def get_weather_forecast():
 def get_daily_forecast():
     """Get 10-day weather forecast for Houston"""
     try:
+        if baron_client is None:
+            return jsonify({
+                'error': 'Weather service not configured. Baron Weather API credentials may be missing.',
+                'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
+            }), 503
+            
         # Handle both query parameters and JSON body parameters
         # Check query parameters first
         days = request.args.get('days', type=int)
@@ -152,37 +175,49 @@ def get_unified_weather():
         # Initialize response data
         response_data = {
             'success': True,
-            'timestamp': baron_client.get_current_timestamp() if hasattr(baron_client, 'get_current_timestamp') else None
+            'timestamp': baron_client.get_current_timestamp() if baron_client and hasattr(baron_client, 'get_current_timestamp') else None
         }
         
         # Get current weather if requested
         if include_current:
-            current_weather = baron_client.get_current_weather()
-            if current_weather is None:
+            if baron_client is None:
                 response_data['current_weather'] = None
-                response_data['current_weather_error'] = 'Weather service temporarily unavailable'
+                response_data['current_weather_error'] = 'Weather service not configured - Baron Weather API credentials may be missing'
             else:
-                response_data['current_weather'] = current_weather
+                current_weather = baron_client.get_current_weather()
+                if current_weather is None:
+                    response_data['current_weather'] = None
+                    response_data['current_weather_error'] = 'Weather service temporarily unavailable'
+                else:
+                    response_data['current_weather'] = current_weather
         
         # Get hourly forecast if requested
         if include_hourly:
-            hourly_forecast = baron_client.get_hourly_forecast(hours)
-            if hourly_forecast is None:
+            if baron_client is None:
                 response_data['hourly_forecast'] = None
-                response_data['hourly_forecast_error'] = 'Hourly forecast temporarily unavailable'
+                response_data['hourly_forecast_error'] = 'Weather service not configured - Baron Weather API credentials may be missing'
             else:
-                response_data['hourly_forecast'] = hourly_forecast
-                response_data['hourly_forecast_hours'] = hours
+                hourly_forecast = baron_client.get_hourly_forecast(hours)
+                if hourly_forecast is None:
+                    response_data['hourly_forecast'] = None
+                    response_data['hourly_forecast_error'] = 'Hourly forecast temporarily unavailable'
+                else:
+                    response_data['hourly_forecast'] = hourly_forecast
+                    response_data['hourly_forecast_hours'] = hours
         
         # Get daily forecast if requested
         if include_daily:
-            daily_forecast = baron_client.get_daily_forecast(days)
-            if daily_forecast is None:
+            if baron_client is None:
                 response_data['daily_forecast'] = None
-                response_data['daily_forecast_error'] = 'Daily forecast temporarily unavailable'
+                response_data['daily_forecast_error'] = 'Weather service not configured - Baron Weather API credentials may be missing'
             else:
-                response_data['daily_forecast'] = daily_forecast
-                response_data['daily_forecast_days'] = days
+                daily_forecast = baron_client.get_daily_forecast(days)
+                if daily_forecast is None:
+                    response_data['daily_forecast'] = None
+                    response_data['daily_forecast_error'] = 'Daily forecast temporarily unavailable'
+                else:
+                    response_data['daily_forecast'] = daily_forecast
+                    response_data['daily_forecast_days'] = days
         
         # Get Harris County rainfall data if requested
         if include_rainfall:

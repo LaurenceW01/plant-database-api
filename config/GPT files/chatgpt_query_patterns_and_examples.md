@@ -193,13 +193,13 @@ GET /api/garden/filter?container_material=ceramic&plant_name=vinca
 
 **For Multi-Criteria Filtering:**
 1. `GET /api/garden/filter?parameter=value&parameter2=value2` → Get filtered plants with criteria
-2. `/api/weather/current` → Get current conditions
+2. `/api/weather?include_rainfall=true` → Get current conditions and rainfall
 3. Integrate results into specific, actionable response
 
 **For Individual Plant Focus:**
 1. `GET /api/plants/search?q={plant_name}` → Get ALL plants matching the name (🔄 converted from POST)
 2. `GET /api/plants/get-context/{id}` → Get location details for EACH found plant (🔄 converted from POST)
-3. `/api/weather/current` → Get current conditions
+3. `/api/weather?include_rainfall=true` → Get current conditions and rainfall
 4. Integrate all three into specific, actionable response
 
 **⚠️ CRITICAL**: For "where are all [plant]" or "find all [plant]" queries, you MUST use search first to find ALL matching plants (e.g., "Vinca" AND "Trailing Vinca"), then get context for each. Do NOT use get-context directly with a plant name as this only finds ONE specific plant.
