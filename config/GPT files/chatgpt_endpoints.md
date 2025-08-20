@@ -536,32 +536,42 @@ Content-Type: application/json
 }
 ```
 
-### Weather Integration
+### Unified Weather Integration
 ```javascript
-GET /api/weather/current
+// Basic current weather (default)
+GET /api/weather
 
-// Current conditions for Houston
+// Current weather with 7-day rainfall total
+GET /api/weather?include_rainfall=true&rainfall_days=7
+
+// Current + daily forecast + rainfall
+GET /api/weather?include_daily=true&days=5&include_rainfall=true&rainfall_days=7
+
+// Full weather data (current + hourly + daily + rainfall)
+GET /api/weather?include_hourly=true&hours=24&include_daily=true&days=7&include_rainfall=true&rainfall_days=7
+
+// Response example with all data:
 {
-  "temperature": 75.5,
-  "humidity": 65,
-  "wind_speed": 8,
-  "description": "Partly cloudy",
-  "precipitation_chance": 30
-}
-
-// Daily forecast - Method 1: Query parameters
-GET /api/weather/forecast/daily?days=7
-
-// Daily forecast - Method 2: JSON body (ChatGPT-friendly)
-POST /api/weather/forecast/daily
-Content-Type: application/json
-{
-  "days": 7
-}
-
-// Both methods return the same response:
-{
-  "forecast": [
+  "success": true,
+  "timestamp": "2024-01-21T10:30:00Z",
+  "current_weather": {
+    "temperature": 75.5,
+    "humidity": 65,
+    "wind_speed": 8,
+    "description": "Partly cloudy",
+    "precipitation_chance": 30
+  },
+  "hourly_forecast": [
+    {
+      "time": "2024-01-21T11:00:00Z",
+      "temperature": 76,
+      "precipitation_chance": 20,
+      "description": "Sunny"
+    }
+    // ... up to 48 hours
+  ],
+  "hourly_forecast_hours": 24,
+  "daily_forecast": [
     {
       "date": "2024-01-21",
       "high_temp": 85,
@@ -569,9 +579,21 @@ Content-Type: application/json
       "precipitation_chance": 30,
       "description": "Partly Cloudy"
     }
-    // ... up to 7 days
-  ]
+    // ... up to 10 days
+  ],
+  "daily_forecast_days": 7,
+  "rainfall_data": {
+    "total_inches": 0.75,
+    "period_days": 7,
+    "source": "Harris County Flood Warning System",
+    "location": "Cole Creek @ Deihl Road (Station 590)"
+  }
 }
+
+// Legacy endpoints still available for backward compatibility:
+// GET /api/weather/current
+// GET /api/weather/forecast?hours=24
+// GET /api/weather/forecast/daily?days=7
 ```
 
 ---

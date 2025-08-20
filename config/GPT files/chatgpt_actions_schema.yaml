@@ -1444,56 +1444,78 @@ paths:
                     description: "API version"
 
   # =============================================
-  # WEATHER INTEGRATION (3 operations)
+  # UNIFIED WEATHER INTEGRATION (1 operation)
   # =============================================
 
-  /api/weather/current:
+  /api/weather:
     get:
-      operationId: getCurrentWeather
-      summary: Get current weather conditions
-      description: Get current weather data for Houston area
-      security: []
-      responses:
-        '200':
-          description: Current weather information
-
-  /api/weather/forecast:
-    get:
-      operationId: getWeatherForecast
-      summary: Get hourly weather forecast
-      description: Get hourly weather forecast data
+      operationId: getUnifiedWeather
+      summary: Get comprehensive weather and rainfall data
+      description: Unified endpoint for current weather, forecasts, and Harris County rainfall data
       security: []
       parameters:
+        - name: include_current
+          in: query
+          description: Include current weather conditions
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: include_hourly
+          in: query
+          description: Include hourly forecast
+          required: false
+          schema:
+            type: boolean
+            default: false
         - name: hours
           in: query
-          description: Number of hours to forecast (default 24, max 72)
+          description: Number of hours to forecast when include_hourly=true
           required: false
           schema:
             type: integer
             default: 24
-            maximum: 72
-      responses:
-        '200':
-          description: Hourly weather forecast
-
-  /api/weather/forecast/daily:
-    get:
-      operationId: getDailyWeatherForecast
-      summary: Get daily weather forecast
-      description: Get daily weather forecast for up to 7 days
-      security: []
-      parameters:
+            minimum: 1
+            maximum: 48
+        - name: include_daily
+          in: query
+          description: Include daily forecast
+          required: false
+          schema:
+            type: boolean
+            default: false
         - name: days
           in: query
-          description: Number of days to forecast (default 7, max 7)
+          description: Number of days to forecast when include_daily=true
           required: false
           schema:
             type: integer
             default: 7
-            maximum: 7
+            minimum: 1
+            maximum: 10
+        - name: include_rainfall
+          in: query
+          description: Include Harris County rainfall data
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: rainfall_days
+          in: query
+          description: Number of days for rainfall total calculation
+          required: false
+          schema:
+            type: integer
+            default: 7
+            minimum: 1
+            maximum: 30
       responses:
         '200':
-          description: Daily weather forecast
+          description: Unified weather and rainfall data
+        '400':
+          description: Invalid parameter values
+        '503':
+          description: Weather services temporarily unavailable
 
 components:
   schemas:

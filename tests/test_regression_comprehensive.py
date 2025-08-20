@@ -723,38 +723,101 @@ class TestRegressionSuite:
             assert 'error' in data
 
     # =============================================
-    # WEATHER INTEGRATION TESTS (3 operations)
+    # UNIFIED WEATHER INTEGRATION TESTS (1 operation)
     # =============================================
     
-    def test_weather_current(self):
-        """Test GET /api/weather/current endpoint (operationId: getCurrentWeather)"""
-        response = self.client.get('/api/weather/current')
+    def test_unified_weather_endpoint(self):
+        """Test GET /api/weather endpoint (operationId: getUnifiedWeather)"""
+        # Test basic current weather (default behavior)
+        response = self.client.get('/api/weather')
         
         # Weather endpoints may not be available in all environments
+        assert response.status_code in [200, 400, 404, 500, 503]
+        
+        if response.status_code == 200:
+            data = response.get_json()
+            assert isinstance(data, dict)
+            assert 'success' in data
+            
+            # Should have current weather by default
+            if data.get('success'):
+                assert 'current_weather' in data or 'current_weather_error' in data
+    
+    def test_unified_weather_with_rainfall(self):
+        """Test unified weather endpoint with rainfall data"""
+        response = self.client.get('/api/weather?include_rainfall=true&rainfall_days=7')
+        assert response.status_code in [200, 400, 404, 500, 503]
+        
+        if response.status_code == 200:
+            data = response.get_json()
+            assert isinstance(data, dict)
+            # Should have rainfall data or rainfall error
+            if data.get('success'):
+                assert 'rainfall_data' in data or 'rainfall_error' in data
+    
+    def test_unified_weather_all_features(self):
+        """Test unified weather endpoint with all features enabled"""
+        params = {
+            'include_current': 'true',
+            'include_hourly': 'true', 
+            'hours': '24',
+            'include_daily': 'true',
+            'days': '5',
+            'include_rainfall': 'true',
+            'rainfall_days': '7'
+        }
+        
+        query_string = '&'.join([f'{k}={v}' for k, v in params.items()])
+        response = self.client.get(f'/api/weather?{query_string}')
+        assert response.status_code in [200, 400, 404, 500, 503]
+        
+        if response.status_code == 200:
+            data = response.get_json()
+            assert isinstance(data, dict)
+            if data.get('success'):
+                # Check that multiple data types can be requested
+                assert ('current_weather' in data or 'current_weather_error' in data)
+    
+    def test_unified_weather_parameter_validation(self):
+        """Test parameter validation in unified weather endpoint"""
+        # Test invalid hours parameter
+        response = self.client.get('/api/weather?include_hourly=true&hours=100')
+        assert response.status_code in [400, 404, 500, 503]
+        
+        # Test invalid days parameter  
+        response = self.client.get('/api/weather?include_daily=true&days=50')
+        assert response.status_code in [400, 404, 500, 503]
+        
+        # Test invalid rainfall_days parameter
+        response = self.client.get('/api/weather?include_rainfall=true&rainfall_days=100') 
+        assert response.status_code in [400, 404, 500, 503]
+
+    # =============================================
+    # LEGACY WEATHER ENDPOINTS (backward compatibility)
+    # =============================================
+    
+    def test_legacy_weather_current(self):
+        """Test legacy GET /api/weather/current endpoint (backward compatibility)"""
+        response = self.client.get('/api/weather/current')
         assert response.status_code in [200, 404, 500, 503]
         
         if response.status_code == 200:
             data = response.get_json()
-            # Weather data structure may vary
             assert isinstance(data, dict)
 
-    def test_weather_forecast_hourly(self):
-        """Test GET /api/weather/forecast endpoint (operationId: getWeatherForecast)"""
-        # Test without parameters
+    def test_legacy_weather_forecast_hourly(self):
+        """Test legacy GET /api/weather/forecast endpoint (backward compatibility)"""
         response = self.client.get('/api/weather/forecast')
         assert response.status_code in [200, 404, 500, 503]
         
-        # Test with hours parameter
         response = self.client.get('/api/weather/forecast?hours=24')
         assert response.status_code in [200, 404, 500, 503]
 
-    def test_weather_forecast_daily(self):
-        """Test GET /api/weather/forecast/daily endpoint (operationId: getDailyWeatherForecast)"""
-        # Test without parameters
+    def test_legacy_weather_forecast_daily(self):
+        """Test legacy GET /api/weather/forecast/daily endpoint (backward compatibility)"""
         response = self.client.get('/api/weather/forecast/daily')
         assert response.status_code in [200, 404, 500, 503]
         
-        # Test with days parameter
         response = self.client.get('/api/weather/forecast/daily?days=7')
         assert response.status_code in [200, 404, 500, 503]
 
@@ -871,14 +934,15 @@ class TestRegressionSuite:
             '/api/garden/metadata/enhanced',
             '/api/garden/care-optimization',
             
-            # Weather Integration (3 operations)
-            '/api/weather/current',
-            '/api/weather/forecast',
-            '/api/weather/forecast/daily'
+            # Unified Weather Integration (1 primary operation + 3 legacy)
+            '/api/weather',  # Primary unified endpoint
+            '/api/weather/current',  # Legacy
+            '/api/weather/forecast',  # Legacy
+            '/api/weather/forecast/daily'  # Legacy
         ]
         
-        # Verify we have 23 main endpoints covered
-        assert len(covered_endpoints) >= 24
+        # Verify we have 24+ main endpoints covered (added unified weather)
+        assert len(covered_endpoints) >= 25
         print(f"✅ Comprehensive test suite covers {len(covered_endpoints)} major endpoints")
 
     # =================================================================
