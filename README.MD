@@ -1,5 +1,5 @@
 # Plant Database API
-**Version 2.5.0 - Endpoint Rationalization**
+**Version 2.5.1 - Houston Timezone & Field Name Fixes**
 
 ## Overview
 A production-ready Plant Database API with full ChatGPT integration, deployed on render.com. Features revolutionary hierarchical query structure that provides complete, accurate plant location data without inference. Includes intelligent pagination, field name compatibility, and Redis-based rate limiting.

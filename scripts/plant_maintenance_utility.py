@@ -399,11 +399,14 @@ class PlantMaintenanceUtility:
             
             # Update Last Updated timestamp
             try:
-                last_updated_field = get_canonical_field_name('last_updated') or 'Last Updated'
+                                    last_updated_field = get_canonical_field_name('last_updated') or 'Last Updated'
                 if last_updated_field in headers:
                     col_idx = headers.index(last_updated_field)
                     range_name = f'Plants!{chr(65 + col_idx)}{plant_row + 1}'
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    # Use Houston Central Time for consistent timestamps (handles CST/CDT automatically)
+                    from zoneinfo import ZoneInfo
+                    houston_tz = ZoneInfo('US/Central')
+                    timestamp = datetime.now(houston_tz).strftime("%Y-%m-%d %H:%M:%S")
                     
                     check_rate_limit()
                     sheets_client.values().update(

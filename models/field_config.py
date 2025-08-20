@@ -79,9 +79,9 @@ LOG_FIELD_NAMES = [
     # Type of analysis (health_assessment|identification|general_care|follow_up)
     'analysis_type',
     # Boolean flag indicating if follow-up is required
-    'follow-up_required',
+    'follow_up_required',
     # Date when follow-up should occur
-    'follow-up_date',
+    'follow_up_date',
     # Last updated timestamp for the log entry
     'last_updated',
 ]
@@ -514,15 +514,20 @@ def validate_log_field_data(field_name: str, value: str) -> tuple[bool, str]:
 
 def generate_log_id() -> str:
     """
-    Generate a unique log ID in the format LOG-YYYYMMDD-001.
+    Generate a unique log ID in the format LOG-YYYYMMDD-001 using Houston Central Time.
     
     Returns:
-        str: Generated log ID
+        str: Generated log ID based on Houston date
     """
     from datetime import datetime
+    from zoneinfo import ZoneInfo
+    
+    # Use Houston Central Time for consistent date generation (handles CST/CDT automatically)
+    houston_tz = ZoneInfo('US/Central')
+    houston_now = datetime.now(houston_tz)
     
     # Get current date in YYYYMMDD format
-    date_str = datetime.now().strftime("%Y%m%d")
+    date_str = houston_now.strftime("%Y%m%d")
     
     # For now, use a simple incrementing number
     # In a real implementation, you'd check existing log IDs to get the next number
@@ -534,17 +539,20 @@ def generate_log_id() -> str:
 
 def format_log_date(dt=None) -> str:
     """
-    Format a datetime as a human-readable log date.
+    Format a datetime as a human-readable log date in Houston Central Time.
     
     Args:
-        dt: datetime object, defaults to current time
+        dt: datetime object, defaults to current Houston time
         
     Returns:
         str: Formatted date string like "January 15, 2024 at 2:30 PM"
     """
     from datetime import datetime
+    from zoneinfo import ZoneInfo
     
     if dt is None:
-        dt = datetime.now()
+        # Use Houston Central Time (automatically handles CST/CDT)
+        houston_tz = ZoneInfo('US/Central')
+        dt = datetime.now(houston_tz)
     
     return dt.strftime("%B %d, %Y at %I:%M %p") 
