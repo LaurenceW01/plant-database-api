@@ -158,10 +158,14 @@ def create_log_entry(
     location: str = ""
 ) -> Dict[str, Any]:
     """
-    Create a new plant log entry with strict plant validation.
+    Create a new plant log entry with optional plant validation.
+    
+    If plant_name matches an existing plant in the database, the plant_id will be stored.
+    If plant_name doesn't exist, the log entry is still created but without a plant_id.
+    This allows for group logs like "Citrus plants" or "The trees".
     
     Args:
-        plant_name (str): Name of the plant (must exist in database)
+        plant_name (str): Name of the plant or plant group (required)
         photo_url (str): Photo URL (IMAGE formula for sheets)
         raw_photo_url (str): Direct photo URL
         diagnosis (str): GPT-generated diagnosis
@@ -183,19 +187,18 @@ def create_log_entry(
         if not initialize_log_sheet():
             return {"success": False, "error": "Failed to initialize log sheet"}
         
-        # Validate plant exists
+        # Try to validate plant exists, but allow log creation even if not found
         plant_validation = validate_plant_for_log(plant_name)
-        if not plant_validation["valid"]:
-            return {
-                "success": False, 
-                "error": "Plant not found in database",
-                "suggestions": plant_validation.get("suggestions", []),
-                "create_new_option": plant_validation.get("create_new_option", False)
-            }
         
-        # Use canonical plant name from validation
-        canonical_plant_name = plant_validation["canonical_name"]
-        plant_id = plant_validation["plant_id"]
+        if plant_validation["valid"]:
+            # Plant exists - use canonical name and plant_id from database
+            canonical_plant_name = plant_validation["canonical_name"]
+            plant_id = plant_validation["plant_id"]
+        else:
+            # Plant doesn't exist - use provided name and no plant_id
+            # This allows group logs like "Citrus plants" or "The trees"
+            canonical_plant_name = plant_name
+            plant_id = None
         
         # Generate log entry data
         log_id = generate_log_id()
