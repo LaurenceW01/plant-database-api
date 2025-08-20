@@ -107,11 +107,26 @@ GET    /api/plants/diagnose         // ✅ AI plant diagnosis with location inte
 GET    /api/plants/enhance-analysis // ✅ Enhanced analysis with database knowledge (WORKAROUND: converted from POST)
 ```
 
-### Health Logging (3 operations)
+### 🔥 Health Logging (1 consolidated operation) **NEW UPDATE FEATURE!**
 ```javascript  
-GET    /api/logs/create             // ✅ Create plant log with upload token (WORKAROUND: converted from POST)
-GET    /api/logs/create-simple      // ✅ Create simple log with field normalization (WORKAROUND: converted from POST)
-GET    /api/logs/search             // ✅ Search logs with comprehensive results
+GET    /api/logs                    // ✅ CONSOLIDATED: Create, Read, Update, Search logs (WORKAROUND: converted from POST)
+                                    // 🆕 NEW: Update existing log entries! 
+                                    // - Create: ?action=create&plant_name=...&diagnosis=...
+                                    // - Update: ?action=update&log_id=LOG-123&diagnosis=New diagnosis
+                                    // - Get: ?log_id=LOG-123 
+                                    // - Search: ?plant_name=Tomato&query=yellowing (default)
+```
+
+**Update Examples:**
+```javascript
+// Update diagnosis and add notes
+GET /api/logs?action=update&log_id=LOG-20240115-001&diagnosis=Recovery progressing well&user_notes=Leaves looking much greener
+
+// Update treatment plan  
+GET /api/logs?action=update&log_id=LOG-20240115-001&treatment_recommendation=Continue current fertilizer schedule for 2 more weeks
+
+// Update multiple fields
+GET /api/logs?action=update&log_id=LOG-20240115-001&diagnosis=Fully recovered&follow_up_required=false&user_notes=Plant is healthy again
 ```
 
 ### Photo Upload (2 operations)
@@ -212,7 +227,7 @@ Content-Type: application/json
     "test_message": "Hello from GPT"
   },
   "test_type": "simple_post_test",
-  "version": "v2.5.0"
+  "version": "v4.0.2"
 }
 ```
 
@@ -243,7 +258,7 @@ Content-Type: application/json
   },
   "test_type": "simple_put_test",
   "method": "PUT",
-  "version": "v2.5.0"
+  "version": "v4.0.2"
 }
 ```
 
@@ -513,25 +528,18 @@ GET /api/plants/get-context/Vinca
 
 ### Create Health Log with Photo Upload
 ```javascript
-POST /api/logs/create
-Content-Type: application/json
-
-{
-  "plant_name": "Tomato Plant #1",
-  "log_title": "Weekly Health Check",
-  "diagnosis": "Minor nitrogen deficiency", 
-  "treatment": "Apply balanced fertilizer",
-  "symptoms": "Yellow leaf edges",
-  "follow_up_required": true,
-  "follow_up_date": "2024-01-22"
-}
+// CHATGPT WORKAROUND: Now uses GET with query parameters (converted from POST)
+GET /api/logs?action=create&plant_name=Tomato%20Plant%20%231&log_title=Weekly%20Health%20Check&diagnosis=Minor%20nitrogen%20deficiency&treatment_recommendation=Apply%20balanced%20fertilizer&symptoms_observed=Yellow%20leaf%20edges&follow_up_required=true&follow_up_date=2024-01-22
 
 // Response includes upload token
 {
   "success": true,
   "log_id": "LOG-20240115-001",
   "upload_url": "https://dev-plant-database-api.onrender.com/upload/log/xyz789",
-  "upload_instructions": "To add a photo to this log entry, visit: [upload_url]"
+  "upload_instructions": "To add a photo to this log entry, visit: [upload_url]",
+  "operation": "create",
+  "consolidated_endpoint": true,
+  "workaround": "GET converted from POST"
 }
 ```
 

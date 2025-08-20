@@ -336,7 +336,7 @@ def get_enhanced_garden_metadata():
         if enhanced_metadata:
             return jsonify({
                 "enhanced_metadata": enhanced_metadata,
-                "api_version": "v2.5.1 - Houston Timezone & Field Name Fixes",
+                "api_version": "v4.0.2 - Consolidated Logging with Updates",
                 "message": "Enhanced garden metadata generated successfully",
                 "phase2_direct": True
             }), 200
@@ -761,7 +761,7 @@ def simple_post_test():
         "timestamp": datetime.utcnow().isoformat(),
         "received_data": request_data,
         "test_type": "simple_post_test",
-        "version": "v2.5.1"
+        "version": "v4.0.2"
     }
     
     logging.info("🧪 Simple POST test completed successfully")
@@ -795,7 +795,7 @@ def simple_put_test():
         "received_data": request_data,
         "test_type": "simple_put_test",
         "method": "PUT",
-        "version": "v2.5.1"
+        "version": "v4.0.2"
     }
     
     logging.info("🔧 Simple PUT test completed successfully")

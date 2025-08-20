@@ -1246,7 +1246,7 @@ def register_routes(app, limiter, require_api_key):
             
             return jsonify({
                 "enhanced_metadata": enhanced_metadata,
-                "api_version": "v2.3.0 - AI-Friendly API Design Complete",
+                "api_version": "v4.0.2 - Consolidated Logging with Updates",
                 "message": "Enhanced garden metadata generated successfully"
             }), 200
             

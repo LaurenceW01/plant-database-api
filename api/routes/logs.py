@@ -1,8 +1,8 @@
 """
-Plant Logging Routes
+Plant Logging Routes - Consolidated CRUD Operations
 
-Handles all plant log-related endpoints including log creation,
-search functionality, and plant-specific logging.
+Handles all plant log-related operations through a single unified endpoint
+supporting Create, Read, Update, and Search functionality.
 """
 
 from flask import Blueprint, request, jsonify
@@ -13,303 +13,326 @@ import logging
 logs_bp = Blueprint('logs', __name__, url_prefix='/api/logs')
 
 
-# ========== CHATGPT WORKAROUND - TEMPORARY ==========
-# TODO: Revert when ChatGPT POST requests work again
-# Changed: methods=['POST'] → methods=['GET']
-@logs_bp.route('/create', methods=['GET'])  # WORKAROUND: was POST
-def create_log():
+# ========================================
+# CONSOLIDATED LOGS ENDPOINT
+# ========================================
+# Replaces /create, /create-simple, and /search endpoints
+# Supports Create, Read, Update, and Search operations
+@logs_bp.route('', methods=['GET'])  # Single consolidated endpoint  
+def logs_handler():
     """
     CHATGPT WORKAROUND: Temporarily converted from POST to GET due to ChatGPT platform issue.
     
-    Original: Phase 2 direct implementation: Create plant log entry with AI-friendly endpoint name.
+    Consolidated logging endpoint supporting all CRUD operations through GET parameters.
+    This replaces the separate /create, /create-simple, and /search endpoints.
+    
+    Operations:
+    - CREATE: GET /api/logs?action=create&plant_name=...&other_fields=...
+    - READ/GET: GET /api/logs?log_id=LOG-123 (specific log entry)
+    - UPDATE: GET /api/logs?action=update&log_id=LOG-123&field1=value1&field2=value2 [NEW FEATURE]
+    - SEARCH: GET /api/logs?plant_name=...&query=...&other_filters=... (default operation)
+    
+    TODO: Revert to proper REST methods (POST for create/update, GET for read/search) when ChatGPT POST issue is resolved.
     """
     from flask import request as flask_request, jsonify, g
-    
-    # WORKAROUND: Extract parameters from query string
-    # Extract all possible log fields using correct field names
-    log_id = flask_request.args.get('log_id')
-    plant_name = flask_request.args.get('plant_name')
-    plant_id = flask_request.args.get('plant_id')
-    location = flask_request.args.get('location')
-    log_date = flask_request.args.get('log_date')
-    log_title = flask_request.args.get('log_title')
-    photo_url = flask_request.args.get('photo_url')
-    raw_photo_url = flask_request.args.get('raw_photo_url')
-    diagnosis = flask_request.args.get('diagnosis')
-    treatment_recommendation = flask_request.args.get('treatment_recommendation')
-    symptoms_observed = flask_request.args.get('symptoms_observed')
-    user_notes = flask_request.args.get('user_notes')
-    confidence_score = flask_request.args.get('confidence_score')
-    analysis_type = flask_request.args.get('analysis_type')
-    follow_up_required = flask_request.args.get('follow_up_required')
-    follow_up_date = flask_request.args.get('follow_up_date')
-    
-    # Also support legacy field names for backward compatibility
-    symptoms = flask_request.args.get('symptoms')  # legacy name
-    treatment = flask_request.args.get('treatment')  # legacy name
-    
-    # Auto-generate required fields if not provided
-    if not log_id:
-        from models.field_config import generate_log_id
-        log_id = generate_log_id()
-    
-    if not log_date:
-        from datetime import datetime
-        log_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    
-    # Validate required fields  
-    if not plant_name:
-        return jsonify({
-            "error": "Plant name is required for creating a log entry",
-            "message": "Use ?plant_name=YourPlantName&log_title=YourTitle&symptoms=YourSymptoms&treatment=YourTreatment in the URL",
-            "workaround": "GET endpoint due to ChatGPT POST issue",
-            "received_args": dict(flask_request.args)
-        }), 400
+    from utils.plant_log_operations import (
+        create_log_entry, get_log_entry_by_id, search_log_entries, update_log_entry
+    )
+    from utils.upload_token_manager import generate_upload_url
+    from models.field_config import generate_log_id
+    from datetime import datetime
     
     try:
-        # Use the proper create_log_entry function which includes plant validation and photo upload
-        from utils.plant_log_operations import create_log_entry
-        from utils.upload_token_manager import generate_upload_url
+        # Determine operation type
+        action = flask_request.args.get('action', '').lower()
+        log_id = flask_request.args.get('log_id')
         
-        # Create log entry using the comprehensive function
-        result = create_log_entry(
-            plant_name=plant_name,
-            photo_url=photo_url or "",
-            raw_photo_url=raw_photo_url or "",
-            diagnosis=diagnosis or "",
-            treatment=treatment_recommendation or (treatment or ""),  # Support legacy field name
-            symptoms=symptoms_observed or (symptoms or ""),  # Support legacy field name  
-            user_notes=user_notes or "",
-            confidence_score=float(confidence_score) if confidence_score else 0.0,
-            analysis_type=analysis_type or "general_care",
-            follow_up_required=follow_up_required and follow_up_required.lower() in ['true', '1', 'yes'],
-            follow_up_date=follow_up_date or "",
-            log_title=log_title or "",
-            location=location or ""
-        )
+        # OPERATION 1: UPDATE LOG ENTRY
+        if action == 'update':
+            if not log_id:
+                return jsonify({
+                    "success": False,
+                    "error": "log_id is required for update operation",
+                    "example": "/api/logs?action=update&log_id=LOG-123&diagnosis=New diagnosis&user_notes=Updated notes",
+                    "workaround": "GET endpoint due to ChatGPT PUT issue"
+                }), 400
+            
+            # Extract all possible update fields
+            update_fields = {}
+            excluded_params = {'action', 'log_id'}  # Don't include these in updates
+            
+            for param, value in flask_request.args.items():
+                if param not in excluded_params and value:
+                    update_fields[param] = value
+            
+            logging.info(f"CONSOLIDATED UPDATE DEBUG: Extracted update_fields: {update_fields}")
+            
+            if not update_fields:
+                return jsonify({
+                    "success": False,
+                    "error": "No fields provided for update",
+                    "available_fields": "plant_name, diagnosis, treatment_recommendation, symptoms_observed, user_notes, log_title, location, etc.",
+                    "workaround": "GET endpoint due to ChatGPT PUT issue"
+                }), 400
+            
+            # Perform update
+            result = update_log_entry(log_id, **update_fields)
+            
+            if result.get('success'):
+                # Generate upload token for photo upload after update
+                from utils.upload_token_manager import generate_upload_token, generate_upload_url
+                
+                # Get the plant name from the updated log entry or update fields
+                plant_name = update_fields.get('plant_name')
+                if not plant_name:
+                    # If plant_name wasn't updated, get it from the existing log entry
+                    log_result = get_log_entry_by_id(log_id)
+                    if log_result.get('success'):
+                        plant_name = log_result.get('log_entry', {}).get('plant_name', 'Unknown Plant')
+                    else:
+                        plant_name = 'Unknown Plant'
+                
+                # Generate upload token for log photo updates
+                upload_token = generate_upload_token(
+                    plant_name=plant_name,
+                    token_type='log_upload',
+                    log_id=log_id,
+                    expiration_hours=24
+                )
+                upload_url = generate_upload_url(upload_token)
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Log entry {log_id} updated successfully",
+                    "log_id": log_id,
+                    "updated_fields": result.get('updated_fields', []),
+                    "upload_url": upload_url,
+                    "upload_token": upload_token,
+                    "upload_instructions": "Use this URL to upload a photo for this updated log entry (24-hour expiration)",
+                    "operation": "update",
+                    "consolidated_endpoint": True,
+                    "workaround": "GET converted from PUT"
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": result.get('error', 'Failed to update log entry'),
+                    "operation": "update",
+                    "workaround": "GET converted from PUT"
+                }), 400
         
-        if result.get('success'):
-            response_tuple = (jsonify({
-                "success": True,
-                "message": f"Created log entry for {plant_name}",
-                "log_id": result.get('log_id'),
-                "log_date": result.get('log_data', {}).get('log_date'),
-                "plant_id": result.get('plant_id'),
-                "upload_url": result.get('upload_url'),
-                "upload_token": result.get('upload_token'),
-                "phase2_direct": True,
-                "endpoint_type": "comprehensive_implementation"
-            }), 200)
+        # OPERATION 2: GET SPECIFIC LOG ENTRY
+        elif log_id and action != 'create':
+            result = get_log_entry_by_id(log_id)
+            
+            if result.get('success'):
+                return jsonify({
+                    "success": True,
+                    "log_entry": result.get('log_entry'),
+                    "operation": "get",
+                    "consolidated_endpoint": True,
+                    "workaround": "GET method (normal for read operations)"
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": result.get('error', f'Log entry {log_id} not found'),
+                    "operation": "get",
+                    "workaround": "GET method (normal for read operations)"
+                }), 404
+        
+        # OPERATION 3: CREATE LOG ENTRY
+        elif action == 'create':
+            # WORKAROUND: Convert GET query params to POST body format
+            # Extract all parameters from query string that could be log fields
+            simulated_json = {}
+            excluded_params = {'action'}  # Don't include action in the simulated body
+            
+            for key in flask_request.args.keys():
+                if key not in excluded_params:
+                    value = flask_request.args.get(key)
+                    if value:  # Only include non-empty values
+                        simulated_json[key] = value
+            
+            # Validate required fields  
+            if 'plant_name' not in simulated_json:
+                return jsonify({
+                    "success": False,
+                    "error": "plant_name is required for creating a log entry",
+                    "message": "Use query parameters like ?action=create&plant_name=YourPlant&diagnosis=...",
+                    "workaround": "GET endpoint due to ChatGPT POST issue",
+                    "received_args": dict(flask_request.args)
+                }), 400
+    
+            # WORKAROUND: Simulate POST request body by storing in both request and g objects
+            # This allows the existing log creation logic to work without modification
+            
+            # Store original data and mock request/g objects
+            original_method = flask_request.method
+            original_get_json = flask_request.get_json
+            original_normalized_data = getattr(g, 'normalized_request_data', None)
+            original_original_data = getattr(g, 'original_request_data', None)
+            
+            # Mock the request.get_json() to return our simulated data
+            flask_request.get_json = lambda: simulated_json
+            flask_request.method = 'POST'  # Temporarily set to POST for compatibility
+            
+            # Set g object data for field normalization middleware
+            g.normalized_request_data = simulated_json.copy()
+            g.original_request_data = simulated_json.copy()
+            
+            try:
+                # Extract creation fields with legacy support
+                plant_name = simulated_json.get('plant_name')
+                
+                fields = {
+                    'plant_name': plant_name,
+                    'log_title': simulated_json.get('log_title', ''),
+                    'diagnosis': simulated_json.get('diagnosis', ''),
+                    'treatment': simulated_json.get('treatment_recommendation') or simulated_json.get('treatment', ''),
+                    'symptoms': simulated_json.get('symptoms_observed') or simulated_json.get('symptoms', ''),
+                    'user_notes': simulated_json.get('user_notes', ''),
+                    'location': simulated_json.get('location', ''),
+                    'photo_url': simulated_json.get('photo_url', ''),
+                    'raw_photo_url': simulated_json.get('raw_photo_url', ''),
+                    'confidence_score': float(simulated_json.get('confidence_score', 0.0)),
+                    'analysis_type': simulated_json.get('analysis_type', 'general_care'),
+                    'follow_up_required': simulated_json.get('follow_up_required', '').lower() in ['true', '1', 'yes'],
+                    'follow_up_date': simulated_json.get('follow_up_date', '')
+                }
+                
+                # Create log entry
+                result = create_log_entry(**fields)
+                
+                if result.get('success'):
+                    response_data = {
+                        "success": True,
+                        "message": f"Created log entry for {plant_name}",
+                        "log_id": result.get('log_id'),
+                        "log_date": result.get('log_data', {}).get('log_date'),
+                        "plant_id": result.get('plant_id'),
+                        "upload_url": result.get('upload_url'),
+                        "upload_token": result.get('upload_token'),
+                        "operation": "create",
+                        "consolidated_endpoint": True,
+                        "workaround": "GET converted from POST"
+                    }
+                    return jsonify(response_data), 201
+                else:
+                    response_data = {
+                        "success": False,
+                        "error": result.get('error', 'Failed to create log entry'),
+                        "suggestions": result.get('suggestions', []),
+                        "create_new_option": result.get('create_new_option', False),
+                        "operation": "create",
+                        "workaround": "GET converted from POST"
+                    }
+                    return jsonify(response_data), 400
+                    
+            finally:
+                # Restore original request properties
+                flask_request.get_json = original_get_json
+                flask_request.method = original_method
+                
+                # Restore original g object data
+                if original_normalized_data is not None:
+                    g.normalized_request_data = original_normalized_data
+                elif hasattr(g, 'normalized_request_data'):
+                    delattr(g, 'normalized_request_data')
+                    
+                if original_original_data is not None:
+                    g.original_request_data = original_original_data
+                elif hasattr(g, 'original_request_data'):
+                    delattr(g, 'original_request_data')
+        
+        # OPERATION 4: SEARCH LOG ENTRIES (default operation)
         else:
-            response_tuple = (jsonify({
-                "success": False,
-                "error": result.get('error', 'Failed to create log entry'),
-                "suggestions": result.get('suggestions', []),
-                "create_new_option": result.get('create_new_option', False),
-                "phase2_direct": True,
-                "endpoint_type": "comprehensive_implementation"
-            }), 400)
+            # Extract search parameters
+            plant_name = flask_request.args.get('plant_name', '').strip()
+            search_query = flask_request.args.get('query', '').strip() or flask_request.args.get('search', '').strip()
+            symptoms = flask_request.args.get('symptoms', '').strip()
+            limit = int(flask_request.args.get('limit', 20))
+            
+            # Perform search
+            result = search_log_entries(
+                plant_name=plant_name if plant_name else None,
+                query=search_query,
+                symptoms=symptoms,
+                limit=limit
+            )
+            
+            if result.get('success'):
+                return jsonify({
+                    "success": True,
+                    "search_results": result.get('search_results', []),
+                    "total_results": result.get('total_results', 0),
+                    "query": search_query,
+                    "plant_name": plant_name,
+                    "operation": "search",
+                    "consolidated_endpoint": True,
+                    "workaround": "GET method (normal for read operations)"
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": result.get('error', 'Failed to search log entries'),
+                    "operation": "search",
+                    "workaround": "GET method (normal for read operations)"
+                }), 500
         
     except Exception as e:
-        logging.error(f"Error creating log entry: {e}")
-        response_tuple = (jsonify({
+        logging.error(f"Error in consolidated logs endpoint: {e}")
+        return jsonify({
             "success": False,
-            "error": "Failed to create log entry",
+            "error": "Internal server error",
             "details": str(e),
-            "phase2_direct": True,
-            "endpoint_type": "direct_implementation"
-        }), 500)
+            "consolidated_endpoint": True,
+            "workaround": "GET endpoint due to ChatGPT compatibility"
+        }), 500
     
-    # Return the response
-    return response_tuple
 
+# ========================================
+# LEGACY ENDPOINTS - DEPRECATED
+# ========================================
+# These endpoints are maintained for backward compatibility
+# and redirect to the consolidated endpoint
 
 @logs_bp.route('/search', methods=['GET'])
 def search_logs():
     """
-    Phase 2 direct implementation: Search across all plant logs with separation from plant endpoints.
-    Provides semantic alignment: searchPlantLogs operationId → /api/logs/search URL
-    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
-    Implements proper separation of concerns (logs separate from plants).
+    DEPRECATED: Use GET /api/logs instead.
+    Redirects to consolidated endpoint for backward compatibility.
     """
-    try:
-        # Import the original search function
-        from api.main import search_plant_logs
-        
-        # Direct implementation using existing search logic
-        response = search_plant_logs()
-        
-        # Mark as Phase 2 direct implementation in response
-        if hasattr(response, 'get_json'):
-            try:
-                data = response.get_json()
-                if isinstance(data, dict):
-                    data['phase2_direct'] = True
-                    data['endpoint_type'] = 'direct_implementation'
-                    data['separation_of_concerns'] = 'logs_separate_from_plants'
-                    return jsonify(data), response.status_code
-            except:
-                pass
-        
-        return response
-        
-    except Exception as e:
-        logging.error(f"Error in Phase 2 search_logs: {e}")
-        return jsonify({
-            'error': str(e),
-            'phase2_direct': True,
-            'separation_of_concerns': 'logs_separate_from_plants'
-        }), 500
+    # Redirect to consolidated endpoint with same parameters
+    from flask import redirect, request
+    query_string = request.query_string.decode('utf-8')
+    return redirect(f"/api/logs?{query_string}", code=301)
 
 
-# ========== CHATGPT WORKAROUND - TEMPORARY ==========
-# TODO: Revert when ChatGPT POST requests work again
-# Changed: methods=['POST'] → methods=['GET']
-@logs_bp.route('/create-simple', methods=['GET'])  # WORKAROUND: was POST
+@logs_bp.route('/create', methods=['GET'])
+def create_log():
+    """
+    CHATGPT WORKAROUND: Temporarily converted from POST to GET due to ChatGPT platform issue.
+    DEPRECATED: Use GET /api/logs?action=create instead.
+    Redirects to consolidated endpoint for backward compatibility.
+    TODO: Remove when ChatGPT POST requests work again and consolidation is complete.
+    """
+    from flask import redirect, request
+    query_string = request.query_string.decode('utf-8')
+    return redirect(f"/api/logs?action=create&{query_string}", code=301)
+
+
+@logs_bp.route('/create-simple', methods=['GET'])
 def create_simple_log():
     """
     CHATGPT WORKAROUND: Temporarily converted from POST to GET due to ChatGPT platform issue.
-    
-    Original: Phase 2 direct implementation: Create simple plant log entry.
+    DEPRECATED: Use GET /api/logs?action=create instead.
+    Redirects to consolidated endpoint for backward compatibility.
+    TODO: Remove when ChatGPT POST requests work again and consolidation is complete.
     """
-    from flask import request as flask_request, jsonify, g
-    
-    # WORKAROUND: Extract parameters from query string
-    log_id = flask_request.args.get('log_id')
-    plant_name = flask_request.args.get('plant_name')
-    entry = (flask_request.args.get('entry') or 
-             flask_request.args.get('user_notes'))
-    log_date = flask_request.args.get('log_date')
-    
-    # Auto-generate required fields if not provided
-    if not log_id:
-        from models.field_config import generate_log_id
-        log_id = generate_log_id()
-    
-    if not log_date:
-        from datetime import datetime
-        log_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    
-    # Validate required fields  
-    if not plant_name:
-        return jsonify({
-            "error": "Plant name is required for creating a simple log entry",
-            "message": "Use ?plant_name=YourPlantName&entry=YourLogEntry in the URL",
-            "workaround": "GET endpoint due to ChatGPT POST issue",
-            "received_args": dict(flask_request.args)
-        }), 400
-    
-    # WORKAROUND: Simulate POST request body
-    simulated_json = {
-        'plant_name': plant_name,
-        'log_id': log_id,
-        'log_date': log_date
-    }
-    if entry:
-        simulated_json['entry'] = entry
-    
-    # Store original data and mock request/g objects
-    original_method = flask_request.method
-    original_get_json = flask_request.get_json
-    original_normalized_data = getattr(g, 'normalized_request_data', None)
-    original_original_data = getattr(g, 'original_request_data', None)
-    
-    flask_request.get_json = lambda: simulated_json
-    flask_request.method = 'POST'
-    g.normalized_request_data = simulated_json.copy()
-    g.original_request_data = simulated_json.copy()
-    
-    try:
-        # Apply field normalization middleware (already handled by @app.before_request)
-        from utils.field_normalization_middleware import (
-            get_plant_name, get_normalized_field, create_error_response_with_field_suggestions,
-            validate_required_fields
-        )
-        
-        # Get normalized field values
-        plant_name = get_plant_name()
-        
-        # Validate required fields  
-        if not plant_name:
-            error_response = create_error_response_with_field_suggestions(
-                "Plant name is required for creating a simple log entry",
-                ['Plant Name']
-            )
-            return jsonify(error_response), 400
-        
-        # Use the proper create_log_entry function for simple logs too
-        from utils.plant_log_operations import create_log_entry
-        
-        # Create simple log entry using the comprehensive function
-        result = create_log_entry(
-            plant_name=plant_name,
-            user_notes=entry or "",
-            analysis_type="general_care",
-            log_title="Simple Log Entry"
-        )
-        
-        if result.get('success'):
-            response_tuple = (jsonify({
-                "success": True,
-                "message": f"Created simple log entry for {plant_name}",
-                "log_id": result.get('log_id'),
-                "log_date": result.get('log_data', {}).get('log_date'),
-                "plant_id": result.get('plant_id'),
-                "entry": entry,
-                "upload_url": result.get('upload_url'),
-                "upload_token": result.get('upload_token'),
-                "phase2_direct": True,
-                "endpoint_type": "comprehensive_implementation",
-                "simple_log_creation": True
-            }), 200)
-        else:
-            response_tuple = (jsonify({
-                "success": False,
-                "error": result.get('error', 'Failed to create simple log entry'),
-                "suggestions": result.get('suggestions', []),
-                "create_new_option": result.get('create_new_option', False),
-                "phase2_direct": True,
-                "endpoint_type": "comprehensive_implementation"
-            }), 400)
-        
-    except Exception as e:
-        logging.error(f"Error creating simple log entry: {e}")
-        response_tuple = (jsonify({
-            "success": False,
-            "error": "Failed to create simple log entry",
-            "details": str(e),
-            "phase2_direct": True,
-            "endpoint_type": "direct_implementation"
-        }), 500)
-    
-    # Return the response
-    return response_tuple
-
-
-@logs_bp.route('/create-for-plant/<plant_name>', methods=['POST'])
-def create_log_for_plant(plant_name):
-    """
-    Phase 2 direct implementation: Create log for specific plant with separation from plant endpoints.
-    Provides semantic alignment: createLogForPlant operationId → /api/logs/create-for-plant/{name} URL
-    This was converted from a Phase 1 redirect to a Phase 2 direct implementation.
-    Implements proper separation of concerns (logs separate from plants).
-    """
-    # For now, return a helpful error message pointing to the correct endpoint structure
-    # This maintains the Phase 2 pattern while guiding users to use the standard log creation
-    return jsonify({
-        "error": "Please use /api/logs/create with 'Plant Name' in the request body", 
-        "suggested_endpoint": "/api/logs/create",
-        "plant_name_provided": plant_name,
-        "phase2_direct": True,
-        "endpoint_type": "direct_implementation",
-        "separation_of_concerns": "logs_separate_from_plants",
-        "example_request": {
-            "Plant Name": plant_name,
-            "Entry": "Your log entry text here",
-            "Diagnosis": "(optional)",
-            "Treatment": "(optional)"
-        }
-    }), 400
+    from flask import redirect, request
+    query_string = request.query_string.decode('utf-8')
+    return redirect(f"/api/logs?action=create&{query_string}", code=301)
 
 
 

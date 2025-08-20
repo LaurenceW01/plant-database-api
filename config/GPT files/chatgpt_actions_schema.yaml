@@ -3,8 +3,9 @@ info:
   title: Plant Database API - Core Operations
   description: |
     Essential plant database operations with AI-powered analysis and location intelligence.
-    Streamlined to 29 operations for optimal performance.
-  version: 2.5.0
+    Streamlined to 27 operations for optimal performance. 
+    NEW: Consolidated logging endpoint with update functionality!
+  version: 4.0.2
 servers:
   - url: https://dev-plant-database-api.onrender.com
     description: Development server
@@ -779,22 +780,40 @@ paths:
                         type: object
 
   # =============================================
-  # HEALTH LOGGING (3 operations)
+  # HEALTH LOGGING (1 consolidated operation)
   # =============================================
 
-  /api/logs/create:
+  /api/logs:
     get:
-      operationId: createLog
-      summary: Create plant health log entry
-      description: "CHATGPT WORKAROUND: Create a comprehensive plant health log entry with photo upload token (converted to GET due to ChatGPT POST issue)"
+      operationId: manageLogs
+      summary: "Unified plant health logging endpoint"
+      description: "CONSOLIDATED ENDPOINT: Create, Read, Update, and Search plant health logs through a single endpoint. CHATGPT WORKAROUND: Using GET with query parameters due to ChatGPT POST limitations. NEW FEATURE: Log updates now supported!"
       security: []
       parameters:
-        - name: plant_name
+        # Operation control
+        - name: action
           in: query
-          required: true
+          required: false
           schema:
             type: string
-          description: "Name of the plant (required)"
+            enum: ["create", "update"]
+          description: "Operation type: 'create' for new log entry, 'update' for existing entry. Omit for search/get operations."
+          example: "create"
+        - name: log_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Log ID for get/update operations. For get: omit action. For update: use action=update."
+          example: "LOG-20240115-001"
+        
+        # Core log fields (for create/update)
+        - name: plant_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Name of the plant (required for create, optional for update)"
           example: "Tomato Plant #1"
         - name: log_title
           in: query
@@ -808,29 +827,36 @@ paths:
           required: false
           schema:
             type: string
-          description: "Plant diagnosis"
-          example: "Minor nitrogen deficiency"
-        - name: treatment
+          description: "Plant diagnosis or health assessment"
+          example: "Minor nitrogen deficiency detected"
+        - name: treatment_recommendation
           in: query
           required: false
           schema:
             type: string
-          description: "Treatment applied"
-          example: "Apply balanced fertilizer"
-        - name: symptoms
+          description: "Treatment recommendations"
+          example: "Apply balanced fertilizer every 2 weeks"
+        - name: symptoms_observed
           in: query
           required: false
           schema:
             type: string
           description: "Observed symptoms"
-          example: "Yellow leaf edges"
+          example: "Yellow leaf edges, slight wilting"
         - name: user_notes
           in: query
           required: false
           schema:
             type: string
-          description: "Additional notes"
-          example: "Plant seems otherwise healthy"
+          description: "Additional user observations"
+          example: "Plant recovering well from repotting"
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Plant location"
+          example: "Living room windowsill"
         - name: follow_up_required
           in: query
           required: false
@@ -845,93 +871,46 @@ paths:
             type: string
           description: "Follow-up date (YYYY-MM-DD format)"
           example: "2024-01-22"
-      responses:
-        '201':
-          description: Log entry created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  log_id:
-                    type: string
-                  upload_url:
-                    type: string
-                  upload_instructions:
-                    type: string
-
-  /api/logs/create-simple:
-    get:
-      operationId: createSimpleLog
-      summary: Create simple plant log entry
-      description: "CHATGPT WORKAROUND: Create a simple plant log entry with basic information (converted to GET due to ChatGPT POST issue)"
-      security: []
-      parameters:
-        - name: plant_name
-          in: query
-          required: true
-          schema:
-            type: string
-          description: "Name of the plant (required)"
-        - name: user_notes
+        
+        # Search parameters (when no action specified)
+        - name: query
           in: query
           required: false
           schema:
             type: string
-          description: "Simple notes about the plant"
-          example: "Plant looks healthy today"
-      responses:
-        '201':
-          description: Simple log entry created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  log_id:
-                    type: string
-                  upload_url:
-                    type: string
-
-  /api/logs/search:
-    get:
-      operationId: searchLogs
-      summary: Search plant health logs
-      description: Search for log entries by plant name or content
-      security: []
-      parameters:
-        - name: q
-          in: query
-          description: Search query for logs
-          required: false
-          schema:
-            type: string
-            example: "tomato"
-        - name: plant_name
-          in: query
-          description: Filter by specific plant name
-          required: false
-          schema:
-            type: string
+          description: "Search query for logs (searches across all fields)"
+          example: "nitrogen deficiency"
         - name: limit
           in: query
-          description: Maximum number of logs to return
           required: false
           schema:
             type: integer
             default: 20
+          description: "Maximum number of results to return"
+          
+        # Legacy support
+        - name: treatment
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Legacy parameter - same as treatment_recommendation"
+            
       responses:
         '200':
-          description: List of matching log entries
+          description: "Operation successful (search, get, or update)"
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                  operation:
+                    type: string
+                    enum: ["search", "get", "update"]
+                    description: "Type of operation performed"
+                  # Search results
                   search_results:
                     type: array
                     items:
@@ -945,8 +924,49 @@ paths:
                           type: string
                         diagnosis:
                           type: string
+                        user_notes:
+                          type: string
                   total_results:
                     type: integer
+                  # Single log entry (get operation)
+                  log_entry:
+                    type: object
+                    additionalProperties: true
+                  # Update operation
+                  log_id:
+                    type: string
+                  updated_fields:
+                    type: array
+                    items:
+                      type: string
+                  message:
+                    type: string
+        '201':
+          description: "Log entry created successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  operation:
+                    type: string
+                    enum: ["create"]
+                  log_id:
+                    type: string
+                  plant_id:
+                    type: string
+                  upload_url:
+                    type: string
+                  upload_token:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: "Bad request - missing required parameters or validation failed"
+        '404':
+          description: "Log entry not found (for get/update operations)"
 
   # =============================================
   # PHOTO UPLOAD (2 operations)

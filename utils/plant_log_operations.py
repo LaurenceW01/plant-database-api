@@ -572,6 +572,158 @@ def format_log_entries_as_journal(log_entries: List[Dict]) -> List[Dict]:
     
     return journal_entries
 
+def update_log_entry(
+    log_id: str,
+    **update_fields
+) -> Dict[str, Any]:
+    """
+    Update an existing log entry with specified fields.
+    
+    Args:
+        log_id (str): The log entry ID to update
+        **update_fields: Fields to update (e.g., plant_name, diagnosis, user_notes, etc.)
+        
+    Returns:
+        Dict containing success status and update details
+    """
+    try:
+        # Rate limiting
+        check_rate_limit()
+        
+        # Get all log entries to find the row to update
+        result = sheets_client.values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range=LOG_RANGE_NAME
+        ).execute()
+        
+        values = result.get('values', [])
+        if not values:
+            return {"success": False, "error": "No log entries found"}
+        
+        # Find headers and log entry row
+        headers = values[0] if values else []
+        if 'log_id' not in headers:
+            return {"success": False, "error": "log_id column not found in sheet"}
+        
+        # Find the row with matching log ID
+        log_id_col = headers.index('log_id')
+        target_row = None
+        existing_data = {}
+        
+        for i, row in enumerate(values[1:], start=2):  # Start from row 2 (skip header)
+            if len(row) > log_id_col and row[log_id_col] == log_id:
+                target_row = i
+                # Store existing data for the log entry
+                for j, header in enumerate(headers):
+                    existing_data[header] = row[j] if j < len(row) else ""
+                break
+        
+        if target_row is None:
+            return {"success": False, "error": f"Log entry with ID {log_id} not found"}
+        
+        # Filter and validate update fields
+        valid_fields = get_all_log_field_names()
+        updates = []
+        updated_fields = []
+        
+        for field_name, new_value in update_fields.items():
+            # Convert to canonical field name (lowercase_underscore)
+            canonical_name = get_canonical_log_field_name(field_name)
+            
+            logger.info(f"UPDATE DEBUG: field_name='{field_name}' -> canonical_name='{canonical_name}' value='{new_value}'")
+            
+            if canonical_name is None:
+                logger.warning(f"UPDATE DEBUG: Field '{field_name}' has no canonical mapping")
+                continue
+            
+            if canonical_name not in valid_fields:
+                logger.warning(f"UPDATE DEBUG: Canonical field '{canonical_name}' not in valid fields: {valid_fields}")
+                continue  # Skip invalid fields
+            
+            # Special handling for boolean fields
+            if canonical_name == 'follow_up_required':
+                # Convert string boolean to proper format for Google Sheets
+                if str(new_value).lower() in ['true', '1', 'yes']:
+                    new_value = 'TRUE'
+                elif str(new_value).lower() in ['false', '0', 'no']:
+                    new_value = 'FALSE'
+                else:
+                    logger.warning(f"UPDATE DEBUG: Invalid boolean value for follow_up_required: '{new_value}'")
+                    continue
+            
+            # Validate the field data
+            is_valid, error_msg = validate_log_field_data(canonical_name, str(new_value))
+            if not is_valid:
+                logger.error(f"UPDATE DEBUG: Validation failed for {canonical_name}: {error_msg}")
+                return {"success": False, "error": f"Validation failed for {canonical_name}: {error_msg}"}
+            
+            # Find column index for this field
+            if canonical_name in headers:
+                col_index = headers.index(canonical_name)
+                
+                logger.info(f"UPDATE DEBUG: Updating {canonical_name} (column {col_index}) with value '{new_value}'")
+                
+                # Prepare the update
+                updates.append({
+                    'range': f'{LOG_SHEET_NAME}!{chr(65 + col_index)}{target_row}',
+                    'values': [[str(new_value)]]
+                })
+                updated_fields.append(canonical_name)
+            else:
+                logger.warning(f"UPDATE DEBUG: Field '{canonical_name}' not found in sheet headers: {headers}")
+        
+        # Always update the last_updated timestamp
+        last_updated_col = headers.index('last_updated') if 'last_updated' in headers else -1
+        if last_updated_col >= 0:
+            updates.append({
+                'range': f'{LOG_SHEET_NAME}!{chr(65 + last_updated_col)}{target_row}',
+                'values': [[get_houston_timestamp_iso()]]
+            })
+            updated_fields.append('last_updated')
+        
+        if not updates:
+            return {"success": False, "error": "No valid fields provided for update"}
+        
+        # If plant_name is being updated, validate the new plant exists
+        if 'plant_name' in update_fields:
+            plant_validation = validate_plant_for_log(update_fields['plant_name'])
+            if plant_validation["valid"]:
+                # Update plant_id if plant exists
+                plant_id = plant_validation["plant_id"]
+                if 'plant_id' in headers:
+                    plant_id_col = headers.index('plant_id')
+                    updates.append({
+                        'range': f'{LOG_SHEET_NAME}!{chr(65 + plant_id_col)}{target_row}',
+                        'values': [[str(plant_id) if plant_id else ""]]
+                    })
+                    updated_fields.append('plant_id')
+        
+        # Perform batch update
+        batch_update_body = {
+            'valueInputOption': 'USER_ENTERED',
+            'data': updates
+        }
+        
+        update_result = sheets_client.values().batchUpdate(
+            spreadsheetId=SPREADSHEET_ID,
+            body=batch_update_body
+        ).execute()
+        
+        logger.info(f"Updated log entry {log_id} with fields: {updated_fields}")
+        
+        return {
+            "success": True,
+            "log_id": log_id,
+            "message": f"Log entry {log_id} updated successfully",
+            "updated_fields": updated_fields,
+            "updates_applied": len(updates),
+            "sheets_result": update_result
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to update log entry {log_id}: {e}")
+        return {"success": False, "error": str(e)}
+
 def search_log_entries(
     plant_name: Optional[str] = None, 
     query: str = "", 
@@ -789,13 +941,23 @@ def search_plant_logs_api():
         if not plant_name:
             return jsonify({'success': False, 'error': 'plant_name parameter is required'}), 400
         
-        logs = get_logs_for_plant(plant_name)
+        # Use the get_plant_log_entries function instead
+        result = get_plant_log_entries(plant_name)
         
-        return jsonify({
-            'success': True,
-            'logs': logs,
-            'count': len(logs)
-        }), 200
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'logs': result.get('log_entries', []),
+                'count': result.get('total_entries', 0),
+                'plant_name': result.get('plant_name'),
+                'plant_id': result.get('plant_id')
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Failed to get logs'),
+                'suggestions': result.get('suggestions', [])
+            }), 400
         
     except Exception as e:
         import logging
