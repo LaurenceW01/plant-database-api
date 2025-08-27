@@ -11,6 +11,7 @@ from .analysis import analysis_bp
 from .locations import locations_bp
 from .photos import photos_bp
 from .plant_maintenance import plant_maintenance_bp
+from .hydrawise import hydrawise_bp
 
 __all__ = [
     'plants_bp',
@@ -18,7 +19,8 @@ __all__ = [
     'analysis_bp',
     'locations_bp',
     'photos_bp',
-    'plant_maintenance_bp'
+    'plant_maintenance_bp',
+    'hydrawise_bp'
 ]
 
 def register_all_blueprints(app):
@@ -29,4 +31,5 @@ def register_all_blueprints(app):
     app.register_blueprint(locations_bp)
     app.register_blueprint(photos_bp)
     app.register_blueprint(plant_maintenance_bp)
+    app.register_blueprint(hydrawise_bp)
 

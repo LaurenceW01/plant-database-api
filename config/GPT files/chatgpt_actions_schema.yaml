@@ -1537,6 +1537,164 @@ paths:
         '503':
           description: Weather services temporarily unavailable
 
+  # =============================================
+  # HYDRAWISE IRRIGATION CONTROL (1 operation)
+  # =============================================
+  
+  /api/hydrawise/zones:
+    get:
+      operationId: hydrawiseZones
+      summary: "Hydrawise irrigation zone control"
+      description: "Control Hydrawise irrigation zones: list zones, start zones, check running zones, or stop all zones. Single endpoint with action-based parameter."
+      security: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["list", "start", "status", "stop"]
+          description: "Action to perform: 'list' shows all zones, 'start' starts a zone, 'status' shows running zones, 'stop' stops all zones"
+          example: "list"
+        - name: zone_selection
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Required for 'start' action: Zone selection number (1-N) or zone ID to start"
+          example: "1"
+        - name: duration_minutes
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 1
+            maximum: 120
+          description: "Required for 'start' action: How long to run the zone in minutes"
+          example: 10
+      responses:
+        '200':
+          description: "Successful zone operation"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  action:
+                    type: string
+                  message:
+                    type: string
+                  zones:
+                    type: array
+                    description: "Available zones (for 'list' action)"
+                    items:
+                      type: object
+                      properties:
+                        selection_number:
+                          type: integer
+                        zone_id:
+                          type: string
+                        zone_name:
+                          type: string
+                        is_running:
+                          type: boolean
+                        status:
+                          type: string
+                        time_left:
+                          type: string
+                  running_zones:
+                    type: array
+                    description: "Currently running zones (for 'status' action)"
+                    items:
+                      type: object
+                      properties:
+                        zone_id:
+                          type: string
+                        zone_name:
+                          type: string
+                        time_left:
+                          type: string
+                  zones_stopped:
+                    type: array
+                    description: "Zones that were stopped (for 'stop' action)"
+                  zone_id:
+                    type: string
+                    description: "Zone that was started (for 'start' action)"
+                  zone_name:
+                    type: string
+                    description: "Name of zone that was started (for 'start' action)"
+                  duration_minutes:
+                    type: number
+                    description: "Duration zone will run (for 'start' action)"
+              examples:
+                list_zones:
+                  summary: "List all zones: GET /api/hydrawise/zones?action=list"
+                  value:
+                    success: true
+                    action: "list"
+                    zones: [
+                      {
+                        "selection_number": 1,
+                        "zone_id": "12345",
+                        "zone_name": "Front Yard",
+                        "is_running": false,
+                        "status": "IDLE"
+                      },
+                      {
+                        "selection_number": 2,
+                        "zone_id": "12346", 
+                        "zone_name": "Back Yard",
+                        "is_running": true,
+                        "status": "RUNNING",
+                        "time_left": "Now"
+                      }
+                    ]
+                    total_zones: 2
+                    running_count: 1
+                    message: "Found 2 zones, 1 running"
+                start_zone:
+                  summary: "Start a zone: GET /api/hydrawise/zones?action=start&zone_selection=1&duration_minutes=10"
+                  value:
+                    success: true
+                    action: "start"
+                    message: "Zone \"Front Yard\" started successfully"
+                    zone_id: "12345"
+                    zone_name: "Front Yard"
+                    duration_minutes: 10
+                running_status:
+                  summary: "Check running zones: GET /api/hydrawise/zones?action=status"
+                  value:
+                    success: true
+                    action: "status"
+                    running_zones: [
+                      {
+                        "zone_id": "12346",
+                        "zone_name": "Back Yard", 
+                        "time_left": "Now"
+                      }
+                    ]
+                    count: 1
+                    message: "1 zones currently running"
+                stop_all:
+                  summary: "Stop all zones: GET /api/hydrawise/zones?action=stop"
+                  value:
+                    success: true
+                    action: "stop"
+                    message: "Successfully stopped 1 zones"
+                    zones_stopped: [
+                      {
+                        "zone_id": "12346",
+                        "zone_name": "Back Yard",
+                        "time_left": "Now"
+                      }
+                    ]
+        '400':
+          description: "Invalid request parameters"
+        '500':
+          description: "Server error or irrigation system unavailable"
+
 components:
   schemas:
     Plant:

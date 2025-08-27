@@ -6,14 +6,14 @@
 
 ## ✅ CORE API ENDPOINTS (ChatGPT Compatible)
 
-**Status**: 29 essential endpoints operational - streamlined for optimal performance.
+**Status**: 30 essential endpoints operational - streamlined for optimal performance.
 All endpoints include AI-powered analysis, field normalization, and location intelligence.
 
 **Workaround Status**: All POST/PUT endpoints converted to GET with parameter simulation.
 
 ---
 
-## Quick Reference - All 29 Operations
+## Quick Reference - All 30 Operations
 
 ### Plant Management (7 operations)
 ```javascript
@@ -156,6 +156,11 @@ GET    /api/garden/care-optimization         // ✅ Care optimization analysis (
 ```javascript
 GET    /api/weather                   // ✅ Unified weather endpoint (current + forecasts + rainfall)
 // Legacy endpoints still available: /api/weather/current, /api/weather/forecast, /api/weather/forecast/daily
+```
+
+### Hydrawise Irrigation Control (1 operation)
+```javascript
+GET    /api/hydrawise/zones           // ✅ Control irrigation zones (list, start, status, stop)
 ```
 
 ---
@@ -602,6 +607,54 @@ GET /api/weather?include_hourly=true&hours=24&include_daily=true&days=7&include_
 // GET /api/weather/forecast?hours=24
 // GET /api/weather/forecast/daily?days=7
 ```
+
+### Hydrawise Irrigation Control
+```javascript
+// List all irrigation zones with status
+GET /api/hydrawise/zones?action=list
+
+// Start a specific zone (by selection number or zone ID)
+GET /api/hydrawise/zones?action=start&zone_selection=1&duration_minutes=10
+
+// Check which zones are currently running
+GET /api/hydrawise/zones?action=status
+
+// Stop all running zones immediately
+GET /api/hydrawise/zones?action=stop
+
+// Example responses:
+{
+  "success": true,
+  "action": "list",
+  "zones": [
+    {
+      "selection_number": 1,
+      "zone_id": "12345",
+      "zone_name": "Front Yard",
+      "is_running": false,
+      "status": "IDLE"
+    },
+    {
+      "selection_number": 2,
+      "zone_id": "12346",
+      "zone_name": "Back Yard",
+      "is_running": true,
+      "status": "RUNNING",
+      "time_left": "Now"
+    }
+  ],
+  "total_zones": 2,
+  "running_count": 1,
+  "message": "Found 2 zones, 1 running"
+}
+```
+
+**Hydrawise Usage Guidelines:**
+- **Always list zones first** to show user available options
+- **Use selection numbers** (1, 2, 3...) for easy user selection
+- **Check status** before starting to avoid conflicts
+- **Reasonable durations** (5-60 minutes typical for most zones)
+- **Stop all** as emergency function when needed
 
 ---
 
