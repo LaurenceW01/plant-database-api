@@ -29,8 +29,9 @@ def get_explorer():
         if not api_key:
             raise ValueError("HUNTER_HYDRAWISE_API_KEY not found in environment variables")
         
-        # Initialize explorer with no rate limiting for API usage
-        _explorer = HydrawiseAPIExplorer(api_key, respect_rate_limits=False, aggressive_rate_limiting=False)
+        # Initialize explorer with conservative rate limiting for web API usage
+        # Use respect_rate_limits=True but aggressive_rate_limiting=False for web-friendly behavior
+        _explorer = HydrawiseAPIExplorer(api_key, respect_rate_limits=True, aggressive_rate_limiting=False)
     
     return _explorer
 
@@ -94,14 +95,26 @@ def list_zones():
         }
         
     except Exception as e:
-        return {
-            'zones': {},
-            'zone_list': [],
-            'running_zones': [],
-            'total_zones': 0,
-            'error': f'Error getting zones: {str(e)}',
-            'success': False
-        }
+        error_msg = str(e)
+        if 'rate limited' in error_msg.lower():
+            return {
+                'zones': {},
+                'zone_list': [],
+                'running_zones': [],
+                'total_zones': 0,
+                'error': 'Hydrawise system is rate limited. Please wait a minute before trying again.',
+                'rate_limited': True,
+                'success': False
+            }
+        else:
+            return {
+                'zones': {},
+                'zone_list': [],
+                'running_zones': [],
+                'total_zones': 0,
+                'error': f'Error getting zones: {error_msg}',
+                'success': False
+            }
 
 
 def start_zone(zone_selection, duration_minutes):
@@ -174,23 +187,41 @@ def start_zone(zone_selection, duration_minutes):
             }
         
         # Start the zone
-        success = start_zone_and_wait(explorer, zone_id, duration_minutes)
-        
-        if success:
-            return {
-                'success': True,
-                'message': f'Zone "{zone_name}" started successfully',
-                'zone_id': zone_id,
-                'zone_name': zone_name,
-                'duration_minutes': duration_minutes
-            }
-        else:
-            return {
-                'success': False,
-                'error': f'Failed to start zone "{zone_name}"',
-                'zone_id': zone_id,
-                'zone_name': zone_name
-            }
+        try:
+            success = start_zone_and_wait(explorer, zone_id, duration_minutes)
+            
+            if success:
+                return {
+                    'success': True,
+                    'message': f'Zone "{zone_name}" started successfully',
+                    'zone_id': zone_id,
+                    'zone_name': zone_name,
+                    'duration_minutes': duration_minutes
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Failed to start zone "{zone_name}"',
+                    'zone_id': zone_id,
+                    'zone_name': zone_name
+                }
+        except Exception as e:
+            error_msg = str(e)
+            if 'rate limited' in error_msg.lower():
+                return {
+                    'success': False,
+                    'error': f'Hydrawise system is rate limited. Please wait a minute before trying again.',
+                    'zone_id': zone_id,
+                    'zone_name': zone_name,
+                    'rate_limited': True
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Error starting zone "{zone_name}": {error_msg}',
+                    'zone_id': zone_id,
+                    'zone_name': zone_name
+                }
             
     except Exception as e:
         return {
@@ -269,20 +300,36 @@ def stop_all_zones():
             }
         
         # Stop all zones
-        success = stop_all_zones_now(explorer)
-        
-        if success:
-            return {
-                'success': True,
-                'message': f'Successfully stopped {len(running_zones)} zones',
-                'zones_stopped': running_zones
-            }
-        else:
-            return {
-                'success': False,
-                'error': 'Failed to stop zones',
-                'zones_that_were_running': running_zones
-            }
+        try:
+            success = stop_all_zones_now(explorer)
+            
+            if success:
+                return {
+                    'success': True,
+                    'message': f'Successfully stopped {len(running_zones)} zones',
+                    'zones_stopped': running_zones
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': 'Failed to stop zones',
+                    'zones_that_were_running': running_zones
+                }
+        except Exception as e:
+            error_msg = str(e)
+            if 'rate limited' in error_msg.lower():
+                return {
+                    'success': False,
+                    'error': 'Hydrawise system is rate limited. Please wait a minute before trying again.',
+                    'zones_that_were_running': running_zones,
+                    'rate_limited': True
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Error stopping zones: {error_msg}',
+                    'zones_that_were_running': running_zones
+                }
             
     except Exception as e:
         return {

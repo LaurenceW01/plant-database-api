@@ -233,8 +233,15 @@ class HydrawiseAPIExplorer:
                 # Handle rate limiting response
                 if response.status_code == 429:
                     retry_after = response.headers.get('Retry-After', 60)
-                    print(f"[WARNING] Rate limited by server. Waiting {retry_after} seconds...")
-                    time.sleep(int(retry_after))
+                    retry_seconds = int(retry_after)
+                    
+                    # For web API usage, don't wait more than 15 seconds to avoid server timeouts
+                    if retry_seconds > 15:
+                        print(f"[ERROR] Rate limited for {retry_seconds}s (too long for web API). Try again later.")
+                        raise Exception(f"Hydrawise rate limited for {retry_seconds} seconds. Please wait before trying again.")
+                    
+                    print(f"[WARNING] Rate limited by server. Waiting {retry_seconds} seconds...")
+                    time.sleep(retry_seconds)
                     
                     # Retry the request once
                     response = self.session.get(url, params=params, timeout=30)
