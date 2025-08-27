@@ -13,6 +13,7 @@ import os
 from dotenv import load_dotenv
 from hydrawise_api_explorer import HydrawiseAPIExplorer
 from zone_run_simple import get_zone_list, start_zone_and_wait, stop_all_zones_now
+from zone_api_web_utils import start_zone_web_optimized, stop_all_zones_web_optimized, get_zone_list_web_optimized
 
 # Global explorer instance - initialized when first needed
 _explorer = None
@@ -51,7 +52,7 @@ def list_zones():
     """
     try:
         explorer = get_explorer()
-        zones = get_zone_list(explorer)
+        zones = get_zone_list_web_optimized(explorer)
         
         if not zones:
             return {
@@ -132,15 +133,28 @@ def start_zone(zone_selection, duration_minutes):
         explorer = get_explorer()
         
         # Get current zones
-        zones_data = list_zones()
-        if not zones_data['success']:
+        zones = get_zone_list_web_optimized(explorer)
+        
+        if not zones:
             return {
                 'success': False,
-                'error': zones_data.get('error', 'Failed to get zones')
+                'error': 'Failed to get zones'
             }
         
-        zone_list = zones_data['zone_list']
-        zones = zones_data['zones']
+        # Create sorted list for display  
+        zone_list = list(zones.values())
+        zone_list.sort(key=lambda z: z['id'])
+        
+        # Format zones for selection
+        formatted_zones = []
+        for i, zone in enumerate(zone_list, 1):
+            formatted_zones.append({
+                'selection_number': i,
+                'zone_id': zone['id'],
+                'zone_name': zone['name'],
+                'is_running': zone.get('time_left') == 'Now',
+                'status': 'RUNNING' if zone.get('time_left') == 'Now' else 'IDLE'
+            })
         
         # Determine zone ID from selection
         zone_id = None
@@ -149,14 +163,14 @@ def start_zone(zone_selection, duration_minutes):
         try:
             # Try as selection number first
             selection_num = int(zone_selection)
-            if 1 <= selection_num <= len(zone_list):
-                selected_zone = zone_list[selection_num - 1]
+            if 1 <= selection_num <= len(formatted_zones):
+                selected_zone = formatted_zones[selection_num - 1]
                 zone_id = selected_zone['zone_id']
                 zone_name = selected_zone['zone_name']
             else:
                 return {
                     'success': False,
-                    'error': f'Invalid selection number. Please choose 1-{len(zone_list)}'
+                    'error': f'Invalid selection number. Please choose 1-{len(formatted_zones)}'
                 }
         except ValueError:
             # Not a number, try as zone ID
@@ -188,7 +202,7 @@ def start_zone(zone_selection, duration_minutes):
         
         # Start the zone
         try:
-            success = start_zone_and_wait(explorer, zone_id, duration_minutes)
+            success = start_zone_web_optimized(explorer, zone_id, duration_minutes)
             
             if success:
                 return {
@@ -238,14 +252,17 @@ def get_running_zones():
         dict: Information about running zones
     """
     try:
-        zones_data = list_zones()
-        if not zones_data['success']:
+        explorer = get_explorer()
+        zones = get_zone_list_web_optimized(explorer)
+        
+        if not zones:
             return {
                 'success': False,
-                'error': zones_data.get('error', 'Failed to get zones')
+                'error': 'Failed to get zones'
             }
         
-        running_zones = zones_data['running_zones']
+        # Get running zones directly
+        running_zones = [zone for zone in zones.values() if zone.get('time_left') == 'Now']
         
         # Format running zones for API response
         formatted_running = []
@@ -301,7 +318,7 @@ def stop_all_zones():
         
         # Stop all zones
         try:
-            success = stop_all_zones_now(explorer)
+            success = stop_all_zones_web_optimized(explorer)
             
             if success:
                 return {
