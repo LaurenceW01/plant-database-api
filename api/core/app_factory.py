@@ -172,7 +172,7 @@ def register_legacy_components(app, limiter):
     try:
         from api.weather_service import register_weather_routes
         register_weather_routes(app, limiter)
-        logging.info("✅ Weather routes registered")
+        logging.info("SUCCESS: Weather routes registered")
     except ImportError:
         logging.warning("⚠️ Weather service not available")
     
