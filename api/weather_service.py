@@ -228,7 +228,7 @@ def get_unified_weather():
                         'total_inches': round(rainfall_total, 2),
                         'period_days': rainfall_days,
                         'source': 'Harris County Flood Warning System',
-                        'location': 'Cole Creek @ Deihl Road (Station 590)'
+                        'location': 'Brickhouse Gully @ Costa Rica Road (Station 580)'
                     }
                 else:
                     response_data['rainfall_data'] = None
