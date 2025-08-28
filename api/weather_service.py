@@ -12,9 +12,9 @@ import logging
 # Initialize Baron Weather client with error handling
 try:
     baron_client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
-    logging.info("✅ Baron Weather client initialized successfully")
+    logging.info("SUCCESS: Baron Weather client initialized successfully")
 except Exception as e:
-    logging.error(f"❌ Failed to initialize Baron Weather client: {e}")
+    logging.error(f"ERROR: Failed to initialize Baron Weather client: {e}")
     baron_client = None
 
 def get_current_weather():
