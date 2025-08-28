@@ -598,7 +598,7 @@ GET /api/weather?include_hourly=true&hours=24&include_daily=true&days=7&include_
     "total_inches": 0.75,
     "period_days": 7,
     "source": "Harris County Flood Warning System",
-    "location": "Cole Creek @ Deihl Road (Station 590)"
+    "location": "Brickhouse Gully @ Costa Rica Road (Station 580)"
   }
 }
 
