@@ -572,17 +572,17 @@ def main():
     Main function to demonstrate the rainfall scraper functionality.
     
     This function creates a scraper instance and retrieves the 7-day rainfall total
-    for the default location (590 - Cole Creek @ Deihl Road).
+    for the default location (580 - Brickhouse Gully @ Costa Rica Road).
     """
     # Create an instance of the rainfall scraper
     scraper = HarrisCountyRainfallScraper()
     
-    # Define the location ID for Cole Creek @ Deihl Road
-    location_id = "590"
+    # Define the location ID for Brickhouse Gully @ Costa Rica Road
+    location_id = "580"
     
     print("Harris County FWS Rainfall Scraper")
     print("=" * 40)
-    print(f"Fetching rainfall data for location {location_id} (Cole Creek @ Deihl Road)")
+    print(f"Fetching rainfall data for location {location_id} (Brickhouse Gully @ Costa Rica Road)")
     print("Calculating total rainfall for the 7 complete days prior to today...")
     print()
     
