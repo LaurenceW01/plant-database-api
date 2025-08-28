@@ -510,13 +510,13 @@ class HarrisCountyRainfallClient:
         total_rainfall = sum(rainfall for _, rainfall in rainfall_data)
         return total_rainfall
 
-    def get_rainfall_total(self, location_id: str = "590", days: int = 7) -> Optional[float]:
+    def get_rainfall_total(self, location_id: str = "580", days: int = 7) -> Optional[float]:
         """
         Main method to get rainfall totals for the N complete days prior to today.
         This excludes today's partial data to ensure accurate 24-hour rainfall measurements.
         
         Args:
-            location_id (str): The location ID for the monitoring station (default: "590")
+            location_id (str): The location ID for the monitoring station (default: "580")
             days (int): Number of days to calculate rainfall for (default: 7)
             
         Returns:
@@ -569,13 +569,13 @@ class HarrisCountyRainfallClient:
 harris_county_client = HarrisCountyRainfallClient()
 
 
-def get_harris_county_rainfall(days: int = 7, location_id: str = "590") -> Optional[float]:
+def get_harris_county_rainfall(days: int = 7, location_id: str = "580") -> Optional[float]:
     """
     Convenience function to get Harris County rainfall data.
     
     Args:
         days (int): Number of days to calculate rainfall for (default: 7)
-        location_id (str): Harris County FWS location ID (default: "590" - Cole Creek @ Deihl Road)
+        location_id (str): Harris County FWS location ID (default: "580" - Brickhouse Gully @ Costa Rica Road')
         
     Returns:
         Optional[float]: Total rainfall in inches, None if failed
