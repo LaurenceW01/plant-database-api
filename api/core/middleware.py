@@ -16,8 +16,8 @@ def setup_middleware(app):
     This replaces the middleware setup that was in register_routes().
     """
     
-    print("🔧 SETTING UP MIDDLEWARE...")  # Debug print
-    logging.info("🔧 Setting up middleware...")
+    print("SETTING UP MIDDLEWARE...")  # Debug print
+    logging.info("Setting up middleware...")
     
     # ========================================
     # FIELD NORMALIZATION MIDDLEWARE
@@ -25,7 +25,7 @@ def setup_middleware(app):
     # Register centralized field normalization middleware
     try:
         from utils.field_normalization_middleware import normalize_request_middleware
-        print("✅ IMPORTED NORMALIZATION MIDDLEWARE")  # Debug print
+        print("SUCCESS: IMPORTED NORMALIZATION MIDDLEWARE")  # Debug print
         
         @app.before_request
         def apply_field_normalization():
@@ -54,27 +54,27 @@ def setup_middleware(app):
             
             # Debug: Wrap normalize_request_middleware with exception handling
             try:
-                print(f"🔧 About to call normalize_request_middleware()...")  # Debug print
+                print(f"About to call normalize_request_middleware()...")  # Debug print
                 normalize_request_middleware()
-                print(f"✅ normalize_request_middleware() completed successfully")  # Debug print
+                print(f"SUCCESS: normalize_request_middleware() completed successfully")  # Debug print
             except Exception as e:
-                print(f"💥 EXCEPTION in normalize_request_middleware(): {e}")  # Debug print
+                print(f"ERROR: EXCEPTION in normalize_request_middleware(): {e}")  # Debug print
                 logging.error(f"💥 EXCEPTION in normalize_request_middleware(): {e}")
                 # Re-raise to let Flask handle it
                 raise
             
             if hasattr(g, 'normalized_request_data'):
-                print(f"✅ Normalized data: {g.normalized_request_data}")  # Debug print
+                print(f"SUCCESS: Normalized data: {g.normalized_request_data}")  # Debug print
             else:
                 # This is expected for GET requests, file uploads, and requests without JSON
                 request_type = "GET request" if request.method == "GET" else f"{request.method} request without JSON data"
                 print(f"ℹ️  No field normalization needed for {request_type}: {request.path}")  # Debug print
             
             # Debug: Track middleware completion
-            print(f"🏁 MIDDLEWARE COMPLETED for {request.method} {request.path}")  # Debug print
+            print(f"MIDDLEWARE COMPLETED for {request.method} {request.path}")  # Debug print
         
-        print("✅ FIELD NORMALIZATION MIDDLEWARE REGISTERED")  # Debug print
-        logging.info("✅ Field normalization middleware registered")
+        print("SUCCESS: FIELD NORMALIZATION MIDDLEWARE REGISTERED")  # Debug print
+        logging.info("SUCCESS: Field normalization middleware registered")
         
         # Debug: Track request completion
         @app.after_request
@@ -88,9 +88,9 @@ def setup_middleware(app):
         def debug_teardown_request(exception=None):
             """Debug logging on request teardown"""
             if exception:
-                print(f"💥 REQUEST_TEARDOWN: {request.method} {request.path} → Exception: {exception}")  # Debug print
+                print(f"ERROR: REQUEST_TEARDOWN: {request.method} {request.path} -> Exception: {exception}")  # Debug print
             else:
-                print(f"✅ REQUEST_TEARDOWN: {request.method} {request.path} → Clean")  # Debug print
+                print(f"SUCCESS: REQUEST_TEARDOWN: {request.method} {request.path} -> Clean")  # Debug print
         
     except Exception as e:
         print(f"❌ MIDDLEWARE SETUP ERROR: {e}")  # Debug print

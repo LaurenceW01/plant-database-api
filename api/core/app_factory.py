@@ -89,9 +89,9 @@ def create_app(testing=False):
     @app.route('/', methods=['GET', 'HEAD', 'POST', 'PUT'])
     def root_health():
         """Root health check endpoint to prevent Render restart cycles"""
-        logging.info("🏠 ROOT HEALTH CHECK CALLED")
-        logging.info(f"🏠 Method: {request.method}")
-        logging.info(f"🏠 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logging.info("ROOT HEALTH CHECK CALLED")
+        logging.info(f"Method: {request.method}")
+        logging.info(f"User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
         
         response_data = {
             "status": "healthy",
@@ -110,7 +110,7 @@ def create_app(testing=False):
         
         # Also handle POST/PUT requests to root for testing
         if request.method in ['POST', 'PUT']:
-            logging.info(f"🏠 {request.method} request to root - treating as health check")
+            logging.info(f"{request.method} request to root - treating as health check")
             response_data["message"] = f"{request.method} request received at root - API is healthy"
         
         return response_data
@@ -119,29 +119,29 @@ def create_app(testing=False):
     @app.before_request
     def log_all_requests():
         """Log every single request that hits the server"""
-        logging.info("🌐" + "="*80)
-        logging.info(f"🌐 INCOMING REQUEST: {request.method} {request.path}")
-        logging.info(f"🌐 Full URL: {request.url}")
-        logging.info(f"🌐 Remote Address: {request.remote_addr}")
-        logging.info(f"🌐 User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
-        logging.info(f"🌐 Content-Type: {request.headers.get('Content-Type', 'None')}")
-        logging.info(f"🌐 Accept: {request.headers.get('Accept', 'None')}")
-        logging.info(f"🌐 Content-Length: {request.headers.get('Content-Length', '0')}")
+        logging.info("=" * 80)
+        logging.info(f"INCOMING REQUEST: {request.method} {request.path}")
+        logging.info(f"Full URL: {request.url}")
+        logging.info(f"Remote Address: {request.remote_addr}")
+        logging.info(f"User-Agent: {request.headers.get('User-Agent', 'Unknown')}")
+        logging.info(f"Content-Type: {request.headers.get('Content-Type', 'None')}")
+        logging.info(f"Accept: {request.headers.get('Accept', 'None')}")
+        logging.info(f"Content-Length: {request.headers.get('Content-Length', '0')}")
         
         # Detect ChatGPT requests
         user_agent = request.headers.get('User-Agent', '').lower()
         is_chatgpt = any(keyword in user_agent for keyword in ['openai', 'gpt', 'chatgpt'])
-        logging.info(f"🤖 IS CHATGPT REQUEST: {is_chatgpt}")
+        logging.info(f"IS CHATGPT REQUEST: {is_chatgpt}")
         
         # Log request body for POST requests
         if request.method == 'POST' and request.content_length and request.content_length > 0:
             try:
                 raw_data = request.get_data(as_text=True)
-                logging.info(f"🌐 POST BODY: {raw_data[:200]}{'...' if len(raw_data) > 200 else ''}")
+                logging.info(f"POST BODY: {raw_data[:200]}{'...' if len(raw_data) > 200 else ''}")
             except:
-                logging.info("🌐 POST BODY: <could not read>")
+                logging.info("POST BODY: <could not read>")
         
-        logging.info("🌐" + "="*80)
+        logging.info("=" * 80)
 
     # Add cache-busting headers to prevent CloudFlare caching issues
     @app.after_request
@@ -153,12 +153,12 @@ def create_app(testing=False):
             response.headers['Expires'] = '0'
             
         # Log response info
-        logging.info(f"🌐 RESPONSE: {request.method} {request.path} → {response.status_code}")
+        logging.info(f"RESPONSE: {request.method} {request.path} -> {response.status_code}")
         return response
     
-    logging.info("✅ Flask app created and configured successfully")
-    logging.info(f"✅ Testing mode: {testing}")
-    logging.info(f"✅ Rate limiting: {'disabled' if testing else 'enabled'}")
+    logging.info("SUCCESS: Flask app created and configured successfully")
+    logging.info(f"SUCCESS: Testing mode: {testing}")
+    logging.info(f"SUCCESS: Rate limiting: {'disabled' if testing else 'enabled'}")
     
     return app
 
@@ -180,7 +180,7 @@ def register_legacy_components(app, limiter):
     try:
         from api.main import register_image_analysis_route, require_api_key
         register_image_analysis_route(app, limiter, require_api_key)
-        logging.info("✅ Image analysis routes registered")
+        logging.info("SUCCESS: Image analysis routes registered")
     except ImportError:
         logging.warning("⚠️ Image analysis routes not available")
     
@@ -189,7 +189,7 @@ def register_legacy_components(app, limiter):
         from api.main import register_plant_log_routes, require_api_key
         # DISABLED: Legacy routes conflict with new blueprint routes
         # register_plant_log_routes(app, limiter, require_api_key)
-        logging.info("🚫 Legacy plant log routes DISABLED (blueprint routes used instead)")
+        logging.info("DISABLED: Legacy plant log routes DISABLED (blueprint routes used instead)")
     except ImportError:
         logging.warning("⚠️ Legacy plant log routes not available")
     
@@ -198,7 +198,7 @@ def register_legacy_components(app, limiter):
         from api.main import register_plant_routes, require_api_key
         # DISABLED: Legacy routes conflict with new blueprint routes  
         # register_plant_routes(app, limiter, require_api_key)
-        logging.info("🚫 Legacy plant routes DISABLED (blueprint routes used instead)")
+        logging.info("DISABLED: Legacy plant routes DISABLED (blueprint routes used instead)")
     except ImportError:
         logging.warning("⚠️ Legacy plant routes not available")
 
