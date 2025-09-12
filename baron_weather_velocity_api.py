@@ -1,6 +1,10 @@
 """
 Baron Weather VelocityWeather API Client for GardenLLM (v2).
 Uses the official VelocityWeather API with HMAC authentication.
+
+DEPRECATED: This module is deprecated and will be removed in a future version.
+Use vc_weather_service.py (Visual Crossing API) instead.
+This module is maintained only as a fallback for the new weather service.
 """
 
 import logging

@@ -188,7 +188,11 @@ except Exception as e:
 # Export the storage client
 __all__ = ['openai_client', 'sheets_client', 'storage_client', 'SPREADSHEET_ID', 'RANGE_NAME', 'LOG_SHEET_NAME', 'LOG_RANGE_NAME', 'STORAGE_BUCKET_NAME', 'STORAGE_PROJECT_ID']
 
-# Baron Weather API Configuration
+# Visual Crossing Weather API Configuration (replaces Baron Weather)
+VISUAL_CROSSING_API_KEY = os.getenv('VISUAL_CROSSING_API_KEY')
+VISUAL_CROSSING_USERNAME = os.getenv('VISUAL_CROSSING_USERNAME')
+
+# Legacy Baron Weather API Configuration (deprecated - for fallback only)
 BARON_API_KEY = os.getenv('BARON_API_KEY', 'tcATLX0GE43S')
 BARON_API_SECRET = os.getenv('BARON_API_SECRET', '1fWKEKScFNHPGxxUA851w7rDXfbMSPFTkEfgBvByNm')
 
@@ -198,17 +202,33 @@ WEATHER_REQUEST_DELAY = 1  # 1 second between requests
 
 # Initialize weather client
 def init_weather_client():
-    """Initialize and return Baron Weather API client"""
+    """Initialize and return Visual Crossing Weather API client"""
     try:
-        from utils.baron_weather_velocity_api import BaronWeatherVelocityAPI
-        client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
+        # Try Visual Crossing API first
+        from vc_weather_service import VisualCrossingWeatherAPI
         
-        # Test connection
-        if client.is_available():
-            logger.info("Successfully connected to Baron Weather API")
-            return client
+        if VISUAL_CROSSING_API_KEY:
+            client = VisualCrossingWeatherAPI(VISUAL_CROSSING_API_KEY, VISUAL_CROSSING_USERNAME)
+            
+            # Test connection
+            if client.is_available():
+                logger.info("Successfully connected to Visual Crossing Weather API")
+                return client
+            else:
+                logger.error("Visual Crossing Weather API connection test failed")
         else:
-            logger.error("Baron Weather API connection test failed")
+            logger.warning("Visual Crossing API key not found in environment")
+        
+        # Fallback to Baron Weather API if Visual Crossing fails
+        logger.info("Attempting fallback to Baron Weather API")
+        from utils.baron_weather_velocity_api import BaronWeatherVelocityAPI
+        baron_client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
+        
+        if baron_client.is_available():
+            logger.info("Successfully connected to Baron Weather API (fallback)")
+            return baron_client
+        else:
+            logger.error("Baron Weather API fallback connection test failed")
             return None
             
     except Exception as e:
@@ -224,10 +244,18 @@ while retry_count < max_retries and weather_client is None:
     try:
         weather_client = init_weather_client()
         if weather_client:
-            logger.info("Successfully initialized Baron Weather client")
+            # Determine which client was initialized
+            client_type = "Visual Crossing" if hasattr(weather_client, 'location') else "Baron Weather"
+            logger.info(f"Successfully initialized {client_type} weather client")
+            
+            # Log additional client info for debugging
+            if hasattr(weather_client, 'location'):
+                logger.info(f"Visual Crossing client location: {weather_client.location}")
+            else:
+                logger.info("Using Baron Weather API as fallback")
             break
     except Exception as e:
         retry_count += 1
-        logger.error(f"Attempt {retry_count} failed to initialize Baron Weather client: {e}")
+        logger.error(f"Attempt {retry_count} failed to initialize weather client: {e}")
         if retry_count < max_retries:
             time.sleep(1) 

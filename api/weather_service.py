@@ -4,29 +4,23 @@ Provides unified weather endpoint with current conditions, forecasts, and rainfa
 """
 
 from flask import jsonify, request
-from utils.baron_weather_velocity_api import BaronWeatherVelocityAPI
 from utils.harris_county_rainfall import get_harris_county_rainfall
-from config.config import BARON_API_KEY, BARON_API_SECRET
+from config.config import weather_client
 import logging
 
-# Initialize Baron Weather client with error handling
-try:
-    baron_client = BaronWeatherVelocityAPI(BARON_API_KEY, BARON_API_SECRET)
-    logging.info("SUCCESS: Baron Weather client initialized successfully")
-except Exception as e:
-    logging.error(f"ERROR: Failed to initialize Baron Weather client: {e}")
-    baron_client = None
+# Use the weather client from config (Visual Crossing or Baron fallback)
+# This client is already initialized in config.py
 
 def get_current_weather():
     """Get current weather conditions for Houston"""
     try:
-        if baron_client is None:
+        if weather_client is None:
             return jsonify({
-                'error': 'Weather service not configured. Baron Weather API credentials may be missing.',
+                'error': 'Weather service not configured. Visual Crossing API credentials may be missing.',
                 'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
             }), 503
             
-        weather_data = baron_client.get_current_weather()
+        weather_data = weather_client.get_current_weather()
         if weather_data is None:
             return jsonify({
                 'error': 'Weather service temporarily unavailable. The external weather API may be experiencing delays or connectivity issues.',
@@ -46,9 +40,9 @@ def get_current_weather():
 def get_weather_forecast():
     """Get hourly weather forecast for Houston"""
     try:
-        if baron_client is None:
+        if weather_client is None:
             return jsonify({
-                'error': 'Weather service not configured. Baron Weather API credentials may be missing.',
+                'error': 'Weather service not configured. Visual Crossing API credentials may be missing.',
                 'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
             }), 503
             
@@ -71,7 +65,7 @@ def get_weather_forecast():
                 'error': 'Hours parameter must be between 1 and 48'
             }), 400
             
-        forecast_data = baron_client.get_hourly_forecast(hours)
+        forecast_data = weather_client.get_hourly_forecast(hours)
         if forecast_data is None:
             return jsonify({
                 'error': 'Weather service temporarily unavailable'
@@ -90,9 +84,9 @@ def get_weather_forecast():
 def get_daily_forecast():
     """Get 10-day weather forecast for Houston"""
     try:
-        if baron_client is None:
+        if weather_client is None:
             return jsonify({
-                'error': 'Weather service not configured. Baron Weather API credentials may be missing.',
+                'error': 'Weather service not configured. Visual Crossing API credentials may be missing.',
                 'fallback_advice': 'Continue with general care recommendations. Check local weather manually.'
             }), 503
             
@@ -115,7 +109,7 @@ def get_daily_forecast():
                 'error': 'Days parameter must be between 1 and 10'
             }), 400
             
-        forecast_data = baron_client.get_daily_forecast(days)
+        forecast_data = weather_client.get_daily_forecast(days)
         if forecast_data is None:
             return jsonify({
                 'error': 'Weather service temporarily unavailable'
@@ -175,16 +169,16 @@ def get_unified_weather():
         # Initialize response data
         response_data = {
             'success': True,
-            'timestamp': baron_client.get_current_timestamp() if baron_client and hasattr(baron_client, 'get_current_timestamp') else None
+            'timestamp': weather_client._get_houston_time().isoformat() if weather_client and hasattr(weather_client, '_get_houston_time') else None
         }
         
         # Get current weather if requested
         if include_current:
-            if baron_client is None:
+            if weather_client is None:
                 response_data['current_weather'] = None
-                response_data['current_weather_error'] = 'Weather service not configured - Baron Weather API credentials may be missing'
+                response_data['current_weather_error'] = 'Weather service not configured - Visual Crossing API credentials may be missing'
             else:
-                current_weather = baron_client.get_current_weather()
+                current_weather = weather_client.get_current_weather()
                 if current_weather is None:
                     response_data['current_weather'] = None
                     response_data['current_weather_error'] = 'Weather service temporarily unavailable'
@@ -193,11 +187,11 @@ def get_unified_weather():
         
         # Get hourly forecast if requested
         if include_hourly:
-            if baron_client is None:
+            if weather_client is None:
                 response_data['hourly_forecast'] = None
-                response_data['hourly_forecast_error'] = 'Weather service not configured - Baron Weather API credentials may be missing'
+                response_data['hourly_forecast_error'] = 'Weather service not configured - Visual Crossing API credentials may be missing'
             else:
-                hourly_forecast = baron_client.get_hourly_forecast(hours)
+                hourly_forecast = weather_client.get_hourly_forecast(hours)
                 if hourly_forecast is None:
                     response_data['hourly_forecast'] = None
                     response_data['hourly_forecast_error'] = 'Hourly forecast temporarily unavailable'
@@ -207,11 +201,11 @@ def get_unified_weather():
         
         # Get daily forecast if requested
         if include_daily:
-            if baron_client is None:
+            if weather_client is None:
                 response_data['daily_forecast'] = None
-                response_data['daily_forecast_error'] = 'Weather service not configured - Baron Weather API credentials may be missing'
+                response_data['daily_forecast_error'] = 'Weather service not configured - Visual Crossing API credentials may be missing'
             else:
-                daily_forecast = baron_client.get_daily_forecast(days)
+                daily_forecast = weather_client.get_daily_forecast(days)
                 if daily_forecast is None:
                     response_data['daily_forecast'] = None
                     response_data['daily_forecast_error'] = 'Daily forecast temporarily unavailable'
